@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Averga's Stats</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Orbitron:wght@600;700&display=swap');
+    :root{
+      --bg: #0c1018;
+      --bg-2: #131a26;
+      --text: #f3f4f6;
+      --muted: #a8b0be;
+      --surface: rgba(22, 30, 43, 0.9);
+      --surface-border: rgba(255, 255, 255, 0.09);
+      --primary: #e4c48c;
+      --primary-2: #c8a86d;
+      --bar-bg: rgba(255, 255, 255, 0.11);
+      --shadow: 0 12px 30px rgba(0, 0, 0, .32);
+      --radius: 20px;
+    }
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      font-family: "Manrope", "Segoe UI", sans-serif;
+      color:var(--text);
+      background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+    }
+
+    header{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(8px);
+      background: rgba(15, 21, 32, .86);
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+    }
+    .container{max-width:1220px; margin:0 auto; padding:24px;}
+    h1{
+      margin:0 0 7px;
+      font-family: "Orbitron", sans-serif;
+      font-size: clamp(1.7rem, 2vw + 1rem, 2.7rem);
+      letter-spacing: .7px;
+      font-weight: 700;
+    }
+    .sub{margin:0; color:var(--muted)}
+
+    .grid{
+      margin-top: 24px;
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+      gap: 18px;
+    }
+
+    .card{
+      position:relative;
+      overflow:hidden;
+      padding:20px;
+      background: var(--surface);
+      border:1px solid var(--surface-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+    }
+    .card:hover{
+      transform: translateY(-4px);
+      border-color: rgba(228,196,140,.42);
+      box-shadow: 0 18px 38px rgba(0,0,0,.42);
+    }
+    .card::after{
+      content:"";
+      position:absolute;
+      width:180px;
+      height:180px;
+      right:-70px;
+      top:-110px;
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(228,196,140,.12) 0%, rgba(228,196,140,0) 72%);
+      pointer-events:none;
+    }
+
+    .card-head{display:flex; align-items:flex-start; gap:14px; padding:0 0 12px}
+    .ovr{
+      min-width:64px;
+      height:64px;
+      border-radius:18px;
+      display:grid;
+      place-items:center;
+      background: linear-gradient(150deg, var(--primary) 0%, var(--primary-2) 100%);
+      color: #0a0a0a;
+      font-weight: 900;
+      font-size: 1.2rem;
+      border: 1px solid rgba(255,255,255,.35);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .info{flex:1; min-width:0}
+    .name{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:0;
+      font-size:1.08rem;
+      font-weight:800;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .role{
+      margin-top:4px;
+      color:var(--muted);
+      font-size:.82rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .chip{
+      position:absolute;
+      top:16px;
+      right:16px;
+      font-size:.72rem;
+      color:#e7d4af;
+      border:1px solid rgba(228,196,140,.35);
+      background: rgba(10, 15, 24, .85);
+      border-radius:999px;
+      padding:6px 10px;
+    }
+
+    .stats{padding:12px 0 0; display:grid; gap:9px}
+    .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px}
+    .label{font-size:.9rem; color:#d7dde8}
+    .value{font-size:.9rem; font-weight:800; color:#f3f7ff}
+    .bar{
+      height:8px;
+      border-radius:999px;
+      overflow:hidden;
+      background: var(--bar-bg);
+    }
+    .bar > span{
+      display:block;
+      height:100%;
+      width:0;
+      background: #d2b179;
+      box-shadow: 0 0 8px rgba(210, 177, 121, .35);
+    }
+
+    .team-dot{
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      overflow:hidden;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(255,255,255,.5);
+      background:#212c3f;
+      box-shadow: 0 4px 10px rgba(0,0,0,.35);
+      flex: 0 0 auto;
+    }
+    .team-dot img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .team-dot.is-text{
+      font-size:.66rem;
+      font-weight:800;
+      letter-spacing:.2px;
+      color:#fff;
+    }
+    .team-blanca{background: #f3f3f3; color:#444;}
+    .team-rosa{background: #ff8ec0; color:#5f1237;}
+    .team-moron{background: #b51010; color:#fff;}
+
+    main{
+      flex:1;
+      width:100%;
+    }
+
+    .app-footer{
+      margin-top:auto;
+      width:100%;
+      border-top:1px solid rgba(255,255,255,.09);
+      background:rgba(15,21,32,.92);
+    }
+    .app-footer-inner{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      gap:.75rem 1.25rem;
+      max-width:1220px;
+      margin:0 auto;
+      padding:1rem 24px;
+    }
+    .app-footer-copy{
+      margin:0;
+      font-size:.85rem;
+      color:var(--muted);
+    }
+    .app-footer-github{
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      color:var(--primary);
+      text-decoration:none;
+      font-size:.88rem;
+      font-weight:600;
+      padding:.35rem .65rem;
+      border-radius:999px;
+      border:1px solid transparent;
+      transition:color .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .app-footer-github:hover{
+      color:var(--text);
+      background:rgba(228,196,140,.1);
+      border-color:rgba(228,196,140,.32);
+    }
+
+    @media (max-width:680px){
+      .container{padding:18px}
+      .grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Averga's Stats</h1>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div id="grid" class="grid" aria-live="polite"></div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="app-footer-inner">
+      <p class="app-footer-copy">© <span id="footer-year"></span> Avergas. Todos los derechos reservados.</p>
+      <a href="https://github.com/LucasAlderete" target="_blank" rel="noopener noreferrer" class="app-footer-github">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.726-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.606-2.665-.303-5.467-1.332-5.467-5.93 0-1.31.468-2.38 1.236-3.22-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.5 11.5 0 0 1 3.003-.404c1.02.005 2.047.138 3.003.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.22 0 4.61-2.807 5.625-5.482 5.92.43.372.823 1.102.823 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 21.796 24 17.297 24 12 24 5.37 18.63 0 12 0z"/>
+        </svg>
+        LucasAlderete
+      </a>
+    </div>
+  </footer>
+
+  <script>
+    // ====== DATOS FIJOS (equivalente al CSV) ======
+    // Valores base (0–10). La MEDIA FIFA ya viene como dos dígitos.
+    const DATA = [
+  { nombre: "Chino", ritmo: 7.44, disparo: 3.78, pases: 4.22, regate: 4.11, defensa: 9.33, fisico: 8.33, mediaFifa: 78 },
+  { nombre: "Emi", ritmo: 4.78, disparo: 6.89, pases: 4.89, regate: 6.56, defensa: 6.67, fisico: 5.11, mediaFifa: 76 },
+  { nombre: "Mati", ritmo: 5.0, disparo: 4.89, pases: 6.56, regate: 5.33, defensa: 6.33, fisico: 6.0, mediaFifa: 69 },
+  { nombre: "Rui", ritmo: 3.33, disparo: 5.0, pases: 4.67, regate: 4.44, defensa: 5.89, fisico: 4.33, mediaFifa: 60 },
+  { nombre: "Gonzi", ritmo: 9.11, disparo: 8.22, pases: 7.67, regate: 9.11, defensa: 7.56, fisico: 9.33, mediaFifa: 87 },
+  { nombre: "Lucas", ritmo: 5.56, disparo: 7.0, pases: 7.11, regate: 7.78, defensa: 5.22, fisico: 4.78, mediaFifa: 75 },
+  { nombre: "Tigre", ritmo: 1, disparo: 1, pases: 0, regate: 1, defensa: 0, fisico: 0.44, mediaFifa: 99 },
+  { nombre: "Rulo", ritmo: 5.56, disparo: 5.44, pases: 7.0, regate: 6.44, defensa: 6.33, fisico: 6.33, mediaFifa: 66 },
+  { nombre: "Sailor", ritmo: 8.89, disparo: 7.11, pases: 5.56, regate: 7.44, defensa: 6.0, fisico: 9.11, mediaFifa: 80 },
+  { nombre: "Cru", ritmo: 6.67, disparo: 6.11, pases: 6.22, regate: 6.22, defensa: 6.67, fisico: 8.11, mediaFifa: 72 },
+  { nombre: "Nahue", ritmo: 3.44, disparo: 3.67, pases: 3.67, regate: 3.44, defensa: 4.0, fisico: 3.33, mediaFifa: 56 },
+  { nombre: "JJ", ritmo: 5.44, disparo: 5.11, pases: 5.33, regate: 5.89, defensa: 5.0, fisico: 5.89, mediaFifa: 81 },
+  { nombre: "Luquitas", ritmo: 6.5, disparo: 6.5, pases: 6.5, regate: 6.5, defensa: 6.5, fisico: 6.5, mediaFifa: 60 },
+];
+
+    const TEAM_ASSETS = {
+      river: 'https://upload.wikimedia.org/wikipedia/commons/3/3f/Logo_River_Plate.png',
+      boca: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/CABJ70.png/120px-CABJ70.png',
+      sanLorenzo: 'https://upload.wikimedia.org/wikipedia/commons/7/77/Escudo_del_Club_Atl%C3%A9tico_San_Lorenzo_de_Almagro.svg',
+      racing: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/78/Racing_Club_logo.svg/120px-Racing_Club_logo.svg.png',
+      moron: 'https://upload.wikimedia.org/wikipedia/en/6/68/Dep_moron_logo16.png',
+    };
+
+    const TEAM_BY_PLAYER = {
+      JJ:    { kind: 'img', src: TEAM_ASSETS.racing, alt: 'Racing' },
+      Nahue: { kind: 'img', src: TEAM_ASSETS.river, alt: 'River Plate' },
+      Cru:   { kind: 'text', className: 'team-rosa', text: '' },
+      Sailor:{ kind: 'img', src: TEAM_ASSETS.boca, alt: 'Boca Juniors' },
+      Tigre: { kind: 'img', src: TEAM_ASSETS.moron, alt: 'Deportivo Morón' },
+      Lucas: { kind: 'img', src: TEAM_ASSETS.river, alt: 'River Plate' },
+      Rulo:  { kind: 'img', src: TEAM_ASSETS.river, alt: 'River Plate' },
+      Gonzi: { kind: 'img', src: TEAM_ASSETS.boca, alt: 'Boca Juniors' },
+      Rui:   { kind: 'img', src: TEAM_ASSETS.boca, alt: 'Boca Juniors' },
+      Mati:  { kind: 'img', src: TEAM_ASSETS.sanLorenzo, alt: 'San Lorenzo' },
+      Emi:   { kind: 'img', src: TEAM_ASSETS.boca, alt: 'Boca Juniors' },
+      Chino: { kind: 'img', src: TEAM_ASSETS.sanLorenzo, alt: 'San Lorenzo' },
+      Luquitas: { kind: 'img', src: TEAM_ASSETS.boca, alt: 'Boca Juniors' },
+    };
+
+    const PHRASE_BY_PLAYER = {
+      Chino: 'Inflando sueños',
+      Emi: 'aah ahhh ahhh ahhh ahhh ahhh ahhh ahhh ∞',
+      Mati: 'Real Madrid Fan',
+      Rui: 'Exportador de ruilleros',
+      Gonzi: 'Que le falto a tu equipo para ganar?',
+      Rulo: 'Desde la lesion ya no soy el mismo',
+      Cru: 'Alguien dijo hermana?',
+      Nahue: 'Mis 3 dedos es lo unico que tengo',
+      JJ: 'A que hora te vas?',
+      Lucas: '$5000. Winter.is.here',
+      Sailor: 'Malviajo, luego existo',
+      Tigre: 'Andate a la concha bien de tu hermana',
+    };
+
+    function teamBadge(team){
+      if (!team) return '<span class="team-dot is-text team-blanca" title="Equipo"></span>';
+      if (team.kind === 'img') {
+        return `<span class="team-dot" title="${team.alt || 'Equipo'}"><img src="${team.src}" alt="${team.alt || 'Equipo'}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentElement.classList.add('is-text','team-blanca'); this.parentElement.textContent='?';"></span>`;
+      }
+      return `<span class="team-dot is-text ${team.className || 'team-blanca'}" title="Equipo">${team.text || ''}</span>`;
+    }
+
+    // ====== Helpers ======
+    const clamp01 = x => Math.max(0, Math.min(1, x));
+    const fmt2 = n => (Math.round(n * 100) / 100).toFixed(2);
+
+    function statRow(label, baseValue){
+      // El usuario pidió que las barras se completen con el valor del CSV * 10
+      const val100 = (Number(baseValue) || 0) * 10; // escala 0–100
+      const safe = Math.max(0, Math.min(100, val100));
+      return `
+        <div class="row">
+          <div class="label">${label}</div>
+          <div class="value" title="${fmt2(safe)}">${fmt2(safe)}</div>
+        </div>
+        <div class="bar" aria-hidden="true"><span data-val="${safe}"></span></div>
+      `;
+    }
+
+    function roleLine(nombre, phrase){
+      if (!phrase) return 'Media FIFA';
+      return `<em>"${phrase}"</em>`;
+    }
+
+    function renderCard(p){
+      const card = document.createElement('article');
+      card.className = 'card';
+      const team = TEAM_BY_PLAYER[p.nombre];
+      const phrase = PHRASE_BY_PLAYER[p.nombre];
+
+      // Media en el círculo: usar EXACTAMENTE el número que viene en Media FIFA (dos dígitos)
+      const mediaCircle = (p.mediaFifa != null) ? String(p.mediaFifa) : '--';
+
+      card.innerHTML = `
+        <div class="card-head">
+          <div class="ovr" title="Media FIFA">${mediaCircle}</div>
+          <div class="info">
+            <div class="name">
+              ${p.nombre || 'Jugador'}
+              ${teamBadge(team)}
+            </div>
+            <div class="role">${roleLine(p.nombre, phrase)}</div>
+          </div>
+        </div>
+        <div class="chip" title="Estadísticas por 90 min">Stats</div>
+        <div class="stats">
+          ${statRow('Ritmo',   p.ritmo)}
+          ${statRow('Disparo', p.disparo)}
+          ${statRow('Pases',   p.pases)}
+          ${statRow('Regate',  p.regate)}
+          ${statRow('Defensa', p.defensa)}
+          ${statRow('Físico',  p.fisico)}
+        </div>
+      `;
+
+      // animación de barras
+      requestAnimationFrame(()=>{
+        card.querySelectorAll('.bar > span').forEach(el => {
+          const val = Number(el.dataset.val) || 0;
+          el.style.width = `${clamp01(val/100)*100}%`;
+        });
+      });
+      return card;
+    }
+
+    // Render inicial automático
+    const grid = document.getElementById('grid');
+    function renderAll(){
+      grid.innerHTML = '';
+      DATA.forEach(p => grid.appendChild(renderCard(p)));
+    }
+    renderAll();
+    document.getElementById('footer-year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
