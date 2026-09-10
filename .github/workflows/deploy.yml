@@ -22,12 +22,23 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          script_stop: true
           script: |
             set -euo pipefail
             REPO="${{ secrets.VPS_REPO_PATH }}"
             if [[ -z "$REPO" ]]; then
               REPO="/var/www/avergas"
             fi
+
+            if [[ ! -f "$REPO/scripts/deploy.sh" ]]; then
+              echo "▶ Bootstrap: clonando repo en $REPO"
+              BACKUP="${REPO}.bak.$(date +%Y%m%d%H%M%S)"
+              if [[ -e "$REPO" ]]; then
+                mv "$REPO" "$BACKUP"
+                echo "  Backup en $BACKUP"
+              fi
+              git clone https://github.com/LucasAlderete/lk-avergas.git "$REPO"
+              chmod +x "$REPO/scripts/deploy.sh"
+            fi
+
             cd "$REPO"
             ./scripts/deploy.sh
