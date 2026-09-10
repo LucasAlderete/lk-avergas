@@ -1,0 +1,33 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Desplegar en VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ejecutar deploy en la VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            REPO="${{ secrets.VPS_REPO_PATH }}"
+            if [[ -z "$REPO" ]]; then
+              REPO="/var/www/avergas"
+            fi
+            cd "$REPO"
+            ./scripts/deploy.sh
