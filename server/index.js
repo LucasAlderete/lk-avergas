@@ -166,7 +166,7 @@ function ah(fn) {
 }
 
 async function seedPlayers(col) {
-  const count = await col.countDocuments();
+  const count = await col.countDocuments({ name: { $type: "string", $ne: "" } });
   if (count > 0) return;
   await col.insertMany(players.map((player) => ({
     name: player.name,
@@ -180,6 +180,18 @@ async function seedPlayers(col) {
     lore: player.lore || null,
     lineupOnly: Boolean(player.lineupOnly),
   })));
+}
+
+async function ensurePlayerNameIndex(col) {
+  await col.deleteMany({
+    $or: [{ name: null }, { name: { $exists: false } }, { name: "" }],
+  });
+  try {
+    await col.dropIndex("name_1");
+  } catch (err) {
+    if (err.code !== 27 && err.codeName !== "IndexNotFound") throw err;
+  }
+  await col.createIndex({ name: 1 }, { unique: true });
 }
 
 async function start() {
@@ -212,7 +224,7 @@ async function start() {
     if (err.code !== 26) throw err;
   }
   await ballots.createIndex({ matchId: 1, googleId: 1 }, { unique: true });
-  await playerCol.createIndex({ name: 1 }, { unique: true });
+  await ensurePlayerNameIndex(playerCol);
   await matches.createIndex({ status: 1, createdAt: -1 });
   await seedPlayers(playerCol);
 
