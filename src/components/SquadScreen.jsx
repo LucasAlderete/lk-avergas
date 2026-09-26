@@ -59,7 +59,7 @@ export default function SquadScreen({ onBack, onNavigate }) {
   const playing = (name) => Boolean(match && eligible.includes(name));
 
   const voteHint = !user
-    ? 'Para puntuar tenés que entrar con Google.'
+    ? ''
     : !match
       ? 'No hay partido abierto. El admin lo abre desde Alineación.'
       : voting
@@ -96,19 +96,16 @@ export default function SquadScreen({ onBack, onNavigate }) {
             <b className="vote-toggle-left">{canVote ? remaining : '!'}</b>
           </button>
         </div>
-        <div className="squad-vote-bar">
-          <p className="squad-vote-hint">{voteHint}</p>
-          {canVote ? <ResetVoteButton myBallot={myBallot} onReset={resetMyBallot} /> : null}
-        </div>
-        {!user && (
-          <div className="login-gate" id="squad-login-gate">
-            <p>Entrá con Google y recién ahí podés sumar o restar puntos.</p>
-            <AccountBar />
+        {(voteHint || canVote) && (
+          <div className="squad-vote-bar">
+            {voteHint ? <p className="squad-vote-hint">{voteHint}</p> : null}
+            {canVote ? <ResetVoteButton myBallot={myBallot} onReset={resetMyBallot} /> : null}
           </div>
         )}
-        {user && !match && (
+        {!user && (
           <div className="login-gate" id="squad-login-gate">
-            <p>No hay partido abierto. El admin lo abre desde Alineación cuando armen la cancha.</p>
+            <p>Entrá con Google para puntuar.</p>
+            <AccountBar compact />
           </div>
         )}
 

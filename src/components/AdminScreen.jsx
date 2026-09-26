@@ -119,8 +119,8 @@ export default function AdminScreen({ onBack, onNavigate }) {
 
       {!canSee ? (
         <div className="login-gate">
-          <p>Esta vista es sólo del admin. Entrá con la cuenta que abre los partidos.</p>
-          <AccountBar />
+          <p>Sólo el admin puede ver esto.</p>
+          <AccountBar compact />
         </div>
       ) : (
         <section className="admin-panel" aria-labelledby="admin-match-title">

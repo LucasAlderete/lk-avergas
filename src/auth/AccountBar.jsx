@@ -9,9 +9,6 @@ export default function AccountBar({ compact = false }) {
   if (!user) {
     return (
       <div className={`account-bar${compact ? ' account-bar--compact' : ''}`}>
-        {!compact && (
-          <p className="account-copy">Entrá con Google para puntuar a los pibes.</p>
-        )}
         <GoogleButton />
       </div>
     );
