@@ -6,6 +6,7 @@ dist/
 tmp/
 
 deploy.env
+.env
 
 # Artefactos temporales de los smoke tests (bundle SSR, dumps, wikitext)
 tmp/

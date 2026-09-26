@@ -6,6 +6,8 @@
 import { useState } from 'react';
 import { Vote } from 'lucide-react';
 
+import AccountBar from '../auth/AccountBar.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
 import PlayerStatsSheet from './PlayerStatsSheet.jsx';
 import SectionHeader from './SectionHeader.jsx';
 import { useSelectedPlayer } from './playerSelection.js';
@@ -46,7 +48,8 @@ function PlayerCard({ player, active, onClick }) {
 export default function SquadScreen({ onBack, onNavigate }) {
   const [selected, selectPlayer] = useSelectedPlayer();
   // El roster trae el OVR ya recalculado con los votos de todos.
-  const { roster, deltas, myBallot, cast, remaining, resetMyBallot, voters } = useVotes();
+  const { user } = useAuth();
+  const { roster, deltas, myBallot, cast, remaining, resetMyBallot, voters, canVote } = useVotes();
   // La hoja se abre con un toque explícito: `selected` viene guardado del
   // storage, así que siguiéramos su valor se abriría sola al entrar.
   const [openName, setOpenName] = useState(null);
@@ -69,22 +72,37 @@ export default function SquadScreen({ onBack, onNavigate }) {
           <button
             type="button"
             className={`vote-toggle${voting ? ' is-active' : ''}`}
-            onClick={() => setVoting((current) => !current)}
+            onClick={() => {
+              if (!canVote) {
+                setVoting(false);
+                document.getElementById('squad-login-gate')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+              }
+              setVoting((current) => !current);
+            }}
             aria-pressed={voting}
           >
             <Vote size={16} aria-hidden="true" />
             {voting ? 'Saliendo de votar' : 'Votar'}
-            <b className="vote-toggle-left">{remaining}</b>
+            <b className="vote-toggle-left">{canVote ? remaining : '!'}</b>
           </button>
         </div>
         <div className="squad-vote-bar">
           <p className="squad-vote-hint">
-            {voting
-              ? 'Tocá un jugador y repartí tus puntos. El OVR se recalcula con los votos de todos.'
-              : `OVR según los votos de ${voters} ${voters === 1 ? 'persona' : 'personas'}.`}
+            {!canVote
+              ? 'Para puntuar tenés que entrar con Google.'
+              : voting
+                ? 'Tocá un jugador y repartí tus puntos. El OVR se recalcula con los votos de todos.'
+                : `OVR según los votos de ${voters} ${voters === 1 ? 'persona' : 'personas'}.`}
           </p>
-          <ResetVoteButton myBallot={myBallot} onReset={resetMyBallot} />
+          {canVote ? <ResetVoteButton myBallot={myBallot} onReset={resetMyBallot} /> : null}
         </div>
+        {!user && (
+          <div className="login-gate" id="squad-login-gate">
+            <p>Entrá con Google y recién ahí podés sumar o restar puntos.</p>
+            <AccountBar />
+          </div>
+        )}
 
         <div className="squad-grid">
           {roster.map((player) => (
@@ -98,7 +116,7 @@ export default function SquadScreen({ onBack, onNavigate }) {
         </div>
       </section>
 
-      {voting
+      {voting && canVote
         ? (
           <VoteSheet
             player={openPlayer}

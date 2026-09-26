@@ -1,5 +1,6 @@
 import { BriefcaseBusiness, ChevronRight, ClipboardList, Users } from 'lucide-react';
 
+import AccountBar from '../auth/AccountBar.jsx';
 import { isFeatureEnabled } from '../navigation.js';
 
 const destinations = [
@@ -34,6 +35,7 @@ export default function HomeScreen({ onNavigate }) {
         <p className="eyebrow">Averga&apos;s Club</p>
         <h1>Inicio</h1>
         <p>Elegí dónde querés seguir.</p>
+        <AccountBar />
       </header>
 
       <section className="home-destinations" aria-label="Secciones disponibles">

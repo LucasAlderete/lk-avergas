@@ -249,6 +249,23 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .home-destination-copy small { color: var(--muted); }
 .home-destination-arrow { color: var(--accent); }
 
+.section-header-tools { display: grid; gap: 12px; justify-items: end; }
+.account-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 22px; }
+.account-bar--compact { margin-top: 0; }
+.account-bar--pending { min-height: 40px; }
+.account-bar.is-in { padding: 8px 10px 8px 8px; border: 1px solid var(--line); border-radius: 3px; background: rgba(255, 255, 255, .04); }
+.account-avatar { width: 36px; height: 36px; object-fit: cover; border: 1px solid rgba(231, 173, 78, .5); border-radius: 3px; }
+.account-avatar.is-fallback { display: grid; place-items: center; color: var(--accent); font-weight: 800; background: rgba(231, 173, 78, .12); }
+.account-copy { display: grid; gap: 2px; min-width: 0; }
+.account-copy strong { font: 700 1rem/1.1 'Barlow Condensed', sans-serif; letter-spacing: .4px; text-transform: uppercase; }
+.account-copy small, .account-copy p, .auth-missing { margin: 0; color: var(--muted); font-size: .82rem; }
+.account-logout { margin-left: auto; padding: 8px 12px; border: 1px solid var(--line); border-radius: 3px; background: transparent; color: #d4d5cd; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.account-logout:hover { border-color: var(--accent); color: var(--accent); }
+.google-btn-slot { min-height: 40px; overflow: hidden; }
+.login-gate { display: grid; gap: 12px; margin: 0 0 16px; padding: 16px; border: 1px solid rgba(231, 173, 78, .45); border-radius: 3px; background: rgba(231, 173, 78, .08); }
+.login-gate p { margin: 0; color: #f0d49a; font-size: .92rem; }
+.login-gate .account-bar { margin: 0; }
+
 /* Navegación compartida. */
 .section-nav { display: flex; flex-wrap: wrap; gap: 8px; }
 .section-nav button { padding: 10px 14px; border: 1px solid var(--line); border-radius: 3px; background: rgba(255, 255, 255, .04); color: #d4d5cd; font-weight: 700; letter-spacing: .4px; }
