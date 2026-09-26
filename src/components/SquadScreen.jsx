@@ -9,6 +9,7 @@ import { Vote } from 'lucide-react';
 import PlayerStatsSheet from './PlayerStatsSheet.jsx';
 import SectionHeader from './SectionHeader.jsx';
 import { useSelectedPlayer } from './playerSelection.js';
+import { photoOf } from '../playerPhotos.js';
 import ResetVoteButton from '../voting/ResetVoteButton.jsx';
 import VoteSheet from '../voting/VoteSheet.jsx';
 import useVotes from '../voting/useVotes.js';
@@ -26,6 +27,9 @@ export function SquadHeader({ onBack, onNavigate }) {
 }
 
 function PlayerCard({ player, active, onClick }) {
+  // Si tiene foto va la foto; si no, las iniciales (como antes).
+  const photo = photoOf(player.name);
+
   return (
     <button
       type="button"
@@ -33,7 +37,11 @@ function PlayerCard({ player, active, onClick }) {
       data-player={player.name}
       onClick={onClick}
     >
-      <span className="player-card-avatar" aria-hidden="true">{player.name.slice(0, 2).toUpperCase()}</span>
+      <span className="player-card-avatar" aria-hidden="true">
+        {photo
+          ? <img className="player-card-photo" src={photo} alt="" loading="lazy" decoding="async" />
+          : player.name.slice(0, 2).toUpperCase()}
+      </span>
       <span className="player-card-copy">
         <strong>{player.name}</strong>
         <small>{player.phrase}</small>

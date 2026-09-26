@@ -216,5 +216,71 @@ console.log('\n== 6-bis) Ficha de stats ==');
   assert(squad.html.includes('Tocá un jugador para ver sus stats'), 'Plantel invita a tocar un jugador');
 }
 
+console.log('\n== 7) Fotos de los jugadores ==');
+{
+  const info = ui.photoInfo();
+  console.log(`   con foto: ${info.withPhoto.length} · sin foto: ${info.withoutPhoto.length}`);
+  console.log(`   con foto: ${info.withPhoto.join(', ')}`);
+
+  // Una foto que no se asocia a nadie es invisible: nadie la ve y nadie sabe
+  // que está ahí. Con el apodo de "pelado" ya resuelto, no debería quedar ninguna.
+  assert(
+    info.unused.length === 0,
+    `no sobran fotos sin jugador (sobran: ${info.unused.join(', ')})`,
+  );
+
+  assert(info.withPhoto.length > 0, 'hay al menos una foto cargada');
+  assert(
+    info.withPhoto.length + info.withoutPhoto.length === players.length,
+    'todos los jugadores están clasificados (con o sin foto)',
+  );
+
+  // Cada foto es una URL del bundle (no una ruta suelta que no exista).
+  for (const name of info.withPhoto) {
+    const url = info.of(name);
+    assert(typeof url === 'string' && url.length > 0, `${name} tiene URL de foto`);
+    assert(url.startsWith('/'), `la foto de ${name} es una ruta del bundle (${url})`);
+  }
+
+  // Plantel: los que tienen foto muestran <img>, los demás las iniciales.
+  const imgCount = (squad.html.match(/class="player-card-photo"/g) || []).length;
+  assert(imgCount === info.withPhoto.length, `Plantel dibuja ${info.withPhoto.length} miniaturas con foto`);
+  assert(!squad.html.includes('class="player-card-photo" alt="" loading="lazy" decoding="async" src="undefined"'), 'ninguna foto quedó sin URL');
+  for (const name of info.withoutPhoto) {
+    const initials = name.slice(0, 2).toUpperCase();
+    assert(squad.html.includes(`>${initials}<`), `${name} (sin foto) cae a las iniciales ${initials}`);
+  }
+
+  // El modal: banner grande arriba para los que tienen foto.
+  const chino = players.find((player) => player.name === 'Chino');
+  const withPhotoSheet = ui.renderStatsSheet(chino);
+  assert(withPhotoSheet.html.includes('class="stats-banner"'), `${chino.name} abre el banner con su foto`);
+  assert(withPhotoSheet.html.includes('class="stats-banner-img"'), 'el banner trae la imagen');
+  assert(withPhotoSheet.html.includes('stats-banner-scrim'), 'el banner tiene el velo para leer el nombre encima');
+  assert(withPhotoSheet.html.includes('stats-sheet-head is-over'), 'el OVR y el nombre se superponen al banner');
+  assert(withPhotoSheet.html.includes('is-banner'), 'la hoja se marca como "con banner"');
+  assert(withPhotoSheet.html.includes(info.of(chino.name)), 'y usa la misma foto que la miniatura');
+
+  // Sin foto: ni banner ni velo, y la hoja queda como estaba.
+  const sinFoto = players.find((player) => info.withoutPhoto.includes(player.name));
+  if (sinFoto) {
+    const plainSheet = ui.renderStatsSheet(sinFoto);
+    assert(!plainSheet.html.includes('stats-banner'), `${sinFoto.name} (sin foto) no dibuja banner`);
+    assert(!plainSheet.html.includes('is-over'), `${sinFoto.name} no superpone el header`);
+    assert(plainSheet.html.includes('stats-ovr'), 'pero el OVR y los atributos siguen ahí');
+  }
+
+  // La foto del banner tiene que verse COMPLETA. Las fotos son cuadradas y con
+  // `cover` (que es lo que había antes) se cortaban a la mitad sin avisar.
+  const css = fs.readFileSync(path.join(root, 'src', 'styles.css'), 'utf8');
+  const bannerRule = /\.stats-banner-img \{([^}]*)\}/.exec(css)?.[1] || '';
+  assert(bannerRule.length > 0, 'existe la regla .stats-banner-img');
+  assert(/object-fit:\s*contain/.test(bannerRule), 'el banner usa object-fit: contain (se ve entera)');
+  assert(!/object-fit:\s*cover/.test(bannerRule), 'y NO cover, que la recortaba a la mitad');
+  assert(/height:\s*auto/.test(bannerRule), 'el alto lo define la imagen (no se estira)');
+  // El header se superpone con margen negativo: eso es lo que arma la carta.
+  assert(/\.stats-sheet-head\.is-over \{[^}]*margin-top:\s*-\d/.test(css), 'el header se superpone al banner');
+}
+
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);
 process.exit(failures === 0 ? 0 : 1);

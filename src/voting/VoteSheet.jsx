@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 
 import { RATING_STATS } from '../data.js';
+import { photoOf } from '../playerPhotos.js';
+import PlayerBanner from '../components/PlayerBanner.jsx';
 import ResetVoteButton from './ResetVoteButton.jsx';
 import { buildReport } from './voteReport.js';
 import { POINTS_PER_PLAYER, TOTAL_POINTS, canCast, costOfPlayer } from './voteRules.js';
@@ -124,12 +126,13 @@ export default function VoteSheet({ player, deltas, myBallot, onCast, remaining,
   return (
     <>
       <div className="stats-sheet-backdrop" onClick={onClose} aria-hidden="true" />
-      <section className="stats-sheet" role="dialog" aria-modal="true" aria-label={`Votar a ${player.name}`}>
+      <section className={`stats-sheet${photoOf(player.name) ? ' is-banner' : ''}`} role="dialog" aria-modal="true" aria-label={`Votar a ${player.name}`}>
         <button ref={closeRef} type="button" className="stats-sheet-close" onClick={onClose} aria-label="Cerrar votación">
           <X size={18} />
         </button>
 
-        <header className="stats-sheet-head">
+        <PlayerBanner player={player} />
+        <header className={`stats-sheet-head${photoOf(player.name) ? ' is-over' : ''}`}>
           <span className="stats-ovr" aria-label={`OVR ${player.rating}`}>{player.rating}</span>
           <div>
             <h3>{player.name}</h3>

@@ -9,6 +9,8 @@ import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 import { RATING_STATS, overallOf, statOf } from '../data.js';
+import { photoOf } from '../playerPhotos.js';
+import PlayerBanner from './PlayerBanner.jsx';
 
 // Color por rango, como los medidores de FIFA.
 const toneOf = (value) => (value >= 80 ? 'high' : value >= 65 ? 'mid' : value >= 50 ? 'low' : 'bad');
@@ -55,12 +57,13 @@ export default function PlayerStatsSheet({ player, onClose }) {
   return (
     <>
       <div className="stats-sheet-backdrop" onClick={onClose} aria-hidden="true" />
-      <section className="stats-sheet" role="dialog" aria-modal="true" aria-label={`Stats de ${player.name}`}>
+      <section className={`stats-sheet${photoOf(player.name) ? ' is-banner' : ''}`} role="dialog" aria-modal="true" aria-label={`Cualidades de ${player.name}`}>
         <button ref={closeRef} type="button" className="stats-sheet-close" onClick={onClose} aria-label="Cerrar stats">
           <X size={18} />
         </button>
 
-        <header className="stats-sheet-head">
+        <PlayerBanner player={player} />
+        <header className={`stats-sheet-head${photoOf(player.name) ? ' is-over' : ''}`}>
           <span className="stats-ovr" aria-label={`OVR ${overall}`}>{overall}</span>
           <div>
             <h3>{player.name}</h3>

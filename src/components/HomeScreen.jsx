@@ -50,6 +50,7 @@ export default function HomeScreen({ onNavigate }) {
             </span>
             <span className="home-destination-copy">
               <strong>{title}</strong>
+              <small>{description}</small>
             </span>
             <ChevronRight className="home-destination-arrow" size={22} aria-hidden="true" />
           </button>
