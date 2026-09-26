@@ -1,21 +1,26 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
+import { useAuth } from './auth/AuthContext.jsx';
+import AdminScreen from './components/AdminScreen.jsx';
 import CareerScreen from './features/career/components/CareerScreen.jsx';
 import HomeScreen from './components/HomeScreen.jsx';
 import LineupScreen from './components/LineupScreen.jsx';
 import SquadScreen from './components/SquadScreen.jsx';
-import { isAppScreen, resolveStoredScreen, transitionScreen } from './navigation.js';
+import { resolveStoredScreen, transitionScreen } from './navigation.js';
 
 function loadScreen() {
   try {
-    return resolveStoredScreen(globalThis.localStorage?.getItem('avergas-screen'));
+    const saved = globalThis.localStorage?.getItem('avergas-screen');
+    if (saved === 'admin') return 'admin';
+    return resolveStoredScreen(saved);
   } catch {
     return 'home';
   }
 }
 
 export default function App() {
+  const { user, ready } = useAuth();
   const [screen, setScreen] = useState(loadScreen);
 
   useEffect(() => {
@@ -26,8 +31,13 @@ export default function App() {
     }
   }, [screen]);
 
+  useEffect(() => {
+    if (!ready) return;
+    if (screen === 'admin' && !user?.isAdmin) setScreen('home');
+  }, [ready, screen, user]);
+
   const navigate = (nextScreen) => {
-    if (isAppScreen(nextScreen)) setScreen((currentScreen) => transitionScreen(currentScreen, nextScreen));
+    setScreen((currentScreen) => transitionScreen(currentScreen, nextScreen, user));
   };
 
   let content;
@@ -37,6 +47,8 @@ export default function App() {
     content = <SquadScreen onBack={() => navigate('home')} onNavigate={navigate} />;
   } else if (screen === 'lineup') {
     content = <LineupScreen onBack={() => navigate('home')} onNavigate={navigate} />;
+  } else if (screen === 'admin') {
+    content = <AdminScreen onBack={() => navigate('home')} onNavigate={navigate} />;
   } else {
     content = <HomeScreen onNavigate={navigate} />;
   }

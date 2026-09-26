@@ -6,8 +6,9 @@ import dotenv from "dotenv";
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
 import { SignJWT, jwtVerify } from "jose";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 
+import { isAdminEmail } from "../src/auth/admin.js";
 import { players, RATING_STATS } from "../src/data.js";
 import {
   POINTS_PER_PLAYER,
@@ -51,7 +52,52 @@ function publicUser(doc) {
     name: doc.name,
     email: doc.email,
     picture: doc.picture || "",
+    isAdmin: isAdminEmail(doc.email),
   };
+}
+
+function dayKeyAR(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function publicMatch(doc) {
+  if (!doc) return null;
+  return {
+    id: String(doc._id),
+    status: doc.status,
+    day: doc.day,
+    players: doc.players || [],
+    mode: doc.mode || 5,
+    createdAt: doc.createdAt,
+    closedAt: doc.closedAt || null,
+  };
+}
+
+function matchObjectId(id) {
+  const value = String(id || "");
+  if (!/^[a-fA-F0-9]{24}$/.test(value)) return null;
+  try {
+    return new ObjectId(value);
+  } catch {
+    return null;
+  }
+}
+
+function cleanPlayerList(raw) {
+  const names = [];
+  const seen = new Set();
+  for (const item of Array.isArray(raw) ? raw : []) {
+    const name = String(item || "").trim();
+    if (!PLAYER_NAMES.has(name) || seen.has(name)) continue;
+    seen.add(name);
+    names.push(name);
+  }
+  return names;
 }
 
 async function signSession(user) {
@@ -81,11 +127,16 @@ async function readSession(token) {
   }
 }
 
-function cleanVotes(raw) {
+function cleanVotes(raw, allowedNames) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const votes = {};
   for (const [name, deltas] of Object.entries(raw)) {
     if (!PLAYER_NAMES.has(name) || !deltas || typeof deltas !== "object") continue;
+    if (allowedNames && !allowedNames.has(name)) {
+      const error = new Error("Solo se puntúa a los que jugaron este partido");
+      error.status = 400;
+      throw error;
+    }
     const next = {};
     for (const [key, value] of Object.entries(deltas)) {
       if (!STAT_KEYS.has(key)) continue;
@@ -146,11 +197,37 @@ async function start() {
   const users = db.collection("users");
   const ballots = db.collection("ballots");
   const playerCol = db.collection("players");
+  const matches = db.collection("matches");
 
   await users.createIndex({ googleId: 1 }, { unique: true });
-  await ballots.createIndex({ googleId: 1 }, { unique: true });
+  try {
+    const ballotIndexes = await ballots.indexes();
+    for (const index of ballotIndexes) {
+      const key = index.key || {};
+      if (index.unique && key.googleId === 1 && key.matchId == null) {
+        await ballots.dropIndex(index.name);
+      }
+    }
+  } catch (err) {
+    if (err.code !== 26) throw err;
+  }
+  await ballots.createIndex({ matchId: 1, googleId: 1 }, { unique: true });
   await playerCol.createIndex({ name: 1 }, { unique: true });
+  await matches.createIndex({ status: 1, createdAt: -1 });
   await seedPlayers(playerCol);
+
+  async function expireOpenMatches() {
+    const today = dayKeyAR();
+    await matches.updateMany(
+      { status: "open", day: { $ne: today } },
+      { $set: { status: "closed", closedAt: new Date(), closedReason: "day-end" } },
+    );
+  }
+
+  async function currentOpenMatch() {
+    await expireOpenMatches();
+    return matches.findOne({ status: "open" }, { sort: { createdAt: -1 } });
+  }
 
   const app = express();
   app.disable("x-powered-by");
@@ -164,6 +241,18 @@ async function start() {
   function requireUser(req, res, next) {
     if (!req.user?.googleId) {
       res.status(401).json({ error: "Entrá con Google para puntuar" });
+      return;
+    }
+    next();
+  }
+
+  function requireAdmin(req, res, next) {
+    if (!req.user?.googleId) {
+      res.status(401).json({ error: "Entrá con Google" });
+      return;
+    }
+    if (!isAdminEmail(req.user.email)) {
+      res.status(403).json({ error: "Sólo el admin puede abrir o cerrar partidos" });
       return;
     }
     next();
@@ -224,24 +313,39 @@ async function start() {
   });
 
   app.get("/api/votes", ah(async (req, res) => {
-    const rows = await ballots.find({}).project({ _id: 0, googleId: 1, votes: 1 }).toArray();
-    const mine = req.user
-      ? rows.find((row) => row.googleId === req.user.googleId)
+    const open = await currentOpenMatch();
+    const matchId = open ? String(open._id) : null;
+    const rows = await ballots.find({}).project({ _id: 0, googleId: 1, votes: 1, matchId: 1 }).toArray();
+    const mine = matchId && req.user
+      ? rows.find((row) => row.matchId === matchId && row.googleId === req.user.googleId)
       : null;
+    const matchVoterIds = matchId
+      ? new Set(rows.filter((row) => row.matchId === matchId).map((row) => row.googleId))
+      : new Set();
+    const allVoterIds = new Set(rows.map((row) => row.googleId).filter(Boolean));
     res.json({
       user: req.user ? publicUser(req.user) : null,
+      match: publicMatch(open),
       myVotes: mine?.votes || {},
       ballots: rows.map((row) => row.votes || {}),
-      voters: rows.length,
+      voters: allVoterIds.size,
+      matchVoters: matchVoterIds.size,
     });
   }));
 
   app.put("/api/votes", requireUser, ah(async (req, res) => {
-    const votes = cleanVotes(req.body?.votes);
+    const open = await currentOpenMatch();
+    if (!open) {
+      res.status(409).json({ error: "No hay partido abierto" });
+      return;
+    }
+    const votes = cleanVotes(req.body?.votes, new Set(open.players));
+    const matchId = String(open._id);
     await ballots.updateOne(
-      { googleId: req.user.googleId },
+      { matchId, googleId: req.user.googleId },
       {
         $set: {
+          matchId,
           googleId: req.user.googleId,
           name: req.user.name,
           email: req.user.email,
@@ -251,12 +355,106 @@ async function start() {
       },
       { upsert: true },
     );
-    res.json({ ok: true, votes });
+    res.json({ ok: true, votes, match: publicMatch(open) });
   }));
 
   app.delete("/api/votes", requireUser, ah(async (req, res) => {
-    await ballots.deleteOne({ googleId: req.user.googleId });
+    const open = await currentOpenMatch();
+    if (!open) {
+      res.status(409).json({ error: "No hay partido abierto" });
+      return;
+    }
+    await ballots.deleteOne({ matchId: String(open._id), googleId: req.user.googleId });
     res.json({ ok: true, votes: {} });
+  }));
+
+  app.post("/api/matches", requireAdmin, ah(async (req, res) => {
+    const existing = await currentOpenMatch();
+    if (existing) {
+      res.status(409).json({ error: "Ya hay un partido abierto. Cerralo antes de abrir otro." });
+      return;
+    }
+    const roster = cleanPlayerList(req.body?.players);
+    if (roster.length < 2) {
+      res.status(400).json({ error: "Poné al menos 2 jugadores del plantel en la cancha" });
+      return;
+    }
+    const mode = Number(req.body?.mode);
+    const doc = {
+      status: "open",
+      day: dayKeyAR(),
+      players: roster,
+      mode: [5, 6, 7].includes(mode) ? mode : 5,
+      createdAt: new Date(),
+      createdBy: {
+        googleId: req.user.googleId,
+        email: req.user.email,
+        name: req.user.name,
+      },
+    };
+    const result = await matches.insertOne(doc);
+    res.status(201).json({ match: publicMatch({ ...doc, _id: result.insertedId }) });
+  }));
+
+  app.post("/api/matches/close", requireAdmin, ah(async (req, res) => {
+    const open = await currentOpenMatch();
+    if (!open) {
+      res.status(404).json({ error: "No hay partido abierto" });
+      return;
+    }
+    await matches.updateOne(
+      { _id: open._id, status: "open" },
+      { $set: { status: "closed", closedAt: new Date(), closedReason: "admin" } },
+    );
+    res.json({ match: publicMatch({ ...open, status: "closed", closedAt: new Date() }) });
+  }));
+
+  app.get("/api/admin/matches", requireAdmin, ah(async (_req, res) => {
+    await expireOpenMatches();
+    const docs = await matches.find({}).sort({ createdAt: -1 }).toArray();
+    const ids = docs.map((doc) => String(doc._id));
+    const counts = ids.length
+      ? await ballots.aggregate([
+        { $match: { matchId: { $in: ids } } },
+        { $group: { _id: "$matchId", voters: { $sum: 1 } } },
+      ]).toArray()
+      : [];
+    const byId = Object.fromEntries(counts.map((row) => [row._id, row.voters]));
+    res.json({
+      matches: docs.map((doc) => ({
+        ...publicMatch(doc),
+        voters: byId[String(doc._id)] || 0,
+      })),
+    });
+  }));
+
+  app.get("/api/admin/matches/:id", requireAdmin, ah(async (req, res) => {
+    const _id = matchObjectId(req.params.id);
+    if (!_id) {
+      res.status(400).json({ error: "Partido inválido" });
+      return;
+    }
+    await expireOpenMatches();
+    const doc = await matches.findOne({ _id });
+    if (!doc) {
+      res.status(404).json({ error: "No está ese partido" });
+      return;
+    }
+    const rows = await ballots.find({ matchId: String(doc._id) })
+      .project({ _id: 0, name: 1, email: 1, votes: 1, updatedAt: 1 })
+      .sort({ name: 1 })
+      .toArray();
+    res.json({
+      match: publicMatch(doc),
+      ballots: rows
+        .map((row) => ({
+          name: row.name || "Alguien",
+          email: row.email || "",
+          votes: row.votes || {},
+          updatedAt: row.updatedAt || null,
+        }))
+        .filter((row) => Object.keys(row.votes).length > 0),
+    });
   }));
 
   app.use((err, _req, res, _next) => {

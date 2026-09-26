@@ -4,6 +4,7 @@ import { RotateCcw } from 'lucide-react';
 
 import { alignmentPlayers, players } from '../data.js';
 import useVotes from '../voting/useVotes.js';
+import MatchBar from './MatchBar.jsx';
 import {
   benchOf,
   beginDragRecord,
@@ -342,7 +343,7 @@ export default function LineupEditor({ onPlayerSelect }) {
   // Los lesionados son sólo del Plantel real: los "Random" no se pueden marcar.
   const injuredPlayers = players.filter((item) => isInjured(item.name));
   // El OVR que se ve en la cancha también es el dinámico (con los votos).
-  const { alignmentRoster: votedRoster } = useVotes();
+  const { alignmentRoster: votedRoster, match, openMatch, closeMatch, matchBusy, matchError } = useVotes();
   const rated = (name) => votedRoster.find((item) => item.name === name) || byName(name);
 
   return (
@@ -360,6 +361,15 @@ export default function LineupEditor({ onPlayerSelect }) {
         </label>
         <button type="button" onClick={resetLineup} aria-label="Restablecer alineación"><RotateCcw size={20} /></button>
       </div>
+
+      <MatchBar
+        lineup={lineup}
+        match={match}
+        openMatch={openMatch}
+        closeMatch={closeMatch}
+        matchBusy={matchBusy}
+        matchError={matchError}
+      />
 
       <section className="five-match-board">
         <div className="shared-pitch" ref={pitchRef}>

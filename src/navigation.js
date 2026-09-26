@@ -26,11 +26,18 @@ export function isAppScreen(screen) {
   return APP_SCREEN_SET.has(screen);
 }
 
-export function resolveStoredScreen(screen) {
-  return isAppScreen(screen) ? screen : 'home';
+export const ADMIN_SCREEN = 'admin';
+
+export function canOpenScreen(screen, user) {
+  if (screen === ADMIN_SCREEN) return Boolean(user?.isAdmin);
+  return isAppScreen(screen);
 }
 
-export function transitionScreen(currentScreen, nextScreen) {
-  if (isAppScreen(nextScreen)) return nextScreen;
-  return isAppScreen(currentScreen) ? currentScreen : 'home';
+export function resolveStoredScreen(screen, user) {
+  return canOpenScreen(screen, user) ? screen : 'home';
+}
+
+export function transitionScreen(currentScreen, nextScreen, user) {
+  if (canOpenScreen(nextScreen, user)) return nextScreen;
+  return canOpenScreen(currentScreen, user) ? currentScreen : 'home';
 }

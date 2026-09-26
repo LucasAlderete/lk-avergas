@@ -20,6 +20,10 @@ export default function useVotes() {
   const [remoteBallots, setRemoteBallots] = useState([]);
   const [myBallot, setMyBallot] = useState({});
   const [remoteVoters, setRemoteVoters] = useState(0);
+  const [matchVoters, setMatchVoters] = useState(0);
+  const [match, setMatch] = useState(null);
+  const [matchBusy, setMatchBusy] = useState(false);
+  const [matchError, setMatchError] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -27,9 +31,12 @@ export default function useVotes() {
       setRemoteBallots(Array.isArray(data.ballots) ? data.ballots : []);
       setMyBallot(data.myVotes && typeof data.myVotes === 'object' ? data.myVotes : {});
       setRemoteVoters(Number(data.voters) || 0);
+      setMatchVoters(Number(data.matchVoters) || 0);
+      setMatch(data.match || null);
     } catch {
       setRemoteBallots([]);
       setMyBallot({});
+      setMatch(null);
     }
   }, []);
 
@@ -45,8 +52,13 @@ export default function useVotes() {
     await load();
   }, [load]);
 
+  const eligible = useMemo(() => match?.players || [], [match]);
+  const matchOpen = match?.status === 'open';
+  const canVote = Boolean(user) && matchOpen;
+
   const cast = useCallback((playerName, key, direction) => {
-    if (!user) return;
+    if (!user || !matchOpen) return;
+    if (!eligible.includes(playerName)) return;
     setMyBallot((current) => {
       const nextVotes = castVote(current, playerName, key, direction);
       if (nextVotes === current) return current;
@@ -56,10 +68,10 @@ export default function useVotes() {
       });
       return nextVotes;
     });
-  }, [user, persist, load]);
+  }, [user, matchOpen, eligible, persist, load]);
 
   const resetMyBallot = useCallback(async () => {
-    if (!user) return;
+    if (!user || !matchOpen) return;
     try {
       await readJSON('/api/votes', { method: 'DELETE' });
       setMyBallot({});
@@ -67,7 +79,40 @@ export default function useVotes() {
     } catch (err) {
       window.alert(err.message || 'No se pudo borrar el voto');
     }
-  }, [user, load]);
+  }, [user, matchOpen, load]);
+
+  const openMatch = useCallback(async ({ players, mode }) => {
+    setMatchBusy(true);
+    setMatchError('');
+    try {
+      const data = await readJSON('/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ players, mode }),
+      });
+      setMatch(data.match || null);
+      await load();
+    } catch (err) {
+      setMatchError(err.message || 'No se pudo abrir el partido');
+    } finally {
+      setMatchBusy(false);
+    }
+  }, [load]);
+
+  const closeMatch = useCallback(async () => {
+    setMatchBusy(true);
+    setMatchError('');
+    try {
+      await readJSON('/api/matches/close', { method: 'POST' });
+      setMatch(null);
+      setMyBallot({});
+      await load();
+    } catch (err) {
+      setMatchError(err.message || 'No se pudo cerrar el partido');
+    } finally {
+      setMatchBusy(false);
+    }
+  }, [load]);
 
   const deltas = useMemo(() => {
     const fromMongo = aggregateBallots(remoteBallots);
@@ -95,6 +140,13 @@ export default function useVotes() {
     remaining: remainingOf(myBallot),
     spent: spentOf(myBallot),
     voters: Math.max(remoteVoters, 0) + castedVoters,
-    canVote: Boolean(user),
+    matchVoters,
+    match,
+    matchBusy,
+    matchError,
+    openMatch,
+    closeMatch,
+    eligible,
+    canVote,
   };
 }

@@ -64,4 +64,9 @@ export function useAuth() {
   return ctx;
 }
 
+export function useIsAdmin() {
+  const ctx = useContext(AuthContext);
+  return Boolean(ctx?.user?.isAdmin);
+}
+
 export { readJSON };

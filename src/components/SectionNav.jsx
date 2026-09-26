@@ -2,13 +2,14 @@
 // activa pueda omitir el suyo sin romper el render.
 import { isFeatureEnabled } from '../navigation.js';
 
-export function SectionNav({ current, onHome, onCareer, onSquad, onLineup }) {
+export function SectionNav({ current, onHome, onCareer, onSquad, onLineup, onAdmin, isAdmin = false }) {
   const sections = [
     { id: 'home', label: 'Inicio', onSelect: onHome },
     { id: 'career', label: 'Mi carrera', onSelect: onCareer },
     { id: 'squad', label: 'Plantel', onSelect: onSquad },
     { id: 'lineup', label: 'Alineación', onSelect: onLineup },
-  ].filter((row) => isFeatureEnabled(row.id));
+    { id: 'admin', label: 'Votos', onSelect: onAdmin, adminOnly: true },
+  ].filter((row) => (row.adminOnly ? isAdmin : isFeatureEnabled(row.id)));
 
   return (
     <nav className="section-nav" aria-label="Navegación principal">

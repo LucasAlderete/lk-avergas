@@ -4,11 +4,13 @@
 // Modelo: cada persona tiene una "boleta" con los puntos que reparte sobre los
 // atributos de los jugadores y el OVR se recalcula.
 //
-//   - TOTAL_POINTS: puntos por persona en toda la app (5).
+//   - TOTAL_POINTS: puntos por persona POR PARTIDO (5). Al cerrar, la boleta
+//     queda trabada y el próximo partido te da otros 5. El OVR NO se resetea.
 //   - POINTS_PER_PLAYER: tope de puntos por jugador (2).
 //   - Un punto = +1 (sumar) o -1 (restar) sobre el atributo en escala 0-99.
+//   - Sólo se vota a los del plantel que estaban en cancha al abrir el partido.
 //   - El OVR de cada jugador es el promedio de sus 6 atributos YA Sumados los
-//     votos de todos: por eso es dinámico.
+//     votos de todos los partidos: por eso es dinámico.
 //
 // Una boleta es un objeto: { [nombreJugador]: { pace: 1, shooting: -1 } }
 // Los deltas que valen 0 no se guardan.
@@ -34,6 +36,21 @@ export const costOfPlayer = (deltas) => Object.values(deltas || {}).reduce((sum,
 export const spent = (ballot) => Object.values(ballot || {}).reduce((sum, deltas) => sum + costOfPlayer(deltas), 0);
 
 export const remaining = (ballot) => Math.max(0, TOTAL_POINTS - spent(ballot));
+
+// Boleta en filas para el admin: a quién le cargó puntos y en qué atributo.
+export function ballotSummary(ballot) {
+  const rows = [];
+  for (const [player, deltas] of Object.entries(ballot || {})) {
+    const parts = [];
+    for (const stat of RATING_STATS) {
+      const delta = Number(deltas?.[stat.key] || 0);
+      if (!delta) continue;
+      parts.push({ key: stat.key, label: stat.label, delta });
+    }
+    if (parts.length) rows.push({ player, parts });
+  }
+  return rows;
+}
 
 // Por qué no se puede aplicar un voto: sirve para explicarle al usuario.
 export function canCast(ballot, playerName, key, direction) {
