@@ -23,7 +23,7 @@
 // Funciones puras: reciben un lineup y devuelven uno nuevo, sin mutar el
 // original. Testeable sin DOM (scripts/smoke-lineup-rules.mjs).
 
-import { alignmentPlayers } from '../data.js';
+import { alignmentPlayers, players as plantel } from '../data.js';
 
 const clamp = (value, minimum = 0, maximum = 100) => Math.max(minimum, Math.min(maximum, value));
 
@@ -66,6 +66,21 @@ function forceHalf(y, team) {
 }
 
 export const allNames = () => alignmentPlayers.map((item) => item.name);
+
+const PLANTEL_NAMES = new Set(plantel.map((item) => item.name));
+
+// Quienes del plantel están en cancha. Los Random no se votan ni abren partido.
+export function playedFromLineup(lineup) {
+  const names = [];
+  const seen = new Set();
+  for (const slot of lineup?.slots || []) {
+    const name = slot?.name;
+    if (!PLANTEL_NAMES.has(name) || seen.has(name)) continue;
+    seen.add(name);
+    names.push(name);
+  }
+  return names;
+}
 
 // Quiénes NO están en la cancha: la lista general de disponibles.
 export function benchOf(lineup) {

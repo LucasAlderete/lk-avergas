@@ -29,15 +29,28 @@ for (const script of scripts) {
   const run = spawnSync(process.execPath, [path.join(here, script)], { encoding: 'utf8' });
   const output = `${run.stdout || ''}${run.stderr || ''}`;
   const ok = run.status === 0;
-  const summary = output
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => /TODO OK|FALLAS|FAIL|^x /.test(line))
-    .slice(-2)
-    .join(' · ');
-  results.push({ script, ok, ms: Date.now() - started, summary });
+  const lines = output.split(/\r?\n/).map((line) => line.trim());
+
+  // Todas las fallas, no sólo las dos últimas. Con slice(-2), un test que rompe
+  // el render de una pantalla entera (que tira cientos de aserciones) mostraba
+  // un errorito sin la causa real.
+  const failures = lines.filter((line) => /x FAIL/.test(line));
+  const summary = [
+    ...(failures.length ? [`${failures.length} falla(s)`] : []),
+    ...lines.filter((line) => /TODO OK|FALLAS/.test(line)).slice(-1),
+  ].join(' · ');
+
+  results.push({ script, ok, ms: Date.now() - started, summary, failures });
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${script}  (${((Date.now() - started) / 1000).toFixed(1)}s)${summary ? `  ${summary}` : ''}`);
-  if (!ok) console.error(output.split(/\r?\n/).slice(-25).join('\n'));
+  if (!ok) {
+    // Primero la causa raíz (ReferenceError, TypeError, SyntaxError) y después
+    // el resto de las fallas.
+    const root = lines.filter((line) => /ReferenceError|TypeError|SyntaxError|is not defined|is not a function/.test(line));
+    const rest = failures.filter((line) => !root.includes(line));
+    console.error(`   causa raíz:\n${[...new Set(root)].slice(0, 5).map((l) => `     ${l}`).join('\n') || '     (sin causa raíz detectable)'}`);
+    if (rest.length) console.error(`   fallas:\n${rest.slice(0, 10).map((l) => `     ${l}`).join('\n')}`);
+    if (failures.length > 10) console.error(`     ...y ${failures.length - 10} más`);
+  }
 }
 
 const failed = results.filter((row) => !row.ok);

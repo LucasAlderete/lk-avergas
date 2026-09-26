@@ -6,6 +6,8 @@
 import { useState } from 'react';
 import { Vote } from 'lucide-react';
 
+import AccountBar from '../auth/AccountBar.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
 import PlayerStatsSheet from './PlayerStatsSheet.jsx';
 import SectionHeader from './SectionHeader.jsx';
 import { useSelectedPlayer } from './playerSelection.js';
@@ -26,14 +28,17 @@ export function SquadHeader({ onBack, onNavigate }) {
   );
 }
 
-function PlayerCard({ player, active, onClick }) {
+// `playing` y `dimmed` llegan desde SquadScreen: marcan los jugadores que
+// jugaron el partido actual. Ojo: si se usan en el className hay que declararlos
+// en la firma, si no el render explota con "playing is not defined".
+function PlayerCard({ player, active, playing, dimmed, onClick }) {
   // Si tiene foto va la foto; si no, las iniciales (como antes).
   const photo = photoOf(player.name);
 
   return (
     <button
       type="button"
-      className={`player-card${active ? ' is-active' : ''}`}
+      className={`player-card${active ? ' is-active' : ''}${playing ? ' is-in-match' : ''}${dimmed ? ' is-out' : ''}`}
       data-player={player.name}
       onClick={onClick}
     >
@@ -54,13 +59,23 @@ function PlayerCard({ player, active, onClick }) {
 export default function SquadScreen({ onBack, onNavigate }) {
   const [selected, selectPlayer] = useSelectedPlayer();
   // El roster trae el OVR ya recalculado con los votos de todos.
-  const { roster, deltas, myBallot, cast, remaining, resetMyBallot, voters } = useVotes();
+  const { user } = useAuth();
+  const { roster, deltas, myBallot, cast, remaining, resetMyBallot, voters, matchVoters, canVote, match, eligible } = useVotes();
   // La hoja se abre con un toque explícito: `selected` viene guardado del
   // storage, así que siguiéramos su valor se abriría sola al entrar.
   const [openName, setOpenName] = useState(null);
   const [voting, setVoting] = useState(false);
   const [voterLabel, setVoterLabel] = useState('');
   const openPlayer = roster.find((item) => item.name === openName) || null;
+  const playing = (name) => Boolean(match && eligible.includes(name));
+
+  const voteHint = !user
+    ? ''
+    : !match
+      ? 'No hay partido abierto. El admin lo abre desde Alineación.'
+      : voting
+        ? 'Tocá a quien jugó y repartí tus 5 puntos de este partido.'
+        : `Partido abierto. ${matchVoters} ${matchVoters === 1 ? 'persona votó' : 'personas votaron'} acá · OVR con ${voters} ${voters === 1 ? 'persona' : 'personas'} en total.`;
 
   const openStats = (name) => {
     selectPlayer(name);
@@ -77,22 +92,33 @@ export default function SquadScreen({ onBack, onNavigate }) {
           <button
             type="button"
             className={`vote-toggle${voting ? ' is-active' : ''}`}
-            onClick={() => setVoting((current) => !current)}
+            onClick={() => {
+              if (!canVote) {
+                setVoting(false);
+                document.getElementById('squad-login-gate')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+              }
+              setVoting((current) => !current);
+            }}
             aria-pressed={voting}
           >
             <Vote size={16} aria-hidden="true" />
             {voting ? 'Saliendo de votar' : 'Votar'}
-            <b className="vote-toggle-left">{remaining}</b>
+            <b className="vote-toggle-left">{canVote ? remaining : '!'}</b>
           </button>
         </div>
-        <div className="squad-vote-bar">
-          <p className="squad-vote-hint">
-            {voting
-              ? 'Tocá un jugador y repartí tus puntos. El OVR se recalcula con los votos de todos.'
-              : `OVR según los votos de ${voters} ${voters === 1 ? 'persona' : 'personas'}.`}
-          </p>
-          <ResetVoteButton myBallot={myBallot} onReset={resetMyBallot} />
-        </div>
+        {(voteHint || canVote) && (
+          <div className="squad-vote-bar">
+            {voteHint ? <p className="squad-vote-hint">{voteHint}</p> : null}
+            {canVote ? <ResetVoteButton myBallot={myBallot} onReset={resetMyBallot} /> : null}
+          </div>
+        )}
+        {!user && (
+          <div className="login-gate" id="squad-login-gate">
+            <p>Entrá con Google para puntuar.</p>
+            <AccountBar compact />
+          </div>
+        )}
 
         <div className="squad-grid">
           {roster.map((player) => (
@@ -100,13 +126,15 @@ export default function SquadScreen({ onBack, onNavigate }) {
               key={player.name}
               player={player}
               active={selected === player.name}
+              playing={playing(player.name)}
+              dimmed={Boolean(match) && !playing(player.name)}
               onClick={() => openStats(player.name)}
             />
           ))}
         </div>
       </section>
 
-      {voting
+      {voting && canVote
         ? (
           <VoteSheet
             player={openPlayer}
@@ -118,6 +146,7 @@ export default function SquadScreen({ onBack, onNavigate }) {
             voterLabel={voterLabel}
             onLabelChange={setVoterLabel}
             onReset={resetMyBallot}
+            eligible={Boolean(openPlayer && playing(openPlayer.name))}
           />
         )
         : <PlayerStatsSheet player={openPlayer} onClose={() => setOpenName(null)} />}

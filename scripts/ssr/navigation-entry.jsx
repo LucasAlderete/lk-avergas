@@ -1,8 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import { AuthProvider } from '../../src/auth/AuthContext.jsx';
+import AdminScreen from '../../src/components/AdminScreen.jsx';
 import CareerScreen from '../../src/features/career/components/CareerScreen.jsx';
 import CareerHeader from '../../src/features/career/components/CareerHeader.jsx';
-import HomeScreen from '../../src/components/HomeScreen.jsx';
+import HomeScreen, { HomeDestinations } from '../../src/components/HomeScreen.jsx';
 import LineupScreen from '../../src/components/LineupScreen.jsx';
 import PlayerStatsSheet from '../../src/components/PlayerStatsSheet.jsx';
 import SectionNav, { SectionNav as NamedSectionNav } from '../../src/components/SectionNav.jsx';
@@ -14,7 +16,7 @@ const noop = () => {};
 
 function render(element) {
   try {
-    return { ok: true, html: renderToStaticMarkup(element) };
+    return { ok: true, html: renderToStaticMarkup(<AuthProvider>{element}</AuthProvider>) };
   } catch (error) {
     return { ok: false, html: '', error: String(error?.message || error) };
   }
@@ -39,6 +41,7 @@ export const photoInfo = () => {
   };
 };
 export const renderLineup = () => render(<LineupScreen onBack={noop} onNavigate={noop} />);
+export const renderAdmin = () => render(<AdminScreen onBack={noop} onNavigate={noop} />);
 export const renderCareerHeader = (career = { name: 'Alan', age: 19, season: 2026 }, phase = 'season') => render(
   <CareerHeader career={career} phase={phase} onBack={noop} onNavigate={noop} />,
 );
@@ -64,7 +67,7 @@ function exerciseElement(element, onTarget) {
 
 export function exerciseHomeCallbacks() {
   const calls = [];
-  exerciseElement(HomeScreen({ onNavigate: (target) => calls.push(target) }), (target) => calls.push(`click:${target}`));
+  exerciseElement(HomeDestinations({ onNavigate: (target) => calls.push(target), isAdmin: false }), (target) => calls.push(`click:${target}`));
   return calls.filter((value) => value.startsWith('click:')).map((value) => value.slice(6));
 }
 

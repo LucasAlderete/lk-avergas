@@ -25,7 +25,7 @@ const { alignmentPlayers, lineupOnlyPlayers, players } = await import(pathToFile
 
 const {
   benchOf, beginDragRecord, changeMode, clampToPitch, countByTeam, DEFAULT_INJURIES, dropPlayer,
-  findSlot, freshLineup, MODES, normalizeLineup, removeFromPitch, sizeForMode, STARTERS,
+  findSlot, freshLineup, MODES, normalizeLineup, playedFromLineup, removeFromPitch, sizeForMode, STARTERS,
   starterLineup, swapTargetIndex, teamForY, totalForMode, SWAP_RADIUS,
 } = rules;
 
@@ -171,6 +171,11 @@ console.log('\n== B-bis) Los 5 "Random" son sólo de alineación ==');
   assert(onPitch(joined).includes('Random 1'), 'se pueden arrastrar a la cancha');
   assert(findSlot(joined, 'Random 1') !== null, 'con su posición guardada');
   assert(findSlot(joined, 'Random 1').y === 95, 'y queda donde se lo soltó');
+
+  const voted = playedFromLineup(joined);
+  assert(!voted.includes('Random 1'), 'Random no entra en el partido para votar');
+  assert(voted.every((name) => players.some((player) => player.name === name)), 'sólo sale gente del plantel');
+  assert(playedFromLineup({ slots: [] }).length === 0, 'cancha vacía no abre partido');
 }
 
 

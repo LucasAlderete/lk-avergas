@@ -36,8 +36,9 @@ const home = ui.renderHome();
 const career = ui.renderCareer();
 const squad = ui.renderSquad();
 const lineup = ui.renderLineup();
+const admin = ui.renderAdmin();
 const header = ui.renderCareerHeader();
-for (const [name, result] of Object.entries({ home, career, squad, lineup, header })) {
+for (const [name, result] of Object.entries({ home, career, squad, lineup, admin, header })) {
   assert(result.ok, `${name} renderiza sin error`);
   assert(Boolean(result.html), `${name} produce HTML`);
 }
@@ -84,6 +85,7 @@ assert(
 );
 assert(header.html.includes('>Plantel<'), 'el header de Carrera ofrece Plantel');
 assert(header.html.includes('>Alineación<'), 'el header de Carrera ofrece Alineación');
+assert(admin.html.includes('Esta vista es sólo del admin'), 'Votos pide la cuenta admin si no hay sesión');
 for (const retired of ['Juegos', 'Ficha', 'Volver a los juegos']) {
   assert(!header.html.includes(retired), `el header de Carrera no contiene ${retired}`);
 }
@@ -174,6 +176,12 @@ if (!careerOn) {
   assert(navigation.resolveStoredScreen('career') === 'home', 'el storage no restaura Mi carrera');
 }
 assert(navigation.resolveStoredScreen('lineup') === 'lineup', 'el storage restaura la pantalla Alineación');
+assert(!navigation.isAppScreen('admin'), 'Votos no es una ruta pública');
+assert(!navigation.canOpenScreen('admin'), 'sin admin no entra a Votos');
+assert(navigation.canOpenScreen('admin', { isAdmin: true }), 'el admin sí entra a Votos');
+assert(navigation.resolveStoredScreen('admin') === 'home', 'el storage no restaura Votos sin admin');
+assert(navigation.transitionScreen('home', 'admin', { isAdmin: true }) === 'admin', 'el admin puede ir a Votos');
+assert(!home.html.includes('Quién le dio puntos a quién'), 'Home no muestra Votos si no sos admin');
 
 console.log('\n== 6) Persistencia y datos ==');
 const lineupSource = fs.readFileSync(path.join(root, 'src', 'components', 'LineupEditor.jsx'), 'utf8');

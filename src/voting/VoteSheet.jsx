@@ -40,9 +40,13 @@ async function copyText(text) {
   }
 }
 
-function VoteRow({ stat, value, myDelta, onCast, playerName, myBallot, disabled }) {
+function VoteRow({ stat, value, myDelta, onCast, playerName, myBallot, disabled, eligible }) {
   const vote = (direction) => onCast(playerName, stat.key, direction);
-  const block = (direction) => (disabled ? 'Ya no te quedan puntos' : canCast(myBallot, playerName, stat.key, direction).reason);
+  const block = (direction) => {
+    if (!eligible) return 'No jugó este partido';
+    if (disabled) return 'Ya no te quedan puntos';
+    return canCast(myBallot, playerName, stat.key, direction).reason;
+  };
 
   return (
     <li className="stat-row">
@@ -59,7 +63,7 @@ function VoteRow({ stat, value, myDelta, onCast, playerName, myBallot, disabled 
           type="button"
           className="vote-btn"
           onClick={() => vote(-1)}
-          disabled={!canCast(myBallot, playerName, stat.key, -1).ok}
+          disabled={!eligible || !canCast(myBallot, playerName, stat.key, -1).ok}
           title={block(-1)}
           aria-label={`Restar un punto de ${stat.label} a ${playerName}`}
         >
@@ -69,7 +73,7 @@ function VoteRow({ stat, value, myDelta, onCast, playerName, myBallot, disabled 
           type="button"
           className="vote-btn"
           onClick={() => vote(1)}
-          disabled={!canCast(myBallot, playerName, stat.key, 1).ok}
+          disabled={!eligible || !canCast(myBallot, playerName, stat.key, 1).ok}
           title={block(1)}
           aria-label={`Sumar un punto de ${stat.label} a ${playerName}`}
         >
@@ -80,7 +84,7 @@ function VoteRow({ stat, value, myDelta, onCast, playerName, myBallot, disabled 
   );
 }
 
-export default function VoteSheet({ player, deltas, myBallot, onCast, remaining, onClose, voterLabel, onLabelChange, onReset }) {
+export default function VoteSheet({ player, deltas, myBallot, onCast, remaining, onClose, voterLabel, onLabelChange, onReset, eligible = false }) {
   const closeRef = useRef(null);
   const [copied, setCopied] = useState('');
   // `onClose` llega como arrow inline desde Plantel: cambia de identidad en cada
@@ -136,13 +140,18 @@ export default function VoteSheet({ player, deltas, myBallot, onCast, remaining,
           <span className="stats-ovr" aria-label={`OVR ${player.rating}`}>{player.rating}</span>
           <div>
             <h3>{player.name}</h3>
-            <p className="vote-budget">
-              Te quedan <b>{remaining}</b> de {TOTAL_POINTS} · a este jugador {used}/{POINTS_PER_PLAYER}
-            </p>
+            {eligible
+              ? (
+                <p className="vote-budget">
+                  Te quedan <b>{remaining}</b> de {TOTAL_POINTS} · a este jugador {used}/{POINTS_PER_PLAYER}
+                </p>
+              )
+              : <p className="vote-budget">No jugó este partido. No se le pueden cargar puntos.</p>}
           </div>
         </header>
 
-        {noPoints && <p className="vote-warning">No te quedan puntos. Podés ver los votos de todos igual.</p>}
+        {!eligible && <p className="vote-warning">Sólo se puntúa a los que estaban en cancha cuando el admin abrió el partido.</p>}
+        {eligible && noPoints && <p className="vote-warning">No te quedan puntos. Podés ver los votos de todos igual.</p>}
 
         <ul className="stat-list">
           {RATING_STATS.map((stat) => (
@@ -156,6 +165,7 @@ export default function VoteSheet({ player, deltas, myBallot, onCast, remaining,
               deltas={all}
               onCast={onCast}
               disabled={noPoints}
+              eligible={eligible}
             />
           ))}
         </ul>
@@ -186,7 +196,7 @@ export default function VoteSheet({ player, deltas, myBallot, onCast, remaining,
           {onReset && <ResetVoteButton myBallot={myBallot} onReset={onReset} />}
         </div>
 
-        <p className="stats-sheet-foot">Máximo {POINTS_PER_PLAYER} puntos por jugador y {TOTAL_POINTS} en total. El OVR se recalcula con los votos de todos.</p>
+        <p className="stats-sheet-foot">Máximo {POINTS_PER_PLAYER} puntos por jugador y {TOTAL_POINTS} por partido. El OVR se queda; los puntos se reciclan en el próximo.</p>
       </section>
     </>
   );

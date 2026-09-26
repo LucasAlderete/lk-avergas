@@ -72,9 +72,11 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .section-copy { margin: -5px 0 18px; color: var(--muted); }
 .squad-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .player-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 4px; background: linear-gradient(145deg, rgba(48, 49, 42, .9), rgba(20, 22, 18, .94)); text-align: left; }
-.player-card:hover, .player-card.is-active { border-color: var(--accent); background: rgba(231, 173, 78, .09); }
+.player-card:hover, .player-card.is-active, .player-card.is-in-match { border-color: var(--accent); background: rgba(231, 173, 78, .09); }
+.player-card.is-out { opacity: .55; }
 .player-card-avatar { display: grid; place-items: center; width: 42px; height: 42px; overflow: hidden; border: 1px solid rgba(231, 173, 78, .5); border-radius: 3px; color: var(--accent); font-weight: 800; }
-/* La foto ocupa toda la miniatura. cover + centro: recorta sin deformar. */
+/* La foto ocupa toda la miniatura. cover + centro: recorta sin deformar (y como
+   las fotos son cuadradas y la caja también, no recorta nada). */
 .player-card-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
 .player-card-copy { display: grid; min-width: 0; gap: 3px; }
 .player-card-copy strong { font-family: 'Rajdhani', sans-serif; font-size: 1.05rem; }
@@ -271,6 +273,50 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .home-destination-copy strong { font: 700 clamp(1.5rem, 3vw, 2.1rem)/1 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
 .home-destination-copy small { color: var(--muted); }
 .home-destination-arrow { color: var(--accent); }
+
+.section-header-tools { display: grid; gap: 12px; justify-items: end; }
+.account-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 22px; }
+.account-bar--compact { margin-top: 0; }
+.account-bar--pending { min-height: 40px; }
+.account-bar.is-in { padding: 8px 10px 8px 8px; border: 1px solid var(--line); border-radius: 3px; background: rgba(255, 255, 255, .04); }
+.account-avatar { width: 36px; height: 36px; object-fit: cover; border: 1px solid rgba(231, 173, 78, .5); border-radius: 3px; }
+.account-avatar.is-fallback { display: grid; place-items: center; color: var(--accent); font-weight: 800; background: rgba(231, 173, 78, .12); }
+.account-copy { display: grid; gap: 2px; min-width: 0; }
+.account-copy strong { font: 700 1rem/1.1 'Barlow Condensed', sans-serif; letter-spacing: .4px; text-transform: uppercase; }
+.account-copy small, .account-copy p, .auth-missing { margin: 0; color: var(--muted); font-size: .82rem; }
+.account-logout { margin-left: auto; padding: 8px 12px; border: 1px solid var(--line); border-radius: 3px; background: transparent; color: #d4d5cd; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.account-logout:hover { border-color: var(--accent); color: var(--accent); }
+.google-btn-slot { min-height: 40px; overflow: hidden; }
+.login-gate { display: grid; gap: 12px; margin: 0 0 16px; padding: 16px; border: 1px solid rgba(231, 173, 78, .45); border-radius: 3px; background: rgba(231, 173, 78, .08); }
+.login-gate p { margin: 0; color: #f0d49a; font-size: .92rem; }
+.login-gate .account-bar { margin: 0; }
+.match-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid rgba(231, 173, 78, .45); border-radius: 3px; background: rgba(231, 173, 78, .08); }
+.match-bar.is-idle { border-color: var(--line); background: rgba(255, 255, 255, .04); }
+.match-bar p { flex: 1 1 220px; margin: 0; color: #f0d49a; font-size: .86rem; }
+.match-bar.is-idle p { color: var(--muted); }
+.match-bar-error { flex: 1 1 100%; color: #f0a39a; }
+.match-bar-btn { padding: 9px 14px; border: 1px solid var(--accent); border-radius: 3px; background: var(--accent); color: #17150f; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; }
+.match-bar-btn:disabled { opacity: .4; cursor: not-allowed; }
+.match-bar-btn.is-close { background: transparent; color: var(--accent); }
+
+.admin-panel { display: grid; gap: 14px; }
+.admin-select { display: grid; gap: 8px; color: var(--muted); font-size: .82rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.admin-select select { padding: 11px 12px; border: 1px solid var(--line); border-radius: 3px; background: #171914; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.admin-match-meta { margin: 0; color: var(--muted); font-size: .86rem; }
+.admin-empty { margin: 0; color: var(--muted); font-size: .9rem; }
+.admin-voters { display: grid; gap: 12px; }
+.admin-voter { padding: 14px; border: 1px solid var(--line); border-radius: 4px; background: linear-gradient(145deg, rgba(48, 49, 42, .9), rgba(20, 22, 18, .94)); }
+.admin-voter-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; margin-bottom: 10px; }
+.admin-voter-head strong { font: 700 1.15rem/1.1 'Barlow Condensed', sans-serif; letter-spacing: .4px; text-transform: uppercase; }
+.admin-voter-head small { grid-column: 1; color: var(--muted); font-size: .78rem; }
+.admin-voter-head b { color: var(--accent); font: 800 .9rem 'Rajdhani', sans-serif; }
+.admin-voter-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.admin-voter-list li { display: grid; gap: 6px; }
+.admin-voter-list span { color: #d4d5cd; font-size: .88rem; }
+.admin-voter-parts { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-voter-parts em { padding: 3px 8px; border-radius: 3px; font: 700 .78rem 'Rajdhani', sans-serif; font-style: normal; }
+.admin-voter-parts em.is-up { background: rgba(78, 157, 84, .25); color: #9fdc9f; }
+.admin-voter-parts em.is-down { background: rgba(214, 76, 71, .25); color: #ffb3b0; }
 
 /* Navegación compartida. */
 .section-nav { display: flex; flex-wrap: wrap; gap: 8px; }

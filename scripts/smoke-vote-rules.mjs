@@ -19,6 +19,7 @@ const v = await import(pathToFileURL(path.join(root, 'src', 'voting', 'voteRules
 const {
   POINTS_PER_PLAYER, TOTAL_POINTS, aggregateBallots, canCast, castVote, clearBallot,
   costOfPlayer, dynamicAlignmentRoster, dynamicRoster, emptyBallot, remaining, spent, withVotes,
+  ballotSummary,
 } = v;
 
 let failures = 0;
@@ -235,6 +236,21 @@ console.log('== H) Borrar mi voto (reset para volver a votar) ==');
   // Ojo: esto sólo borra lo LOCAL. Los votos de castedVotes.js van en el bundle
   // y los ve todo el mundo, así que el reset de un celu no los toca nunca.
   assert(typeof ballots === 'object' && Array.isArray(ballots), 'la lista sigue siendo de boletas locales');
+}
+
+console.log('== I) Resumen de boleta para el admin ==');
+{
+  let ballot = emptyBallot();
+  ballot = castVote(ballot, 'Chino', 'passing', 1);
+  ballot = castVote(ballot, 'Chino', 'pace', -1);
+  ballot = castVote(ballot, 'Emi', 'shooting', 1);
+  const rows = ballotSummary(ballot);
+  assert(rows.length === 2, 'agrupa por jugador');
+  assert(rows[0].player === 'Chino', 'primero Chino');
+  assert(rows[0].parts.some((part) => part.label === 'Pase' && part.delta === 1), 'Chino recibió +1 Pase');
+  assert(rows[0].parts.some((part) => part.label === 'Ritmo' && part.delta === -1), 'y −1 Ritmo');
+  assert(rows[1].player === 'Emi' && rows[1].parts[0].delta === 1, 'Emi recibió +1 Tiro');
+  assert(ballotSummary({}).length === 0, 'boleta vacía no lista a nadie');
 }
 
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);

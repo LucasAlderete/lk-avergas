@@ -1,5 +1,7 @@
-import { BriefcaseBusiness, ChevronRight, ClipboardList, Users } from 'lucide-react';
+import { BriefcaseBusiness, ChevronRight, ClipboardList, ListChecks, Users } from 'lucide-react';
 
+import AccountBar from '../auth/AccountBar.jsx';
+import { useIsAdmin } from '../auth/AuthContext.jsx';
 import { isFeatureEnabled } from '../navigation.js';
 
 const destinations = [
@@ -22,11 +24,47 @@ const destinations = [
     icon: ClipboardList,
     wide: true,
   },
+  {
+    id: 'admin',
+    title: 'Votos',
+    description: 'Quién le dio puntos a quién, partido por partido',
+    icon: ListChecks,
+    adminOnly: true,
+    wide: true,
+  },
 ];
 
+export function HomeDestinations({ onNavigate, isAdmin = false }) {
+  const visible = destinations.filter((row) => (
+    row.adminOnly ? isAdmin : isFeatureEnabled(row.id)
+  ));
+
+  return (
+    <section className="home-destinations" aria-label="Secciones disponibles">
+      {visible.map(({ id, title, description, icon: Icon, wide }) => (
+        <button
+          key={id}
+          type="button"
+          className={`home-destination${wide ? ' home-destination--wide' : ''}`}
+          data-navigation={id}
+          onClick={() => onNavigate(id)}
+        >
+          <span className="home-destination-icon" aria-hidden="true">
+            <Icon size={28} strokeWidth={1.8} />
+          </span>
+          <span className="home-destination-copy">
+            <strong>{title}</strong>
+            <small>{description}</small>
+          </span>
+          <ChevronRight className="home-destination-arrow" size={22} aria-hidden="true" />
+        </button>
+      ))}
+    </section>
+  );
+}
+
 export default function HomeScreen({ onNavigate }) {
-  // Las secciones apagadas en FEATURE_FLAGS no llegan ni a la lista.
-  const visible = destinations.filter((row) => isFeatureEnabled(row.id));
+  const isAdmin = useIsAdmin();
 
   return (
     <main className="home-page">
@@ -34,28 +72,9 @@ export default function HomeScreen({ onNavigate }) {
         <p className="eyebrow">Averga&apos;s Club</p>
         <h1>Inicio</h1>
         <p>Elegí dónde querés seguir.</p>
+        <AccountBar />
       </header>
-
-      <section className="home-destinations" aria-label="Secciones disponibles">
-        {visible.map(({ id, title, description, icon: Icon, wide }) => (
-          <button
-            key={id}
-            type="button"
-            className={`home-destination${wide ? ' home-destination--wide' : ''}`}
-            data-navigation={id}
-            onClick={() => onNavigate(id)}
-          >
-            <span className="home-destination-icon" aria-hidden="true">
-              <Icon size={28} strokeWidth={1.8} />
-            </span>
-            <span className="home-destination-copy">
-              <strong>{title}</strong>
-              <small>{description}</small>
-            </span>
-            <ChevronRight className="home-destination-arrow" size={22} aria-hidden="true" />
-          </button>
-        ))}
-      </section>
+      <HomeDestinations onNavigate={onNavigate} isAdmin={isAdmin} />
     </main>
   );
 }
