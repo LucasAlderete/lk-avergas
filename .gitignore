@@ -1,1 +1,17 @@
+# Dependencias y artefactos de build
+node_modules/
+dist/
+
+# Scratch de los smokes (bundle SSR, dumps y sondas descartables)
+tmp/
+
 deploy.env
+
+# Artefactos temporales de los smoke tests (bundle SSR, dumps, wikitext)
+tmp/
+
+# Build de producción
+dist/
+node_modules/
+dist/
+tmp/

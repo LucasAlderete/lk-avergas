@@ -1,0 +1,79 @@
+// ============================================================================
+// FICHA DE STATS — hoja modal desde abajo (mobile first)
+// ============================================================================
+// Por qué modal y no tooltip: en el celu no existe el hover, así que un tooltip
+// no se puede abrir. Al tocar un jugador del Plantel sube esta hoja, que se
+// opera con el pulgar y muestra los 6 atributos de FIFA + el OVR.
+// El OVR es el promedio de esos 6 atributos (ver overallOf en data.js).
+import { useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
+
+import { RATING_STATS, overallOf, statOf } from '../data.js';
+
+// Color por rango, como los medidores de FIFA.
+const toneOf = (value) => (value >= 80 ? 'high' : value >= 65 ? 'mid' : value >= 50 ? 'low' : 'bad');
+
+function StatRow({ stat, player }) {
+  const value = statOf(player, stat.key);
+  return (
+    <li className="stat-row">
+      <span className="stat-label">{stat.label}</span>
+      <span className="stat-bar">
+        <span className={`stat-fill tone-${toneOf(value)}`} style={{ width: `${value}%` }} />
+      </span>
+      <b className="stat-value">{value}</b>
+    </li>
+  );
+}
+
+export default function PlayerStatsSheet({ player, onClose }) {
+  const closeRef = useRef(null);
+  // Mismo cuidado que en VoteSheet: `onClose` es un arrow inline y cambia de
+  // identidad en cada render. En un ref, para no re-disparar el efecto (y con
+  // él el focus de la X, que hace saltar el scroll) al escribir en un input.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const playerName = player?.name;
+
+  useEffect(() => {
+    if (!playerName) return undefined;
+    const onKeyDown = (event) => { if (event.key === 'Escape') onCloseRef.current(); };
+    document.addEventListener('keydown', onKeyDown);
+    // Evita que la página de atrás siga scrolleando con la hoja abierta.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [playerName]);
+
+  if (!player) return null;
+  const overall = overallOf(player);
+
+  return (
+    <>
+      <div className="stats-sheet-backdrop" onClick={onClose} aria-hidden="true" />
+      <section className="stats-sheet" role="dialog" aria-modal="true" aria-label={`Stats de ${player.name}`}>
+        <button ref={closeRef} type="button" className="stats-sheet-close" onClick={onClose} aria-label="Cerrar stats">
+          <X size={18} />
+        </button>
+
+        <header className="stats-sheet-head">
+          <span className="stats-ovr" aria-label={`OVR ${overall}`}>{overall}</span>
+          <div>
+            <h3>{player.name}</h3>
+            <p>{player.lore?.perfil || player.phrase}</p>
+          </div>
+        </header>
+
+        <ul className="stat-list">
+          {RATING_STATS.map((stat) => <StatRow key={stat.key} stat={stat} player={player} />)}
+        </ul>
+
+        <p className="stats-sheet-foot">El OVR es el promedio de los seis atributos.</p>
+      </section>
+    </>
+  );
+}

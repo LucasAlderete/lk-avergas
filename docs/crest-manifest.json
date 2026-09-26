@@ -1,0 +1,2248 @@
+{
+  "abc": {
+    "status": "ok",
+    "name": "abc",
+    "file": "career/clubs/abc.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:ABC FC - RN.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:ABC_FC_-_RN.svg"
+  },
+  "ajax": {
+    "status": "ok",
+    "name": "ajax",
+    "file": "career/clubs/ajax.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Cruyff ajax 14.svg",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Cruyff_ajax_14.svg"
+  },
+  "almagro": {
+    "status": "ok",
+    "name": "Almagro",
+    "file": "career/clubs/almagro.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera Nacional",
+    "source": "File:Almagro escudo2024.png",
+    "license": "CC0",
+    "page": "https://commons.wikimedia.org/wiki/File:Almagro_escudo2024.png"
+  },
+  "argentinos-juniors": {
+    "status": "ok",
+    "name": "Argentinos Juniors",
+    "file": "career/clubs/argentinos-juniors.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Asociación Atlética Argentinos Juniors logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Asociaci%C3%B3n_Atl%C3%A9tica_Argentinos_Juniors_logo.svg"
+  },
+  "arsenal": {
+    "status": "ok",
+    "name": "Arsenal",
+    "file": "career/clubs/arsenal.png",
+    "scope": "in-universe",
+    "country": "Inglaterra",
+    "league": "Premier League",
+    "source": "File:Arsenal Crest Art Deco.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Arsenal_Crest_Art_Deco.svg"
+  },
+  "as-roma": {
+    "status": "ok",
+    "name": "AS Roma",
+    "file": "career/clubs/as-roma.png",
+    "scope": "in-universe",
+    "country": "Italia",
+    "league": "Serie A",
+    "source": "File:Storico AS Roma.svg",
+    "license": "CC BY-SA 3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Storico_AS_Roma.svg"
+  },
+  "atletico-mineiro": {
+    "status": "ok",
+    "name": "Atlético Mineiro",
+    "file": "career/clubs/atletico-mineiro.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Atlético Mineiro crest 1910.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Atl%C3%A9tico_Mineiro_crest_1910.svg"
+  },
+  "az-alkmaar": {
+    "status": "ok",
+    "name": "az-alkmaar",
+    "file": "career/clubs/az-alkmaar.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:AZ Alkmaar.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:AZ_Alkmaar.svg"
+  },
+  "banfield": {
+    "status": "ok",
+    "name": "Banfield",
+    "file": "career/clubs/banfield.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:CA Banfield (2014).svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:CA_Banfield_(2014).svg"
+  },
+  "bayer-leverkusen": {
+    "status": "ok",
+    "name": "bayer-leverkusen",
+    "file": "career/clubs/bayer-leverkusen.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Logo TSV Bayer 04 Leverkusen.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Logo_TSV_Bayer_04_Leverkusen.svg"
+  },
+  "benfica": {
+    "status": "ok",
+    "name": "benfica",
+    "file": "career/clubs/benfica.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Emblema Grupo Sport Benfica (Sem fundo).png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Emblema_Grupo_Sport_Benfica_(Sem_fundo).png"
+  },
+  "borussia-dortmund": {
+    "status": "ok",
+    "name": "borussia-dortmund",
+    "file": "career/clubs/borussia-dortmund.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Borussia Dortmund logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Borussia_Dortmund_logo.svg"
+  },
+  "ceara": {
+    "status": "ok",
+    "name": "ceara",
+    "file": "career/clubs/ceara.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Ceará Sporting Club logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Cear%C3%A1_Sporting_Club_logo.svg"
+  },
+  "charleroi": {
+    "status": "ok",
+    "name": "charleroi",
+    "file": "career/clubs/charleroi.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Charleroi SC Performance Chart.png",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Charleroi_SC_Performance_Chart.png"
+  },
+  "corinthians": {
+    "status": "ok",
+    "name": "Corinthians",
+    "file": "career/clubs/corinthians.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Corinthians Paulista 1916.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Corinthians_Paulista_1916.png"
+  },
+  "correcaminos-uat": {
+    "status": "ok",
+    "name": "correcaminos-uat",
+    "file": "career/clubs/correcaminos-uat.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Escudo del CF Correcaminos de la UAT.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_CF_Correcaminos_de_la_UAT.png"
+  },
+  "criciuma": {
+    "status": "ok",
+    "name": "criciuma",
+    "file": "career/clubs/criciuma.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Criciúma EC 2025 crest.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Crici%C3%BAma_EC_2025_crest.svg"
+  },
+  "cruz-azul": {
+    "status": "ok",
+    "name": "Cruz Azul",
+    "file": "career/clubs/cruz-azul.png",
+    "scope": "in-universe",
+    "country": "México",
+    "league": "Liga MX",
+    "source": "File:Cruz Azul Femenil logo.png",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Cruz_Azul_Femenil_logo.png"
+  },
+  "cruzeiro": {
+    "status": "ok",
+    "name": "Cruzeiro",
+    "file": "career/clubs/cruzeiro.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Escudo Cruzeiro BH 1950.png",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_Cruzeiro_BH_1950.png"
+  },
+  "danubio": {
+    "status": "ok",
+    "name": "danubio",
+    "file": "career/clubs/danubio.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Escudo oficial de Danubio FC.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_oficial_de_Danubio_FC.png"
+  },
+  "defensor-sporting": {
+    "status": "ok",
+    "name": "defensor-sporting",
+    "file": "career/clubs/defensor-sporting.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Defensor Sporting.svg",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Defensor_Sporting.svg"
+  },
+  "dynamo-dresden": {
+    "status": "ok",
+    "name": "dynamo-dresden",
+    "file": "career/clubs/dynamo-dresden.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Dynamo Dresden Performance Chart.png",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Dynamo_Dresden_Performance_Chart.png"
+  },
+  "estudiantes": {
+    "status": "ok",
+    "name": "Estudiantes",
+    "file": "career/clubs/estudiantes.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Estudiantes de la Plata crest (2025) cropped.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Estudiantes_de_la_Plata_crest_(2025)_cropped.svg"
+  },
+  "fc-utrecht": {
+    "status": "ok",
+    "name": "fc-utrecht",
+    "file": "career/clubs/fc-utrecht.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Logo FC Utrecht.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Logo_FC_Utrecht.svg"
+  },
+  "fc-volendam": {
+    "status": "ok",
+    "name": "fc-volendam",
+    "file": "career/clubs/fc-volendam.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:FC Volendam logo.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:FC_Volendam_logo.png"
+  },
+  "feyenoord": {
+    "status": "ok",
+    "name": "feyenoord",
+    "file": "career/clubs/feyenoord.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Feyenoord logo 100 years.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Feyenoord_logo_100_years.svg"
+  },
+  "fiorentina": {
+    "status": "ok",
+    "name": "Fiorentina",
+    "file": "career/clubs/fiorentina.png",
+    "scope": "in-universe",
+    "country": "Italia",
+    "league": "Serie A",
+    "source": "File:Logo ACF Fiorentina.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:ACF_Fiorentina_-_logo_(Italy,_2022).svg"
+  },
+  "flamengo": {
+    "status": "ok",
+    "name": "Flamengo",
+    "file": "career/clubs/flamengo.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Clube de Regatas do Flamengo logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Clube_de_Regatas_do_Flamengo_logo.svg"
+  },
+  "fortuna-dusseldorf": {
+    "status": "ok",
+    "name": "fortuna-dusseldorf",
+    "file": "career/clubs/fortuna-dusseldorf.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Fortuna Düsseldorf.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Fortuna_D%C3%BCsseldorf.svg"
+  },
+  "gimnasia-y-esgrima": {
+    "status": "ok",
+    "name": "Gimnasia y Esgrima",
+    "file": "career/clubs/gimnasia-y-esgrima.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Escudo Club Atlético Gimnasia y Esgrima Mendoza.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_Club_Atl%C3%A9tico_Gimnasia_y_Esgrima_Mendoza.png"
+  },
+  "goias": {
+    "status": "ok",
+    "name": "goias",
+    "file": "career/clubs/goias.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Brasão de Goiás.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Bras%C3%A3o_de_Goi%C3%A1s.svg"
+  },
+  "gremio": {
+    "status": "ok",
+    "name": "Grêmio",
+    "file": "career/clubs/gremio.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Gremio logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Gremio_logo.svg"
+  },
+  "hamburger-sv": {
+    "status": "ok",
+    "name": "hamburger-sv",
+    "file": "career/clubs/hamburger-sv.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Hamburger SV logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Hamburger_SV_logo.svg"
+  },
+  "huracan": {
+    "status": "ok",
+    "name": "Huracán",
+    "file": "career/clubs/huracan.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Emblema oficial del Club Atlético Huracán.svg",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Emblema_oficial_del_Club_Atl%C3%A9tico_Hurac%C3%A1n.svg"
+  },
+  "independiente": {
+    "status": "ok",
+    "name": "Independiente",
+    "file": "career/clubs/independiente.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Escudo del Club Independiente Rivadavia.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Independiente_Rivadavia.svg"
+  },
+  "internacional": {
+    "status": "ok",
+    "name": "Internacional",
+    "file": "career/clubs/internacional.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Sport Club Internacional logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Sport_Club_Internacional_logo.svg"
+  },
+  "juventus": {
+    "status": "ok",
+    "name": "Juventus",
+    "file": "career/clubs/juventus.png",
+    "scope": "in-universe",
+    "country": "Italia",
+    "league": "Serie A",
+    "source": "File:Juventus Next Gen.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Juventus_Next_Gen.png"
+  },
+  "krc-genk": {
+    "status": "ok",
+    "name": "krc-genk",
+    "file": "career/clubs/krc-genk.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Logo KRC Genk.png",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Logo_KRC_Genk.png"
+  },
+  "lanus": {
+    "status": "ok",
+    "name": "Lanús",
+    "file": "career/clubs/lanus.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Escudo de Lanús (sin estrellas).svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_de_Lan%C3%BAs_(sin_estrellas).svg"
+  },
+  "los-andes": {
+    "status": "ok",
+    "name": "Los Andes",
+    "file": "career/clubs/los-andes.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera Nacional",
+    "source": "File:Escudo del Club Atlético Los Andes.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Atl%C3%A9tico_Los_Andes.svg"
+  },
+  "mainz-05": {
+    "status": "ok",
+    "name": "mainz-05",
+    "file": "career/clubs/mainz-05.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:1. FSV Mainz 05 logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:1._FSV_Mainz_05_logo.svg"
+  },
+  "manchester-city": {
+    "status": "ok",
+    "name": "Manchester City",
+    "file": "career/clubs/manchester-city.png",
+    "scope": "in-universe",
+    "country": "Inglaterra",
+    "league": "Premier League",
+    "source": "File:England Greater Manchester numbered.svg",
+    "license": "CC BY 3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:England_Greater_Manchester_numbered.svg"
+  },
+  "monterrey": {
+    "status": "ok",
+    "name": "Monterrey",
+    "file": "career/clubs/monterrey.png",
+    "scope": "in-universe",
+    "country": "México",
+    "league": "Liga MX",
+    "source": "File:Club de Fútbol Monterrey logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_de_F%C3%BAtbol_Monterrey_logo.svg"
+  },
+  "nacional": {
+    "status": "ok",
+    "name": "nacional",
+    "file": "career/clubs/nacional.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Club Nacional de Football.png",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_Nacional_de_Football.png"
+  },
+  "napoli": {
+    "status": "ok",
+    "name": "Napoli",
+    "file": "career/clubs/napoli.png",
+    "scope": "in-universe",
+    "country": "Italia",
+    "league": "Serie A",
+    "source": "File:CoA Città di Napoli 2.svg",
+    "license": "CC BY-SA 3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:CoA_Citt%C3%A0_di_Napoli_2.svg"
+  },
+  "newell-s-old-boys": {
+    "status": "ok",
+    "name": "Newell's Old Boys",
+    "file": "career/clubs/newell-s-old-boys.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Escudo del Club Atlético Newell's Old Boys de Rosario.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Atl%C3%A9tico_Newell%27s_Old_Boys_de_Rosario.svg"
+  },
+  "norwich-city": {
+    "status": "ok",
+    "name": "Norwich City",
+    "file": "career/clubs/norwich-city.png",
+    "scope": "in-universe",
+    "country": "Inglaterra",
+    "league": "Championship",
+    "source": "File:Arms of Norwich.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Arms_of_Norwich.svg"
+  },
+  "palmeiras": {
+    "status": "ok",
+    "name": "Palmeiras",
+    "file": "career/clubs/palmeiras.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:SE Palmeiras 2025 crest.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:SE_Palmeiras_2025_crest.png"
+  },
+  "penarol": {
+    "status": "ok",
+    "name": "penarol",
+    "file": "career/clubs/penarol.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Escudo-club-atletico-penarol.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo-club-atletico-penarol.png"
+  },
+  "platense": {
+    "status": "ok",
+    "name": "Platense",
+    "file": "career/clubs/platense.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Club Altético Platense crest (2025).svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_Alt%C3%A9tico_Platense_crest_(2025).svg"
+  },
+  "racing-club": {
+    "status": "ok",
+    "name": "Racing Club",
+    "file": "career/clubs/racing-club.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Escudo de Racing Club (2014).svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_de_Racing_Club_(2014).svg"
+  },
+  "remo": {
+    "status": "ok",
+    "name": "Remo",
+    "file": "career/clubs/remo.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Clube do Remo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Clube_do_Remo.svg"
+  },
+  "river-plate": {
+    "status": "ok",
+    "name": "River Plate",
+    "file": "career/clubs/river-plate.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Club Atlético River Plate logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_Atl%C3%A9tico_River_Plate_logo.svg"
+  },
+  "san-lorenzo": {
+    "status": "ok",
+    "name": "San Lorenzo",
+    "file": "career/clubs/san-lorenzo.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Sanlorenzo almagro logo2026.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Sanlorenzo_almagro_logo2026.png"
+  },
+  "san-telmo": {
+    "status": "ok",
+    "name": "San Telmo",
+    "file": "career/clubs/san-telmo.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera Nacional",
+    "source": "File:Club santelmo logo.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_santelmo_logo.png"
+  },
+  "santos": {
+    "status": "ok",
+    "name": "Santos",
+    "file": "career/clubs/santos.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Santos fc firstlogo.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Santos_fc_firstlogo.png"
+  },
+  "sao-paulo-fc": {
+    "status": "ok",
+    "name": "São Paulo FC",
+    "file": "career/clubs/sao-paulo-fc.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:São Paulo Futebol Clube logo (2022).svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:S%C3%A3o_Paulo_Futebol_Clube_logo_(2022).svg"
+  },
+  "sc-freiburg": {
+    "status": "ok",
+    "name": "sc-freiburg",
+    "file": "career/clubs/sc-freiburg.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Freiburg Performance Chart.png",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Freiburg_Performance_Chart.png"
+  },
+  "sport-recife": {
+    "status": "ok",
+    "name": "sport-recife",
+    "file": "career/clubs/sport-recife.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Sport Recife (Brasao Antigo).png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Sport_Recife_(Brasao_Antigo).png"
+  },
+  "sunderland": {
+    "status": "ok",
+    "name": "Sunderland",
+    "file": "career/clubs/sunderland.png",
+    "scope": "in-universe",
+    "country": "Inglaterra",
+    "league": "Premier League",
+    "source": "File:Arms of the Sunderland City Council.svg",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Arms_of_the_Sunderland_City_Council.svg"
+  },
+  "talleres": {
+    "status": "ok",
+    "name": "Talleres",
+    "file": "career/clubs/talleres.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Escudo Talleres 2015.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_Talleres_2015.svg"
+  },
+  "toluca": {
+    "status": "ok",
+    "name": "Toluca",
+    "file": "career/clubs/toluca.png",
+    "scope": "in-universe",
+    "country": "México",
+    "league": "Liga MX",
+    "source": "File:Club Toluca Logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_Toluca_Logo.svg"
+  },
+  "torino": {
+    "status": "ok",
+    "name": "Torino",
+    "file": "career/clubs/torino.png",
+    "scope": "in-universe",
+    "country": "Italia",
+    "league": "Serie A",
+    "source": "File:Ac-torino-old-1.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Ac-torino-old-1.png"
+  },
+  "vasco-da-gama": {
+    "status": "ok",
+    "name": "Vasco da Gama",
+    "file": "career/clubs/vasco-da-gama.png",
+    "scope": "in-universe",
+    "country": "Brasil",
+    "league": "Série A",
+    "source": "File:Escudo Vasco 1898.png",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_Vasco_1898.png"
+  },
+  "velez-sarsfield": {
+    "status": "ok",
+    "name": "Vélez Sarsfield",
+    "file": "career/clubs/velez-sarsfield.png",
+    "scope": "in-universe",
+    "country": "Argentina",
+    "league": "Primera División",
+    "source": "File:Escudo del Club Atlético Vélez Sarsfield.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Atl%C3%A9tico_V%C3%A9lez_Sarsfield.svg"
+  },
+  "vfl-wolfsburg": {
+    "status": "ok",
+    "name": "vfl-wolfsburg",
+    "file": "career/clubs/vfl-wolfsburg.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:Wolfsburg Performance Chart.png",
+    "license": "CC BY-SA 4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Wolfsburg_Performance_Chart.png"
+  },
+  "vvv-venlo": {
+    "status": "ok",
+    "name": "vvv-venlo",
+    "file": "career/clubs/vvv-venlo.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:VVV Venlo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:VVV_Venlo.svg"
+  },
+  "werder-bremen": {
+    "status": "ok",
+    "name": "werder-bremen",
+    "file": "career/clubs/werder-bremen.png",
+    "scope": "orphan",
+    "country": null,
+    "league": null,
+    "source": "File:SV-Werder-Bremen-Logo.svg",
+    "license": "Public domain",
+    "page": "https://commons.wikimedia.org/wiki/File:SV-Werder-Bremen-Logo.svg"
+  },
+  "boca-juniors": {
+    "status": "no-free-crest",
+    "name": "Boca Juniors",
+    "article": "2026 Club Atlético Boca Juniors season"
+  },
+  "rosario-central": {
+    "status": "no-free-crest",
+    "name": "Rosario Central",
+    "article": "Rosario Central"
+  },
+  "defensa-y-justicia": {
+    "status": "ok",
+    "name": "Defensa y Justicia",
+    "file": "career/clubs/defensa-y-justicia.png",
+    "bytes": 24826,
+    "source": "File:Escudo del Club Social y Deportivo Defensa y Justicia.svg",
+    "license": "Public domain",
+    "artist": "Defensa y Justicia",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Social_y_Deportivo_Defensa_y_Justicia.svg",
+    "article": "Defensa y Justicia"
+  },
+  "belgrano": {
+    "status": "ok",
+    "name": "Belgrano",
+    "file": "career/clubs/belgrano.png",
+    "bytes": 30904,
+    "source": "File:Defensores de Belgrano Logo.svg",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:Defensores_de_Belgrano_Logo.svg",
+    "article": "Defensores de Belgrano"
+  },
+  "instituto": {
+    "status": "ok",
+    "name": "Instituto",
+    "file": "career/clubs/instituto.png",
+    "bytes": 21000,
+    "source": "File:Instituto acc cordoba logo.svg",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:Instituto_acc_cordoba_logo.svg",
+    "article": "Instituto Atlético Central Córdoba"
+  },
+  "atletico-tucuman": {
+    "status": "ok",
+    "name": "Atlético Tucumán",
+    "file": "career/clubs/atletico-tucuman.png",
+    "bytes": 17040,
+    "source": "File:Atletico tucuman nuevo2.svg",
+    "license": "Public domain",
+    "artist": "Club Atlético Tucumán",
+    "page": "https://commons.wikimedia.org/wiki/File:Atletico_tucuman_nuevo2.svg",
+    "article": "Atlético Tucumán"
+  },
+  "union": {
+    "status": "no-free-crest",
+    "name": "Unión",
+    "article": "Unión de Santa Fe"
+  },
+  "central-cordoba-santiago-del-estero": {
+    "status": "no-free-crest",
+    "name": "Central Córdoba (Santiago del Estero)",
+    "article": "Central Córdoba de Santiago del Estero"
+  },
+  "tigre": {
+    "status": "no-free-crest",
+    "name": "Tigre",
+    "article": "Club Atlético Tigre"
+  },
+  "independiente-rivadavia": {
+    "status": "ok",
+    "name": "Independiente Rivadavia",
+    "file": "career/clubs/independiente-rivadavia.png",
+    "bytes": 57705,
+    "source": "File:Escudo del Club Independiente Rivadavia.svg",
+    "license": "Public domain",
+    "artist": "Unknown (Vector graphics by Trandos)",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Independiente_Rivadavia.svg",
+    "article": "Independiente Rivadavia"
+  },
+  "aldosivi": {
+    "status": "no-free-crest",
+    "name": "Aldosivi",
+    "article": "Club Atlético Aldosivi"
+  },
+  "estudiantes-rio-cuarto": {
+    "status": "ok",
+    "name": "Estudiantes (Río Cuarto)",
+    "file": "career/clubs/estudiantes-rio-cuarto.png",
+    "bytes": 24770,
+    "source": "File:Escudo Asociacion Atlética Estudiantes de Río Cuarto.svg",
+    "license": "Public domain",
+    "artist": "Marcelo Lopez Tobares",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_Asociacion_Atl%C3%A9tica_Estudiantes_de_R%C3%ADo_Cuarto.svg",
+    "article": "Estudiantes de Río Cuarto"
+  },
+  "gimnasia-y-esgrima-mendoza": {
+    "status": "ok",
+    "name": "Gimnasia y Esgrima (Mendoza)",
+    "file": "career/clubs/gimnasia-y-esgrima-mendoza.png",
+    "bytes": 10915,
+    "source": "File:Escudo Club Atlético Gimnasia y Esgrima Mendoza.png",
+    "license": "Public domain",
+    "artist": "Gimnasia y Esgrima Mendoza",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_Club_Atl%C3%A9tico_Gimnasia_y_Esgrima_Mendoza.png",
+    "article": "Gimnasia y Esgrima de Mendoza"
+  },
+  "sarmiento-junin": {
+    "status": "no-article",
+    "name": "Sarmiento (Junín)"
+  },
+  "barracas-central": {
+    "status": "ok",
+    "name": "Barracas Central",
+    "file": "career/clubs/barracas-central.png",
+    "bytes": 20624,
+    "source": "File:Barracas central logo.svg",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:Barracas_central_logo.svg",
+    "article": "Barracas Central"
+  },
+  "deportivo-riestra": {
+    "status": "ok",
+    "name": "Deportivo Riestra",
+    "file": "career/clubs/deportivo-riestra.png",
+    "bytes": 32354,
+    "source": "File:Escudo del Club Deportivo Riestra.svg",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Deportivo_Riestra.svg",
+    "article": "Deportivo Riestra"
+  },
+  "godoy-cruz": {
+    "status": "no-free-crest",
+    "name": "Godoy Cruz",
+    "article": "Godoy Cruz Antonio Tomba"
+  },
+  "colon": {
+    "status": "ok",
+    "name": "Colón",
+    "file": "career/clubs/colon.png",
+    "bytes": 34076,
+    "source": "File:Escudo Colon Con Estrella.png",
+    "license": "CC BY-SA 4.0",
+    "artist": "Colon Oficial",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_Colon_Con_Estrella.png",
+    "article": "Club Atlético Colón"
+  },
+  "san-martin-tucuman": {
+    "status": "ok",
+    "name": "San Martín (Tucumán)",
+    "file": "career/clubs/san-martin-tucuman.png",
+    "bytes": 17074,
+    "source": "File:San Martin de Tucuman logo.svg",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:San_Martin_de_Tucuman_logo.svg",
+    "article": "San Martín de Tucumán"
+  },
+  "quilmes": {
+    "status": "ok",
+    "name": "Quilmes",
+    "file": "career/clubs/quilmes.png",
+    "bytes": 24005,
+    "source": "File:Escudo de Quilmes Atlético Club.svg",
+    "license": "Public domain",
+    "artist": "Unknown  (vector graphics image by Trandos)",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_de_Quilmes_Atl%C3%A9tico_Club.svg",
+    "article": "Quilmes Atlético Club"
+  },
+  "chacarita-juniors": {
+    "status": "ok",
+    "name": "Chacarita Juniors",
+    "file": "career/clubs/chacarita-juniors.png",
+    "bytes": 20536,
+    "source": "File:Escudo del Club Atlético Chacarita Juniors.svg",
+    "license": "Public domain",
+    "artist": "C.A. Chicarita Juniors",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Atl%C3%A9tico_Chacarita_Juniors.svg",
+    "article": "Chacarita Juniors"
+  },
+  "all-boys": {
+    "status": "ok",
+    "name": "All Boys",
+    "file": "career/clubs/all-boys.png",
+    "bytes": 13139,
+    "source": "File:Escudo del Club Atlético All Boys.svg",
+    "license": "Public domain",
+    "artist": "Unknown (vector graphics image by Trandos)",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Atl%C3%A9tico_All_Boys.svg",
+    "article": "All Boys"
+  },
+  "ferro-carril-oeste": {
+    "status": "no-free-crest",
+    "name": "Ferro Carril Oeste",
+    "article": "Ferro Carril Oeste"
+  },
+  "san-martin-san-juan": {
+    "status": "ok",
+    "name": "San Martín (San Juan)",
+    "file": "career/clubs/san-martin-san-juan.png",
+    "bytes": 51563,
+    "source": "File:San Martín de San Juan.png",
+    "license": "CC0",
+    "artist": "OrgulloVerdinegro",
+    "page": "https://commons.wikimedia.org/wiki/File:San_Mart%C3%ADn_de_San_Juan.png",
+    "article": "San Martín de San Juan"
+  },
+  "patronato": {
+    "status": "no-free-crest",
+    "name": "Patronato",
+    "article": "Club Atlético Patronato"
+  },
+  "defensores-de-belgrano": {
+    "status": "ok",
+    "name": "Defensores de Belgrano",
+    "file": "career/clubs/defensores-de-belgrano.png",
+    "bytes": 30904,
+    "source": "File:Defensores de Belgrano Logo.svg",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:Defensores_de_Belgrano_Logo.svg",
+    "article": "Defensores de Belgrano"
+  },
+  "atletico-de-rafaela": {
+    "status": "ok",
+    "name": "Atlético de Rafaela",
+    "file": "career/clubs/atletico-de-rafaela.png",
+    "bytes": 36349,
+    "source": "File:Logotipo Oficial y Escudo del Club Atlético de Rafaela.svg",
+    "license": "Public domain",
+    "artist": "Unknown (vector graphics image by Trandos)",
+    "page": "https://commons.wikimedia.org/wiki/File:Logotipo_Oficial_y_Escudo_del_Club_Atl%C3%A9tico_de_Rafaela.svg",
+    "article": "Atlético de Rafaela"
+  },
+  "atlanta": {
+    "status": "ok",
+    "name": "Atlanta",
+    "file": "career/clubs/atlanta.png",
+    "bytes": 58400,
+    "source": "File:C.a. atlanta.png",
+    "license": "Public domain",
+    "artist": "ManuSryker",
+    "page": "https://commons.wikimedia.org/wiki/File:C.a._atlanta.png",
+    "article": "Club Atlético Atlanta"
+  },
+  "chaco-for-ever": {
+    "status": "ok",
+    "name": "Chaco For Ever",
+    "file": "career/clubs/chaco-for-ever.png",
+    "bytes": 10730,
+    "source": "File:Chaco For Ever-ARG.png",
+    "license": "Public domain",
+    "artist": "Club Atlético Chaco For Ever",
+    "page": "https://commons.wikimedia.org/wiki/File:Chaco_For_Ever-ARG.png",
+    "article": "Chaco For Ever"
+  },
+  "estudiantes-caseros": {
+    "status": "no-article",
+    "name": "Estudiantes (Caseros)"
+  },
+  "racing-cordoba": {
+    "status": "ok",
+    "name": "Racing (Córdoba)",
+    "file": "career/clubs/racing-cordoba.png",
+    "bytes": 8335,
+    "source": "File:Escudo del Club Racing de Córdoba.svg",
+    "license": "Public domain",
+    "artist": "Telebeam",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Racing_de_C%C3%B3rdoba.svg",
+    "article": "Racing de Córdoba"
+  },
+  "agropecuario": {
+    "status": "no-free-crest",
+    "name": "Agropecuario",
+    "article": "Club Agropecuario Argentino"
+  },
+  "gimnasia-y-esgrima-jujuy": {
+    "status": "ok",
+    "name": "Gimnasia y Esgrima (Jujuy)",
+    "file": "career/clubs/gimnasia-y-esgrima-jujuy.png",
+    "bytes": 25249,
+    "source": "File:Escudo de Gimnasia y Esgrima de Jujuy.svg",
+    "license": "CC BY-SA 4.0",
+    "artist": "Globinnn",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_de_Gimnasia_y_Esgrima_de_Jujuy.svg",
+    "article": "Gimnasia y Esgrima de Jujuy"
+  },
+  "gimnasia-y-tiro": {
+    "status": "no-free-crest",
+    "name": "Gimnasia y Tiro",
+    "article": "Gimnasia y Tiro"
+  },
+  "almirante-brown": {
+    "status": "ok",
+    "name": "Almirante Brown",
+    "file": "career/clubs/almirante-brown.png",
+    "bytes": 12732,
+    "source": "File:Escudo del Club Almirante Brown.svg",
+    "license": "Public domain",
+    "artist": "Unknown (Vector graphics image by Trandos)",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Almirante_Brown.svg",
+    "article": "Club Almirante Brown"
+  },
+  "central-norte-salta": {
+    "status": "no-free-crest",
+    "name": "Central Norte (Salta)",
+    "article": "Central Norte"
+  },
+  "ciudad-de-bolivar": {
+    "status": "no-free-crest",
+    "name": "Ciudad de Bolívar",
+    "article": "Club Ciudad de Bolívar"
+  },
+  "deportivo-maipu": {
+    "status": "ok",
+    "name": "Deportivo Maipú",
+    "file": "career/clubs/deportivo-maipu.png",
+    "bytes": 26123,
+    "source": "File:Escudo del Club Deportivo Maipu.svg",
+    "license": "Public domain",
+    "artist": "Unknown (Vector graphics logo by Trandos)",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Deportivo_Maipu.svg",
+    "article": "Deportivo Maipú"
+  },
+  "guemes": {
+    "status": "ok",
+    "name": "Güemes",
+    "file": "career/clubs/guemes.png",
+    "bytes": 20980,
+    "source": "File:Club Atletico Guemes512x.png",
+    "license": "Public domain",
+    "artist": "Luquitassh",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_Atletico_Guemes512x.png",
+    "article": "Club Atlético Güemes"
+  },
+  "acassuso": {
+    "status": "ok",
+    "name": "Acassuso",
+    "file": "career/clubs/acassuso.png",
+    "bytes": 65955,
+    "source": "File:Club acassuso logo.png",
+    "license": "Public domain",
+    "artist": "Club Atlético Acassuso",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_acassuso_logo.png",
+    "article": "Club Atlético Acassuso"
+  },
+  "colegiales": {
+    "status": "ok",
+    "name": "Colegiales",
+    "file": "career/clubs/colegiales.png",
+    "bytes": 40466,
+    "source": "File:Logo of Club Atlético Colegiales.svg",
+    "license": "Public domain",
+    "artist": "Unknown",
+    "page": "https://commons.wikimedia.org/wiki/File:Logo_of_Club_Atl%C3%A9tico_Colegiales.svg",
+    "article": "Club Atlético Colegiales (Argentina)"
+  },
+  "deportivo-madryn": {
+    "status": "ok",
+    "name": "Deportivo Madryn",
+    "file": "career/clubs/deportivo-madryn.png",
+    "bytes": 38523,
+    "source": "File:Escudo del Club Social y Deportivo Madryn.svg",
+    "license": "Public domain",
+    "artist": "Club Social y Deportivo Madryn",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Social_y_Deportivo_Madryn.svg",
+    "article": "Deportivo Madryn"
+  },
+  "ferroarril-midland": {
+    "status": "no-article",
+    "name": "Ferroarril Midland"
+  },
+  "mitre-santiago-del-estero": {
+    "status": "ok",
+    "name": "Mitre (Santiago del Estero)",
+    "file": "career/clubs/mitre-santiago-del-estero.png",
+    "bytes": 70911,
+    "source": "File:Escudo de la Ciudad de Santiago del Estero.svg",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_de_la_Ciudad_de_Santiago_del_Estero.svg",
+    "article": "Santiago del Estero"
+  },
+  "tristan-suarez": {
+    "status": "no-free-crest",
+    "name": "Tristán Suárez",
+    "article": "CSyD Tristán Suárez"
+  },
+  "san-miguel": {
+    "status": "ok",
+    "name": "San Miguel",
+    "file": "career/clubs/san-miguel.png",
+    "bytes": 20558,
+    "source": "File:SAN MIGUEL.png",
+    "license": "CC0",
+    "artist": "Joakotv17",
+    "page": "https://commons.wikimedia.org/wiki/File:SAN_MIGUEL.png",
+    "article": "Club Atlético San Miguel"
+  },
+  "deportivo-moron": {
+    "status": "no-free-crest",
+    "name": "Deportivo Morón",
+    "article": "Deportivo Morón"
+  },
+  "temperley": {
+    "status": "no-free-crest",
+    "name": "Temperley",
+    "article": "Temperley, Argentina"
+  },
+  "nueva-chicago": {
+    "status": "no-free-crest",
+    "name": "Nueva Chicago",
+    "article": "Club Atlético Nueva Chicago"
+  },
+  "real-madrid": {
+    "status": "no-free-crest",
+    "name": "Real Madrid",
+    "article": "2026–27 Real Madrid CF season"
+  },
+  "fc-barcelona": {
+    "status": "no-free-crest",
+    "name": "FC Barcelona",
+    "article": "2026–27 FC Barcelona season"
+  },
+  "atletico-de-madrid": {
+    "status": "no-free-crest",
+    "name": "Atlético de Madrid",
+    "article": "2025–26 Atlético Madrid season"
+  },
+  "athletic-club": {
+    "status": "no-free-crest",
+    "name": "Athletic Club",
+    "article": "Athletic Bilbao"
+  },
+  "real-sociedad": {
+    "status": "no-free-crest",
+    "name": "Real Sociedad",
+    "article": "2026–27 Real Sociedad season"
+  },
+  "villarreal": {
+    "status": "no-free-crest",
+    "name": "Villarreal",
+    "article": "2024–25 Villarreal CF season"
+  },
+  "sevilla-fc": {
+    "status": "no-free-crest",
+    "name": "Sevilla FC",
+    "article": "2026–27 Sevilla FC season"
+  },
+  "real-betis": {
+    "status": "no-free-crest",
+    "name": "Real Betis",
+    "article": "2024–25 Real Betis season"
+  },
+  "valencia-cf": {
+    "status": "no-free-crest",
+    "name": "Valencia CF",
+    "article": "List of Valencia CF seasons"
+  },
+  "celta-de-vigo": {
+    "status": "no-free-crest",
+    "name": "Celta de Vigo",
+    "article": "RC Celta de Vigo"
+  },
+  "osasuna": {
+    "status": "no-free-crest",
+    "name": "Osasuna",
+    "article": "2023–24 CA Osasuna season"
+  },
+  "rayo-vallecano": {
+    "status": "no-free-crest",
+    "name": "Rayo Vallecano",
+    "article": "Rayo Vallecano"
+  },
+  "rcd-espanyol": {
+    "status": "no-free-crest",
+    "name": "RCD Espanyol",
+    "article": "RCD Espanyol"
+  },
+  "getafe": {
+    "status": "ok",
+    "name": "Getafe",
+    "file": "career/clubs/getafe.png",
+    "bytes": 24209,
+    "source": "File:Demografía Getafe (España).png",
+    "license": "CC BY-SA 2.5",
+    "artist": "Miguel303xm",
+    "page": "https://commons.wikimedia.org/wiki/File:Demograf%C3%ADa_Getafe_(Espa%C3%B1a).png",
+    "article": "Getafe"
+  },
+  "deportivo-alaves": {
+    "status": "ok",
+    "name": "Deportivo Alavés",
+    "file": "career/clubs/deportivo-alaves.png",
+    "bytes": 43004,
+    "source": "File:CDAlavés1923.png",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:CDAlav%C3%A9s1923.png",
+    "article": "Deportivo Alavés"
+  },
+  "levante-ud": {
+    "status": "no-free-crest",
+    "name": "Levante UD",
+    "article": "Levante FC"
+  },
+  "deportivo-la-coruna": {
+    "status": "no-free-crest",
+    "name": "Deportivo La Coruña",
+    "article": "Deportivo de A Coruña"
+  },
+  "racing-santander": {
+    "status": "no-free-crest",
+    "name": "Racing Santander",
+    "article": "Racing de Santander"
+  },
+  "malaga-cf": {
+    "status": "no-free-crest",
+    "name": "Málaga CF",
+    "article": "Málaga CF"
+  },
+  "elche": {
+    "status": "no-free-crest",
+    "name": "Elche",
+    "article": "Elche"
+  },
+  "girona": {
+    "status": "no-free-crest",
+    "name": "Girona",
+    "article": "2023–24 Girona FC season"
+  },
+  "mallorca": {
+    "status": "no-free-crest",
+    "name": "Mallorca",
+    "article": "RCD Mallorca"
+  },
+  "granada": {
+    "status": "no-free-crest",
+    "name": "Granada",
+    "article": "Recreativo Granada"
+  },
+  "las-palmas": {
+    "status": "no-free-crest",
+    "name": "Las Palmas",
+    "article": "UD Las Palmas Atlético"
+  },
+  "sporting-de-gijon": {
+    "status": "no-free-crest",
+    "name": "Sporting de Gijón",
+    "article": "Sporting de Gijón"
+  },
+  "cadiz": {
+    "status": "no-free-crest",
+    "name": "Cádiz",
+    "article": "Cádiz CF"
+  },
+  "almeria": {
+    "status": "ok",
+    "name": "Almería",
+    "file": "career/clubs/almeria.png",
+    "bytes": 107227,
+    "source": "File:Escudo ciudad de Almería.svg",
+    "license": "Public domain",
+    "artist": "Miguillen",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_ciudad_de_Almer%C3%ADa.svg",
+    "article": "Almería"
+  },
+  "eibar": {
+    "status": "ok",
+    "name": "Eibar",
+    "file": "career/clubs/eibar.png",
+    "bytes": 101012,
+    "source": "File:Escudo de Eibar.svg",
+    "license": "CC BY 3.0",
+    "artist": "Miguillen(Taller de Heráldica y Vexilología in the Spanish Wikipedia )",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_de_Eibar.svg",
+    "article": "Eibar"
+  },
+  "real-oviedo": {
+    "status": "no-free-crest",
+    "name": "Real Oviedo",
+    "article": "Real Oviedo Vetusta"
+  },
+  "real-valladolid": {
+    "status": "no-free-crest",
+    "name": "Real Valladolid",
+    "article": "Real Valladolid Promesas"
+  },
+  "tenerife": {
+    "status": "ok",
+    "name": "Tenerife",
+    "file": "career/clubs/tenerife.png",
+    "bytes": 178677,
+    "source": "File:Tenerife formation.png",
+    "license": "Public domain",
+    "artist": "Original by Mimeetic, modified by Unconventional",
+    "page": "https://commons.wikimedia.org/wiki/File:Tenerife_formation.png",
+    "article": "Tenerife"
+  },
+  "albacete": {
+    "status": "ok",
+    "name": "Albacete",
+    "file": "career/clubs/albacete.png",
+    "bytes": 57294,
+    "source": "File:Escudo Albacete.svg",
+    "license": "CC BY-SA 4.0",
+    "artist": "Espanish AlB",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_Albacete.svg",
+    "article": "Albacete"
+  },
+  "cordoba": {
+    "status": "no-free-crest",
+    "name": "Córdoba",
+    "article": "Córdoba CF"
+  },
+  "burgos": {
+    "status": "no-free-crest",
+    "name": "Burgos",
+    "article": "Ricardo de Burgos Bengoetxea"
+  },
+  "celta-fortuna": {
+    "status": "no-free-crest",
+    "name": "Celta Fortuna",
+    "article": "RC Celta Fortuna"
+  },
+  "fc-andorra": {
+    "status": "no-free-crest",
+    "name": "FC Andorra",
+    "article": "FC Andorra"
+  },
+  "leganes": {
+    "status": "ok",
+    "name": "Leganés",
+    "file": "career/clubs/leganes.png",
+    "bytes": 143716,
+    "source": "File:Escudo de Leganes.svg",
+    "license": "CC BY-SA 4.0",
+    "artist": "SanchoPanzaXXI",
+    "page": "https://commons.wikimedia.org/wiki/File:Escudo_de_Leganes.svg",
+    "article": "Leganés"
+  },
+  "castellon": {
+    "status": "no-free-crest",
+    "name": "Castellón",
+    "article": "CD Castellón"
+  },
+  "real-sociedad-b": {
+    "status": "no-free-crest",
+    "name": "Real Sociedad B",
+    "article": "2026–27 Real Sociedad season"
+  },
+  "eldense": {
+    "status": "no-free-crest",
+    "name": "Eldense",
+    "article": "CD Eldense"
+  },
+  "ceuta": {
+    "status": "ok",
+    "name": "Ceuta",
+    "file": "career/clubs/ceuta.png",
+    "bytes": 65419,
+    "source": "File:Ceuta en.png",
+    "license": "CC BY-SA 3.0",
+    "artist": null,
+    "page": "https://commons.wikimedia.org/wiki/File:Ceuta_en.png",
+    "article": "2026 Ceuta migrant crisis"
+  },
+  "sabadell": {
+    "status": "no-free-crest",
+    "name": "Sabadell",
+    "article": "CE Sabadell FC"
+  },
+  "paris-saint-germain": {
+    "status": "no-free-crest",
+    "name": "Paris Saint-Germain",
+    "article": "Paris Saint-Germain FC"
+  },
+  "as-monaco": {
+    "status": "no-free-crest",
+    "name": "AS Mónaco",
+    "article": "AS Monaco FC"
+  },
+  "olympique-de-marsella": {
+    "status": "no-article",
+    "name": "Olympique de Marsella"
+  },
+  "olympique-de-lyon": {
+    "status": "no-free-crest",
+    "name": "Olympique de Lyon",
+    "article": "2006–07 Olympique Lyonnais season"
+  },
+  "losc-lille": {
+    "status": "no-article",
+    "name": "LOSC Lille"
+  },
+  "stade-brestois": {
+    "status": "no-free-crest",
+    "name": "Stade Brestois",
+    "article": "Stade Brestois 29"
+  },
+  "rc-strasbourg": {
+    "status": "no-free-crest",
+    "name": "RC Strasbourg",
+    "article": "RC Strasbourg Alsace"
+  },
+  "ogc-niza": {
+    "status": "no-article",
+    "name": "OGC Niza"
+  },
+  "stade-rennais": {
+    "status": "no-free-crest",
+    "name": "Stade Rennais",
+    "article": "Stade Rennais FC"
+  },
+  "angers-sco": {
+    "status": "ok",
+    "name": "Angers SCO",
+    "file": "career/clubs/angers-sco.png",
+    "bytes": 32259,
+    "source": "File:Angers Sporting Club de l'Ouest logo.svg",
+    "license": "Public domain",
+    "artist": "Angers Sporting Club de l'Ouest",
+    "page": "https://commons.wikimedia.org/wiki/File:Angers_Sporting_Club_de_l%27Ouest_logo.svg",
+    "article": "Angers SCO"
+  },
+  "aj-auxerre": {
+    "status": "no-free-crest",
+    "name": "AJ Auxerre",
+    "article": "AJ Auxerre"
+  },
+  "fc-lorient": {
+    "status": "no-free-crest",
+    "name": "FC Lorient",
+    "article": "FC Lorient"
+  },
+  "es-troyes": {
+    "status": "no-free-crest",
+    "name": "ES Troyes",
+    "article": "Troyes"
+  },
+  "le-havre-ac": {
+    "status": "no-free-crest",
+    "name": "Le Havre AC",
+    "article": "Le Havre AC"
+  },
+  "le-mans-fc": {
+    "status": "no-free-crest",
+    "name": "Le Mans FC",
+    "article": "Le Mans FC"
+  },
+  "montpellier-hsc": {
+    "status": "no-free-crest",
+    "name": "Montpellier HSC",
+    "article": "Montpellier HSC"
+  },
+  "stade-de-reims": {
+    "status": "ok",
+    "name": "Stade de Reims",
+    "file": "career/clubs/stade-de-reims.png",
+    "bytes": 14782,
+    "source": "File:Stade de Reims logo.svg",
+    "license": "Public domain",
+    "artist": "Stade de Reims",
+    "page": "https://commons.wikimedia.org/wiki/File:Stade_de_Reims_logo.svg",
+    "article": "Stade de Reims"
+  },
+  "fc-nantes": {
+    "status": "no-free-crest",
+    "name": "FC Nantes",
+    "article": "FC Nantes"
+  },
+  "as-saint-etienne": {
+    "status": "no-free-crest",
+    "name": "AS Saint-Étienne",
+    "article": "AS Saint-Étienne"
+  },
+  "fc-metz": {
+    "status": "no-free-crest",
+    "name": "FC Metz",
+    "article": "FC Metz"
+  },
+  "grenoble-foot-38": {
+    "status": "no-free-crest",
+    "name": "Grenoble Foot 38",
+    "article": "Grenoble Foot 38"
+  },
+  "as-nancy": {
+    "status": "no-free-crest",
+    "name": "AS Nancy",
+    "article": "AS Nancy Lorraine"
+  },
+  "fc-annecy": {
+    "status": "no-free-crest",
+    "name": "FC Annecy",
+    "article": "FC Annecy"
+  },
+  "fc-laval": {
+    "status": "no-free-crest",
+    "name": "FC Laval",
+    "article": "Stade Lavallois"
+  },
+  "usl-dunkerque": {
+    "status": "no-free-crest",
+    "name": "USL Dunkerque",
+    "article": "USL Dunkerque"
+  },
+  "pau-fc": {
+    "status": "no-free-crest",
+    "name": "Pau FC",
+    "article": "Pau FC"
+  },
+  "usl-boulogne": {
+    "status": "no-article",
+    "name": "USL Boulogne"
+  },
+  "red-star-fc": {
+    "status": "ok",
+    "name": "Red Star FC",
+    "file": "career/clubs/red-star-fc.png",
+    "bytes": 25927,
+    "source": "File:Red Star FC logo.svg",
+    "license": "Public domain",
+    "artist": "Red Star F.C.",
+    "page": "https://commons.wikimedia.org/wiki/File:Red_Star_FC_logo.svg",
+    "article": "Red Star FC"
+  },
+  "fc-rodez": {
+    "status": "no-free-crest",
+    "name": "FC Rodez",
+    "article": "Rodez AF"
+  },
+  "newcastle-united": {
+    "status": "no-free-crest",
+    "name": "Newcastle United",
+    "article": "Newcastle United F.C."
+  },
+  "aston-villa": {
+    "status": "no-free-crest",
+    "name": "Aston Villa",
+    "article": "Aston Villa F.C."
+  },
+  "leeds-united": {
+    "status": "no-free-crest",
+    "name": "Leeds United",
+    "article": "Leeds United F.C."
+  },
+  "brighton": {
+    "status": "no-free-crest",
+    "name": "Brighton",
+    "article": "2026–27 Brighton & Hove Albion F.C. season"
+  },
+  "nottingham-forest": {
+    "status": "no-free-crest",
+    "name": "Nottingham Forest",
+    "article": "2022–23 Nottingham Forest F.C. season"
+  },
+  "everton": {
+    "status": "ok",
+    "name": "Everton",
+    "file": "career/clubs/everton.png",
+    "bytes": 214834,
+    "source": "File:Séamus Coleman - Everton Football Club.png",
+    "license": "CC BY 3.0",
+    "artist": "Everton Football Club",
+    "page": "https://commons.wikimedia.org/wiki/File:S%C3%A9amus_Coleman_-_Everton_Football_Club.png",
+    "article": "Everton F.C."
+  },
+  "crystal-palace": {
+    "status": "no-free-crest",
+    "name": "Crystal Palace",
+    "article": "Crystal Palace F.C."
+  },
+  "fulham": {
+    "status": "no-free-crest",
+    "name": "Fulham",
+    "article": "Fulham F.C."
+  },
+  "bournemouth": {
+    "status": "no-free-crest",
+    "name": "Bournemouth",
+    "article": "AFC Bournemouth"
+  },
+  "brentford": {
+    "status": "no-free-crest",
+    "name": "Brentford",
+    "article": "Brentford F.C."
+  },
+  "ipswich-town": {
+    "status": "no-free-crest",
+    "name": "Ipswich Town",
+    "article": "Ipswich Town F.C."
+  },
+  "west-bromwich-albion": {
+    "status": "no-free-crest",
+    "name": "West Bromwich Albion",
+    "article": "West Bromwich Albion F.C."
+  },
+  "middlesbrough": {
+    "status": "no-free-crest",
+    "name": "Middlesbrough",
+    "article": "Middlesbrough F.C."
+  },
+  "wolverhampton-wanderers": {
+    "status": "no-free-crest",
+    "name": "Wolverhampton Wanderers",
+    "article": "Wolverhampton Wanderers F.C."
+  },
+  "southampton": {
+    "status": "no-free-crest",
+    "name": "Southampton",
+    "article": "Southampton F.C."
+  },
+  "burnley": {
+    "status": "no-free-crest",
+    "name": "Burnley",
+    "article": "Burnley F.C."
+  },
+  "watford": {
+    "status": "no-free-crest",
+    "name": "Watford",
+    "article": "Watford F.C."
+  },
+  "bolton-wanderers": {
+    "status": "no-free-crest",
+    "name": "Bolton Wanderers",
+    "article": "Bolton Wanderers F.C."
+  },
+  "portsmouth": {
+    "status": "no-free-crest",
+    "name": "Portsmouth",
+    "article": "Portsmouth F.C."
+  },
+  "derby-county": {
+    "status": "no-free-crest",
+    "name": "Derby County",
+    "article": "Derby County F.C."
+  },
+  "birmingham-city": {
+    "status": "no-free-crest",
+    "name": "Birmingham City",
+    "article": "2011–12 Birmingham City F.C. season"
+  },
+  "cardiff-city": {
+    "status": "no-free-crest",
+    "name": "Cardiff City",
+    "article": "Cardiff City F.C."
+  },
+  "queens-park-rangers": {
+    "status": "no-free-crest",
+    "name": "Queens Park Rangers",
+    "article": "Queens Park Rangers F.C."
+  },
+  "millwall": {
+    "status": "no-free-crest",
+    "name": "Millwall",
+    "article": "Millwall F.C."
+  },
+  "blackburn-rovers": {
+    "status": "no-free-crest",
+    "name": "Blackburn Rovers",
+    "article": "Blackburn Rovers F.C."
+  },
+  "preston-north-end": {
+    "status": "no-free-crest",
+    "name": "Preston North End",
+    "article": "Preston North End F.C."
+  },
+  "wrexham": {
+    "status": "no-free-crest",
+    "name": "Wrexham",
+    "article": "Wrexham A.F.C."
+  },
+  "lincoln-city": {
+    "status": "no-free-crest",
+    "name": "Lincoln City",
+    "article": "Lincoln City F.C."
+  },
+  "inter": {
+    "status": "no-free-crest",
+    "name": "Inter",
+    "article": "2019–20 Inter Milan season"
+  },
+  "ac-milan": {
+    "status": "no-free-crest",
+    "name": "AC Milan",
+    "article": "2026–27 AC Milan season"
+  },
+  "ea-guingamp": {
+    "status": "no-free-crest",
+    "name": "EA Guingamp",
+    "article": "En Avant Guingamp"
+  },
+  "dijon-fco": {
+    "status": "no-free-crest",
+    "name": "Dijon FCO",
+    "article": "Dijon FCO"
+  },
+  "fc-sochaux": {
+    "status": "no-free-crest",
+    "name": "FC Sochaux",
+    "article": "FC Sochaux-Montbéliard"
+  },
+  "liverpool": {
+    "status": "no-free-crest",
+    "name": "Liverpool",
+    "article": "Liverpool F.C."
+  },
+  "chelsea": {
+    "status": "no-free-crest",
+    "name": "Chelsea",
+    "article": "Chelsea F.C."
+  },
+  "manchester-united": {
+    "status": "no-free-crest",
+    "name": "Manchester United",
+    "article": "Manchester United F.C."
+  },
+  "sheffield-united": {
+    "status": "no-free-crest",
+    "name": "Sheffield United",
+    "article": "Sheffield United F.C."
+  },
+  "bristol-city": {
+    "status": "no-free-crest",
+    "name": "Bristol City",
+    "article": "Bristol City F.C."
+  },
+  "stoke-city": {
+    "status": "no-free-crest",
+    "name": "Stoke City",
+    "article": "Stoke City F.C."
+  },
+  "swansea-city": {
+    "status": "no-free-crest",
+    "name": "Swansea City",
+    "article": "Swansea City A.F.C."
+  },
+  "charlton-athletic": {
+    "status": "no-free-crest",
+    "name": "Charlton Athletic",
+    "article": "Charlton Athletic F.C."
+  },
+  "atalanta": {
+    "status": "no-free-crest",
+    "name": "Atalanta",
+    "article": "Atalanta BC"
+  },
+  "lazio": {
+    "status": "no-free-crest",
+    "name": "Lazio",
+    "article": "2018–19 SS Lazio season"
+  },
+  "como": {
+    "status": "ok",
+    "name": "Como",
+    "file": "career/clubs/como.png",
+    "bytes": 191401,
+    "source": "File:Como Cosenza Festa (cropped).png",
+    "license": "CC BY 4.0",
+    "artist": "Fra Casa",
+    "page": "https://commons.wikimedia.org/wiki/File:Como_Cosenza_Festa_(cropped).png",
+    "article": "Como 1907"
+  },
+  "monza": {
+    "status": "no-free-crest",
+    "name": "Monza",
+    "article": "AC Monza"
+  },
+  "parma": {
+    "status": "ok",
+    "name": "Parma",
+    "file": "career/clubs/parma.png",
+    "bytes": 49630,
+    "source": "File:Parma FC logo.png",
+    "license": "Public domain",
+    "artist": "Parma F.C.",
+    "page": "https://commons.wikimedia.org/wiki/File:Parma_FC_logo.png",
+    "article": "Parma Calcio 1913"
+  },
+  "lecce": {
+    "status": "no-free-crest",
+    "name": "Lecce",
+    "article": "US Lecce"
+  },
+  "sassuolo": {
+    "status": "no-free-crest",
+    "name": "Sassuolo",
+    "article": "US Sassuolo Calcio"
+  },
+  "venezia": {
+    "status": "no-free-crest",
+    "name": "Venezia",
+    "article": "Venezia FC"
+  },
+  "frosinone": {
+    "status": "no-free-crest",
+    "name": "Frosinone",
+    "article": "Frosinone Calcio"
+  },
+  "sampdoria": {
+    "status": "no-free-crest",
+    "name": "Sampdoria",
+    "article": "UC Sampdoria"
+  },
+  "palermo": {
+    "status": "no-free-crest",
+    "name": "Palermo",
+    "article": "Palermo FC"
+  },
+  "hellas-verona": {
+    "status": "no-free-crest",
+    "name": "Hellas Verona",
+    "article": "Hellas Verona FC"
+  },
+  "empoli": {
+    "status": "no-free-crest",
+    "name": "Empoli",
+    "article": "Empoli FC"
+  },
+  "pisa": {
+    "status": "no-free-crest",
+    "name": "Pisa",
+    "article": "Pisa SC"
+  },
+  "cremonese": {
+    "status": "no-free-crest",
+    "name": "Cremonese",
+    "article": "US Cremonese"
+  },
+  "modena": {
+    "status": "no-free-crest",
+    "name": "Modena",
+    "article": "Modena FC 2018"
+  },
+  "ascoli": {
+    "status": "no-free-crest",
+    "name": "Ascoli",
+    "article": "Ascoli Calcio 1898 FC"
+  },
+  "avellino": {
+    "status": "no-free-crest",
+    "name": "Avellino",
+    "article": "US Avellino 1912"
+  },
+  "sudtirol": {
+    "status": "no-free-crest",
+    "name": "Südtirol",
+    "article": "FC Südtirol"
+  },
+  "arezzo": {
+    "status": "no-free-crest",
+    "name": "Arezzo",
+    "article": "SS Arezzo"
+  },
+  "juve-stabia": {
+    "status": "no-free-crest",
+    "name": "Juve Stabia",
+    "article": "SS Juve Stabia"
+  },
+  "mantova": {
+    "status": "ok",
+    "name": "Mantova",
+    "file": "career/clubs/mantova.png",
+    "bytes": 35283,
+    "source": "File:Logo Mantova FC.svg",
+    "license": "CC BY-SA 4.0",
+    "artist": "Vale93b (talk)",
+    "page": "https://commons.wikimedia.org/wiki/File:Logo_Mantova_FC.svg",
+    "article": "Mantova 1911"
+  },
+  "padova": {
+    "status": "ok",
+    "name": "Padova",
+    "file": "career/clubs/padova.png",
+    "bytes": 15720,
+    "source": "File:Calcio Padova logo.svg",
+    "license": "Public domain",
+    "artist": "Calcio Padova",
+    "page": "https://commons.wikimedia.org/wiki/File:Calcio_Padova_logo.svg",
+    "article": "Calcio Padova"
+  },
+  "carrarese": {
+    "status": "no-free-crest",
+    "name": "Carrarese",
+    "article": "Carrarese Calcio 1908"
+  },
+  "virtus-entella": {
+    "status": "no-free-crest",
+    "name": "Virtus Entella",
+    "article": "Virtus Entella"
+  },
+  "athletico-paranaense": {
+    "status": "ok",
+    "name": "Athletico Paranaense",
+    "file": "career/clubs/athletico-paranaense.png",
+    "bytes": 51315,
+    "source": "File:CA Paranaense.svg",
+    "license": "Public domain",
+    "artist": "Clube Atlético Paranaense",
+    "page": "https://commons.wikimedia.org/wiki/File:CA_Paranaense.svg",
+    "article": "Club Athletico Paranaense"
+  },
+  "botafogo": {
+    "status": "ok",
+    "name": "Botafogo",
+    "file": "career/clubs/botafogo.png",
+    "bytes": 11531,
+    "source": "File:Botafogo de Futebol e Regatas logo.svg",
+    "license": "Public domain",
+    "artist": "Botafogo de Futebol e Regatas",
+    "page": "https://commons.wikimedia.org/wiki/File:Botafogo_de_Futebol_e_Regatas_logo.svg",
+    "article": "Botafogo FR"
+  },
+  "fluminense": {
+    "status": "ok",
+    "name": "Fluminense",
+    "file": "career/clubs/fluminense.png",
+    "bytes": 38461,
+    "source": "File:Fluminense Football Club.svg",
+    "license": "Public domain",
+    "artist": "Fluminense FC",
+    "page": "https://commons.wikimedia.org/wiki/File:Fluminense_Football_Club.svg",
+    "article": "Fluminense FC"
+  },
+  "bahia": {
+    "status": "ok",
+    "name": "Bahia",
+    "file": "career/clubs/bahia.png",
+    "bytes": 1761,
+    "source": "File:Bandeira da Bahia.svg",
+    "license": "Public domain",
+    "artist": "Diocleciano Ramos",
+    "page": "https://commons.wikimedia.org/wiki/File:Bandeira_da_Bahia.svg",
+    "article": "Salvador, Bahia"
+  },
+  "chapecoense": {
+    "status": "ok",
+    "name": "Chapecoense",
+    "file": "career/clubs/chapecoense.png",
+    "bytes": 67441,
+    "source": "File:Logo Associação Chapecoense de Futebol.svg",
+    "license": "Public domain",
+    "artist": "Chapecoense",
+    "page": "https://commons.wikimedia.org/wiki/File:Logo_Associa%C3%A7%C3%A3o_Chapecoense_de_Futebol.svg",
+    "article": "Associação Chapecoense de Futebol"
+  },
+  "inter-miami": {
+    "status": "no-free-crest",
+    "name": "Inter Miami",
+    "article": "Inter Miami CF"
+  },
+  "la-galaxy": {
+    "status": "ok",
+    "name": "LA Galaxy",
+    "file": "career/clubs/la-galaxy.png",
+    "bytes": 39631,
+    "source": "File:Los Angeles Galaxy logo.svg",
+    "license": "Public domain",
+    "artist": "LA Galaxy",
+    "page": "https://commons.wikimedia.org/wiki/File:Los_Angeles_Galaxy_logo.svg",
+    "article": "LA Galaxy"
+  },
+  "los-angeles-fc": {
+    "status": "ok",
+    "name": "Los Angeles FC",
+    "file": "career/clubs/los-angeles-fc.png",
+    "bytes": 7359,
+    "source": "File:Los Angeles FC LA mark.svg",
+    "license": "Public domain",
+    "artist": "Los Angeles Football Club",
+    "page": "https://commons.wikimedia.org/wiki/File:Los_Angeles_FC_LA_mark.svg",
+    "article": "Los Angeles FC"
+  },
+  "columbus-crew": {
+    "status": "ok",
+    "name": "Columbus Crew",
+    "file": "career/clubs/columbus-crew.png",
+    "bytes": 43289,
+    "source": "File:Columbus seal.png",
+    "license": "Public domain",
+    "artist": "City of Columbus",
+    "page": "https://commons.wikimedia.org/wiki/File:Columbus_seal.png",
+    "article": "Columbus Crew"
+  },
+  "seattle-sounders": {
+    "status": "no-free-crest",
+    "name": "Seattle Sounders",
+    "article": "Seattle Sounders FC"
+  },
+  "philadelphia-union": {
+    "status": "no-free-crest",
+    "name": "Philadelphia Union",
+    "article": "Philadelphia Union"
+  },
+  "atlanta-united": {
+    "status": "no-free-crest",
+    "name": "Atlanta United",
+    "article": "Atlanta United FC"
+  },
+  "minnesota-united": {
+    "status": "no-free-crest",
+    "name": "Minnesota United",
+    "article": "Minnesota United FC"
+  },
+  "orlando-city": {
+    "status": "no-free-crest",
+    "name": "Orlando City",
+    "article": "Orlando City SC"
+  },
+  "vancouver-whitecaps": {
+    "status": "no-free-crest",
+    "name": "Vancouver Whitecaps",
+    "article": "Vancouver Whitecaps FC"
+  },
+  "charlotte-fc": {
+    "status": "ok",
+    "name": "Charlotte FC",
+    "file": "career/clubs/charlotte-fc.png",
+    "bytes": 83236,
+    "source": "File:New seal of Charlotte, North Carolina.svg",
+    "license": "Public domain",
+    "artist": "City of Charlotte, North Carolina",
+    "page": "https://commons.wikimedia.org/wiki/File:New_seal_of_Charlotte,_North_Carolina.svg",
+    "article": "Charlotte FC"
+  },
+  "nashville-sc": {
+    "status": "ok",
+    "name": "Nashville SC",
+    "file": "career/clubs/nashville-sc.png",
+    "bytes": 125088,
+    "source": "File:Parthenon Nashville.png",
+    "license": "CC BY-SA 4.0",
+    "artist": "White.alister.t",
+    "page": "https://commons.wikimedia.org/wiki/File:Parthenon_Nashville.png",
+    "article": "Nashville, Tennessee"
+  },
+  "colorado-rapids": {
+    "status": "ok",
+    "name": "Colorado Rapids",
+    "file": "career/clubs/colorado-rapids.png",
+    "bytes": 103685,
+    "source": "File:Seal of Denver, Colorado.svg",
+    "license": "Public domain",
+    "artist": "Original: Stephan Cree Vector:  King Henry1Stephens",
+    "page": "https://commons.wikimedia.org/wiki/File:Seal_of_Denver,_Colorado.svg",
+    "article": "Colorado Rapids"
+  },
+  "houston-dynamo": {
+    "status": "ok",
+    "name": "Houston Dynamo",
+    "file": "career/clubs/houston-dynamo.png",
+    "bytes": 26673,
+    "source": "File:Houston Dynamo FC logo.svg",
+    "license": "Public domain",
+    "artist": "Houston Dynamo FC",
+    "page": "https://commons.wikimedia.org/wiki/File:Houston_Dynamo_FC_logo.svg",
+    "article": "Houston Dynamo FC"
+  },
+  "austin-fc": {
+    "status": "no-free-crest",
+    "name": "Austin FC",
+    "article": "Austin FC"
+  },
+  "d-c-united": {
+    "status": "ok",
+    "name": "D.C. United",
+    "file": "career/clubs/d-c-united.png",
+    "bytes": 63179,
+    "source": "File:United States (+overseas), administrative divisions - en - colored (zoom).svg",
+    "license": "CC BY-SA 3.0",
+    "artist": "TUBS",
+    "page": "https://commons.wikimedia.org/wiki/File:United_States_(%2Boverseas),_administrative_divisions_-_en_-_colored_(zoom).svg",
+    "article": "United States"
+  },
+  "st-louis-city": {
+    "status": "ok",
+    "name": "St. Louis City",
+    "file": "career/clubs/st-louis-city.png",
+    "bytes": 32997,
+    "source": "File:Logo of St. Louis City SC.svg",
+    "license": "Public domain",
+    "artist": "St. Louis City SC",
+    "page": "https://commons.wikimedia.org/wiki/File:Logo_of_St._Louis_City_SC.svg",
+    "article": "St. Louis City SC"
+  },
+  "san-jose-earthquakes": {
+    "status": "no-free-crest",
+    "name": "San Jose Earthquakes",
+    "article": "San Jose Earthquakes"
+  },
+  "chicago-fire": {
+    "status": "no-free-crest",
+    "name": "Chicago Fire",
+    "article": "Chicago Fire FC"
+  },
+  "sporting-kansas-city": {
+    "status": "no-free-crest",
+    "name": "Sporting Kansas City",
+    "article": "Sporting Kansas City"
+  },
+  "cf-montreal": {
+    "status": "no-free-crest",
+    "name": "CF Montréal",
+    "article": "CF Montréal"
+  },
+  "toronto-fc": {
+    "status": "no-free-crest",
+    "name": "Toronto FC",
+    "article": "Inter Toronto FC"
+  },
+  "america": {
+    "status": "no-free-crest",
+    "name": "América",
+    "article": "Club América"
+  },
+  "chivas-de-guadalajara": {
+    "status": "no-article",
+    "name": "Chivas de Guadalajara"
+  },
+  "tigres-uanl": {
+    "status": "no-free-crest",
+    "name": "Tigres UANL",
+    "article": "Tigres UANL (women)"
+  },
+  "pachuca": {
+    "status": "no-free-crest",
+    "name": "Pachuca",
+    "article": "C.F. Pachuca"
+  },
+  "club-leon": {
+    "status": "no-free-crest",
+    "name": "Club León",
+    "article": "Club León"
+  },
+  "atlas": {
+    "status": "ok",
+    "name": "Atlas",
+    "file": "career/clubs/atlas.png",
+    "bytes": 14103,
+    "source": "File:Fútbol Club Atlas.svg",
+    "license": "Public domain",
+    "artist": "pescudo",
+    "page": "https://commons.wikimedia.org/wiki/File:F%C3%BAtbol_Club_Atlas.svg",
+    "article": "Atlas F.C."
+  },
+  "pumas-unam": {
+    "status": "no-free-crest",
+    "name": "Pumas UNAM",
+    "article": "Pumas UNAM"
+  },
+  "santos-laguna": {
+    "status": "no-free-crest",
+    "name": "Santos Laguna",
+    "article": "Santos Laguna"
+  },
+  "tijuana": {
+    "status": "no-free-crest",
+    "name": "Tijuana",
+    "article": "Club Tijuana"
+  },
+  "atletico-san-luis": {
+    "status": "no-free-crest",
+    "name": "Atlético San Luis",
+    "article": "Atlético San Luis"
+  },
+  "necaxa": {
+    "status": "ok",
+    "name": "Necaxa",
+    "file": "career/clubs/necaxa.png",
+    "bytes": 31039,
+    "source": "File:Club Necaxa Logo.svg",
+    "license": "Public domain",
+    "artist": "Impulsora del Deportivo Necaxa, S.A. de C.V. (Club Necaxa)",
+    "page": "https://commons.wikimedia.org/wiki/File:Club_Necaxa_Logo.svg",
+    "article": "Club Necaxa"
+  },
+  "fc-juarez": {
+    "status": "no-free-crest",
+    "name": "FC Juárez",
+    "article": "FC Juárez"
+  },
+  "puebla": {
+    "status": "no-free-crest",
+    "name": "Puebla",
+    "article": "Club Puebla"
+  },
+  "queretaro": {
+    "status": "no-free-crest",
+    "name": "Querétaro",
+    "article": "Querétaro F.C."
+  },
+  "atlante": {
+    "status": "no-free-crest",
+    "name": "Atlante",
+    "article": "Atlante F.C."
+  }
+}

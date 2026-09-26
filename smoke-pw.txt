@@ -1,0 +1,46 @@
+
+> avergas-club@0.1.0 smoke
+> node scripts/smoke-all.mjs
+
+PASS  smoke-accept-transfer.mjs  (0.9s)  TODO OK
+PASS  smoke-career-all-clubs.mjs  (14.6s)  TODO OK
+PASS  smoke-career-clubs.mjs  (0.5s)  TODO OK
+PASS  smoke-career-events.mjs  (0.6s)  TODO OK
+PASS  smoke-career-flow.mjs  (1.0s)  ✅ smoke-career-flow: TODO OK
+PASS  smoke-career-integration.mjs  (0.3s)  ✅ smoke-career-integration: TODO OK
+PASS  smoke-career-persistence.mjs  (0.6s)  ✅ smoke-career-persistence: TODO OK
+FAIL  smoke-career-ui.mjs  (8.5s)  x FAIL: ClubBadge usa el logo real de river-plate · x FAIL: ClubBadge: falta "BOC"
+node.exe : 
+En C:\nvm4w\nodejs\npm.ps1: 29 Car�cter: 3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+== 1) Build SSR del entry de UI ==
+   bundle: tmp/ssr-ui/career-ui-entry.js
+== 2) Render por fase (estado real del motor) ==
+   renders verificados · logo real: river-plate · fallback: boca-juniors
+11 FALLAS
+  x FAIL: CareerHeader: falta "Atlante"
+  x FAIL: CareerHeader: falta "Debut"
+  x FAIL: CareerHistory: HTML vacío
+  x FAIL: CareerHeader: falta "RC Strasbourg"
+  x FAIL: CareerSeasonReport: HTML vacío
+  x FAIL: CareerEvent: falta "El tÃ©cnico nuevo"
+  x FAIL: TransferOffers: falta "OVR"
+  x FAIL: CareerTimeline: falta "Historial"
+  x FAIL: ClubBadge: falta "<img"
+  x FAIL: ClubBadge usa el logo real de river-plate
+  x FAIL: ClubBadge: falta "BOC"
+PASS  smoke-offers.mjs  (0.4s)  TODO OK
+PASS  smoke-resolve-stay.mjs  (1.8s)  TODO OK
+PASS  smoke-retire-career.mjs  (0.7s)  TODO OK
+PASS  smoke-simulate-segment.mjs  (0.8s)  ✅ smoke-simulate-segment: TODO OK
+PASS  smoke-use-career-persistence.mjs  (2.1s)  ✅ smoke-use-career-persistence: TODO OK
+PASS  smoke-use-career.mjs  (0.5s)  ✅ smoke-use-career: TODO OK
+PASS  smoke-youth-offers.mjs  (0.4s)  TODO OK
+
+14/15 smoke tests en verde
+Fallaron: smoke-career-ui.mjs
+SMOKE_EXIT=0

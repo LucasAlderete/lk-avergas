@@ -1,0 +1,2037 @@
+/* ==========================================================================
+   CAREER SCREEN — Modo Carrera (Paso 11A)
+   ==========================================================================
+   CSS AISLADO de la pantalla del modo carrera: fondo oscuro, índigo como acento
+   y estética de menú deportivo. Reglas de este archivo:
+
+   - Todo vive bajo `.career-screen` y usa prefijo `.career-*`: NO reutiliza
+     clases globales conflictivas (`.history`, `.event-panel`, `.choice-button`,
+     `.player-tile`, `.primary-button`, `.page-header`...), así el tema global
+     existente (styles.css) no puede pisar estas reglas ni
+     estas reglas alterar otras pantallas.
+   - Sin `!important`. Los colores dinámicos (escudo del club) se pasan por
+     custom properties desde el componente (--club-primary / --club-secondary).
+   - Contraste: los textos secundarios se mantienen en #9db0a3 o más claro
+     sobre fondos #101a15 (≈7:1), nunca gris oscuro sobre gris oscuro.
+   ========================================================================== */
+
+.career-screen {
+  /* Paleta local del modo carrera: dark deportivo sobrio, índigo como identidad.
+     Verde solo para éxito/crecimiento, dorado para logros, rojo para daño. */
+  --c-bg: #080D14;
+  --c-panel: #101923;
+  --c-panel-2: #151F2B;
+  --c-panel-3: #0B1220;
+  --c-line: #263544;
+  --c-line-2: #33475C;
+  --c-text: #F1F4F8;
+  --c-text-2: #C7D1DD;
+  --c-muted: #A4AFBD;
+  --c-dim: #697586;
+  --c-accent: #8B93E6;
+  --c-primary: #5865C7;
+  --c-primary-hover: #6875D6;
+  --c-primary-dark: #3D478F;
+  --c-success: #52C878;
+  --c-gold: #D6A84F;
+  --c-warning: #D6A84F;
+  --c-danger: #D45C6A;
+  --c-danger-soft: rgba(212, 92, 106, 0.14);
+  --c-radius: 14px;
+  --c-shadow: 0 14px 30px rgba(0, 0, 0, 0.42);
+  /* Aliases con los nombres pedidos en el brief: apuntan a los mismos valores. */
+  --career-bg: #080D14;
+  --career-panel: #101923;
+  --career-panel-2: #151F2B;
+  --career-border: #263544;
+  --career-primary: #5865C7;
+  --career-primary-hover: #6875D6;
+  --career-primary-dark: #3D478F;
+  --career-text: #F1F4F8;
+  --career-muted: #A4AFBD;
+  --career-muted-2: #697586;
+  --career-success: #52C878;
+  --career-warning: #D6A84F;
+  --career-danger: #D45C6A;
+  --c-nav-clearance: 92px;
+
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: .5rem .5rem calc(.5rem + var(--c-nav-clearance));
+  overflow-x: clip;
+  overflow-x: hidden; /* red de seguridad contra overflow accidental */
+  color: var(--c-text);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+  background-color: var(--c-bg);
+  background-image:
+  radial-gradient(
+    ellipse 120% 70% at 50% -12%,
+    rgba(91, 190, 230, 0.26),
+    transparent 62%
+  ),
+  radial-gradient(
+    ellipse 80% 60% at 100% 8%,
+    rgba(103, 202, 238, 0.14),
+    transparent 58%
+  ),
+  repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.014) 0 2px,
+    transparent 2px 6px
+  ),
+  linear-gradient(
+    168deg,
+    #0b1821 0%,
+    #080D14 46%,
+    #0a141c 100%
+  );
+}
+
+/* Con la pantalla de carrera montada, el fondo global del sitio (madera/silver
+   del tema clásico) no debe asomar detrás ni debajo de la pantalla. */
+body:has(.career-screen) {
+  background-color: #080D14;
+  background-image: none;
+}
+
+body:has(.career-screen)::before,
+body:has(.career-screen)::after {
+  display: none;
+}
+
+.career-screen *,
+.career-screen *::before,
+.career-screen *::after {
+  box-sizing: border-box;
+}
+
+.career-shell {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.2vw, 14px);
+  width: min(100%, 1180px);
+  margin: 0 auto;
+}
+
+.career-screen h1,
+.career-screen h2,
+.career-screen h3,
+.career-screen p {
+  margin: 0;
+  color: inherit;
+}
+
+.career-screen button {
+  font-family: inherit;
+  letter-spacing: inherit;
+  display: flex;
+  justify-content: space-between;
+}
+
+.career-screen button:focus-visible,
+.career-screen input:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+
+/* --------------------------------------------------------------------------
+   Primitivas compartidas: panel, títulos, chips, escudo, botones, avisos
+   -------------------------------------------------------------------------- */
+
+.career-section {
+  position: relative;
+  padding: clamp(14px, 2vw, 22px);
+  border: 1px solid var(--c-line);
+  border-radius: var(--c-radius);
+  background: linear-gradient(155deg, var(--c-panel), var(--c-panel-3));
+  box-shadow: var(--c-shadow), inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.career-section--accent {
+  border-color: var(--c-line-2);
+  background: linear-gradient(155deg, rgba(24, 33, 50, 0.96), rgba(9, 14, 22, 0.96));
+}
+
+.career-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--c-line);
+}
+
+.career-section-kicker {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  color: var(--c-accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.career-section-title {
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif;
+  font-size: clamp(1.15rem, 2.4vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.career-section-note {
+  color: var(--c-muted);
+  font-size: 0.9rem;
+}
+
+.career-chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  max-width: 100%;
+  padding: 5px 10px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--c-text-2);
+  font-size: 0.83rem;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.career-chip--accent {
+  border-color: rgba(139, 240, 95, 0.42);
+  background: rgba(139, 240, 95, 0.14);
+  color: #d7ffc4;
+}
+
+.career-chip--gold {
+  border-color: rgba(214, 168, 79, 0.44);
+  background: rgba(214, 168, 79, 0.14);
+  color: #F0D49A;
+}
+
+.career-chip--warn {
+  border-color: rgba(212, 92, 106, 0.44);
+  background: var(--c-danger-soft);
+  color: #F2B8C1;
+}
+
+.career-badge {
+  --club-primary: #223529;
+  --club-secondary: #0d1512;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 2px solid rgba(255, 255, 255, 0.24);
+  border-radius: 14px 14px 22px 22px;
+  background: linear-gradient(160deg, var(--club-primary), var(--club-secondary));
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Logo real: imagen en vez de texto simbólico */
+.career-badge--with-logo {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.career-badge img {
+  display: block;
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.career-badge--sm {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px 10px 16px 16px;
+  font-size: 1rem;
+}
+
+.career-badge--sm img {
+  width: 78%;
+  height: 78%;
+}
+
+.career-badge--lg {
+  width: 92px;
+  height: 92px;
+  font-size: 1.9rem;
+}
+
+.career-badge--lg img {
+  width: 75%;
+  height: 75%;
+}
+
+.career-button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border: 1px solid var(--c-line-2);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  color: var(--c-text);
+  font-size: 0.94rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+}
+
+.career-button:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+}
+
+.career-button:disabled {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #b7c4ba;
+  cursor: not-allowed;
+}
+
+.career-button--primary {
+  border-color: #a8f585;
+  background: linear-gradient(180deg, #9cf06d, #3fae5f);
+  color: #08210f;
+  box-shadow: 0 12px 26px rgba(78, 203, 113, 0.28), inset 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.career-button--primary:hover {
+  background: linear-gradient(180deg, #acf885, #47bd69);
+}
+
+.career-button--ghost {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-2);
+}
+
+.career-button--danger {
+  border-color: rgba(212, 92, 106, 0.5);
+  background: linear-gradient(180deg, rgba(212, 92, 106, 0.22), rgba(212, 92, 106, 0.08));
+  color: #F2BCC3;
+}
+
+.career-button--block {
+  width: 100%;
+}
+
+.career-icon-button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--c-line);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--c-text-2);
+  cursor: pointer;
+  justify-content: center !important;
+}
+
+.career-icon-button:hover {
+  border-color: var(--c-line-2);
+  color: var(--c-text);
+}
+
+.career-empty {
+  color: var(--c-muted);
+  font-size: 0.94rem;
+}
+
+.career-muted {
+  color: var(--c-muted);
+}
+
+.career-flash {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid rgba(139, 240, 95, 0.4);
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(139, 240, 95, 0.16), rgba(139, 240, 95, 0.03));
+  color: #dcffca;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.career-flash--warn {
+  border-color: rgba(214, 168, 79, 0.45);
+  background: linear-gradient(90deg, rgba(214, 168, 79, 0.18), rgba(214, 168, 79, 0.04));
+  color: #F0D49A;
+}
+
+.career-alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid rgba(214, 168, 79, 0.4);
+  border-radius: 12px;
+  background: rgba(214, 168, 79, 0.1);
+  color: #F2DFAE;
+  font-size: 0.92rem;
+}
+
+.career-alert--danger {
+  border-color: rgba(212, 92, 106, 0.5);
+  background: var(--c-danger-soft);
+  color: #F0BFC6;
+}
+
+/* --------------------------------------------------------------------------
+   Header: identidad del jugador + OVR protagonista
+   -------------------------------------------------------------------------- */
+
+.career-header {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(14px, 2.2vw, 24px);
+  border: 1px solid var(--c-line-2);
+  border-radius: calc(var(--c-radius) + 4px);
+  background:
+    radial-gradient(ellipse 70% 120% at 12% -30%, rgba(139, 240, 95, 0.2), transparent 60%),
+    linear-gradient(140deg, rgba(28, 46, 34, 0.98), rgba(8, 14, 11, 0.98));
+  box-shadow: var(--c-shadow), inset 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.career-header::after {
+  content: '';
+  position: absolute;
+  inset: auto -60px -120px auto;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(88, 101, 199, 0.20), transparent 70%);
+  pointer-events: none;
+}
+
+.career-header-top {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.career-header-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.career-header-main {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(12px, 2vw, 22px);
+  align-items: center;
+}
+
+.career-identity {
+  display: flex;
+  flex: 1 1 260px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.career-kicker {
+  color: var(--c-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+}
+
+.career-name {
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif;
+  font-size: clamp(2.1rem, 6vw, 3.4rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  overflow-wrap: anywhere;
+}
+
+.career-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.career-ovr {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 2px;
+  place-items: center;
+  min-width: 132px;
+  padding: 12px 18px;
+  border: 1px solid rgba(139, 240, 95, 0.42);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(139, 240, 95, 0.16), rgba(0, 0, 0, 0.28));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.12);
+  text-align: center;
+}
+
+.career-ovr-label {
+  color: #d7ffc4;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+}
+
+.career-ovr-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2.9rem, 8vw, 4rem);
+  font-weight: 700;
+  line-height: 1;
+  color: #f4ffe9;
+  text-shadow: 0 0 22px rgba(139, 240, 95, 0.45);
+}
+
+.career-ovr-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  color: var(--c-text-2);
+  font-size: 0.82rem;
+}
+
+.career-stars {
+  display: inline-flex;
+  gap: 2px;
+  color: var(--c-gold);
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+}
+
+.career-header-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-line);
+}
+
+.career-fact {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  color: var(--c-text-2);
+  font-size: 0.9rem;
+}
+
+.career-fact svg {
+  color: var(--c-accent);
+}
+
+.career-fact b {
+  color: var(--c-text);
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Strip de última temporada (números grandes)
+   -------------------------------------------------------------------------- */
+
+.career-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.career-strip-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.24));
+}
+
+.career-strip-label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--c-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.career-strip-label svg {
+  color: var(--c-accent);
+}
+
+.career-strip-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(1.6rem, 4.4vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--c-text);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .career-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Overview: estado de carrera, atributos, trofeos y logros
+   -------------------------------------------------------------------------- */
+
+.career-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.career-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.career-stat-label {
+  color: var(--c-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.career-stat-value {
+  color: var(--c-text);
+  font-size: 1.02rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.career-stat-value--big {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: #d7ffc4;
+}
+
+.career-stat-note {
+  color: var(--c-dim);
+  font-size: 0.82rem;
+}
+
+.career-subtitle {
+  margin: 16px 0 9px;
+  color: var(--c-text-2);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.career-subtitle:first-child {
+  margin-top: 0;
+}
+
+.career-attrs {
+  display: grid;
+  gap: 9px;
+}
+
+.career-attr-head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  color: var(--c-text-2);
+  font-size: 0.86rem;
+}
+
+.career-attr-head b {
+  color: var(--c-text);
+  font-size: 0.92rem;
+}
+
+.career-attr-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.career-attr-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3fae5f, #a6f57d);
+  box-shadow: 0 0 12px rgba(139, 240, 95, 0.4);
+}
+
+.career-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.career-tag {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  max-width: 100%;
+  padding: 7px 11px;
+  border: 1px solid rgba(214, 168, 79, 0.36);
+  border-radius: 10px;
+  background: rgba(214, 168, 79, 0.1);
+  color: #F0D49A;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.career-tag small {
+  color: #C9A86A;
+  font-size: 0.78rem;
+}
+
+/* --------------------------------------------------------------------------
+   Contenido de la fase: panel protagonista
+   -------------------------------------------------------------------------- */
+
+.career-phase {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.6vw, 18px);
+  min-width: 0;
+}
+
+.career-phase-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.career-phase-title {
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.career-phase-copy {
+  max-width: 62ch;
+  margin-top: 6px;
+  color: var(--c-text-2);
+  font-size: 0.98rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* Resumen de temporada (reporte deportivo) --------------------------------- */
+
+.career-report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.career-report-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.26));
+  text-align: center;
+}
+
+.career-report-label {
+  color: var(--c-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.career-report-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--c-text);
+}
+
+.career-report-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.career-delta {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 11px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-2);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.career-delta--up {
+  border-color: rgba(139, 240, 95, 0.42);
+  background: rgba(139, 240, 95, 0.14);
+  color: #d7ffc4;
+}
+
+.career-delta--down {
+  border-color: rgba(212, 92, 106, 0.44);
+  background: var(--c-danger-soft);
+  color: #F2B8C1;
+}
+
+.career-report-club {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.career-report-club strong {
+  display: block;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.career-report-club span {
+  color: var(--c-muted);
+  font-size: 0.86rem;
+}
+
+/* Ofertas ------------------------------------------------------------------ */
+
+.career-offers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: clamp(10px, 1.6vw, 16px);
+}
+
+.career-offer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: clamp(13px, 1.8vw, 18px);
+  border: 1px solid var(--c-line);
+  border-radius: var(--c-radius);
+  background: linear-gradient(160deg, rgba(21, 31, 45, 0.94), rgba(10, 15, 23, 0.96));
+  box-shadow: var(--c-shadow);
+}
+
+.career-offer:hover {
+  border-color: var(--c-line-2);
+}
+
+.career-offer-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.career-offer-club {
+  min-width: 0;
+}
+
+.career-offer-club strong {
+  display: block;
+  font-size: 1.12rem;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.career-offer-club span {
+  color: var(--c-muted);
+  font-size: 0.84rem;
+  letter-spacing: 0.6px;
+}
+
+.career-offer-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.career-offer-meta div {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--c-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.career-offer-meta span {
+  display: block;
+  color: var(--c-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.career-offer-meta b {
+  color: var(--c-text);
+  font-size: 0.98rem;
+  overflow-wrap: anywhere;
+}
+
+.career-offer-message {
+  color: var(--c-text-2);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.career-offer-reason {
+  color: var(--c-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.career-offer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 560px) {
+  .career-offers {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Evento e decisiones ------------------------------------------------------ */
+
+.career-event-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--c-line-2);
+  border-radius: 14px;
+  background: rgba(139, 240, 95, 0.12);
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.career-event-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.career-choices {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.career-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: clamp(13px, 1.8vw, 17px);
+  border: 1px solid var(--c-line-2);
+  border-radius: 14px;
+  background: linear-gradient(150deg, rgba(32, 52, 38, 0.92), rgba(10, 17, 13, 0.95));
+  color: var(--c-text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.career-choice:hover {
+  transform: translateY(-2px);
+  border-color: var(--c-accent);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(88, 101, 199, 0.30);
+}
+
+.career-choice-label {
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.career-choice-desc {
+  color: var(--c-text-2);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.career-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.career-pill {
+  padding: 3px 9px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-2);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.career-pill--positive {
+  border-color: rgba(139, 240, 95, 0.42);
+  background: rgba(139, 240, 95, 0.14);
+  color: #d7ffc4;
+}
+
+.career-pill--negative {
+  border-color: rgba(212, 92, 106, 0.42);
+  background: var(--c-danger-soft);
+  color: #F2B8C1;
+}
+
+.career-pill--risky {
+  border-color: rgba(214, 168, 79, 0.42);
+  background: rgba(214, 168, 79, 0.14);
+  color: #F0D49A;
+}
+
+.career-pill--special {
+  border-color: rgba(139, 147, 230, 0.42);
+  background: rgba(139, 147, 230, 0.14);
+  color: #C9CFF5;
+}
+
+.career-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: clamp(10px, 1.6vw, 14px);
+}
+
+.career-action {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: clamp(14px, 2vw, 18px);
+  border: 1px solid var(--c-line-2);
+  border-radius: var(--c-radius);
+  background: linear-gradient(150deg, rgba(30, 49, 36, 0.95), rgba(9, 15, 12, 0.96));
+  color: var(--c-text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.career-action:hover {
+  transform: translateY(-2px);
+  border-color: var(--c-accent);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(88, 101, 199, 0.32);
+}
+
+.career-action-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--c-line-2);
+  border-radius: 12px;
+  background: rgba(139, 240, 95, 0.12);
+  color: var(--c-accent);
+}
+
+.career-action-label {
+  display: block;
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.career-action-desc {
+  display: block;
+  margin-top: 3px;
+  color: var(--c-text-2);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.career-action--danger {
+  border-color: rgba(212, 92, 106, 0.42);
+  background: linear-gradient(150deg, rgba(56, 28, 24, 0.94), rgba(12, 8, 7, 0.96));
+}
+
+.career-action--danger .career-action-icon {
+  border-color: rgba(212, 92, 106, 0.5);
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+}
+
+.career-action--wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .career-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.career-season-action {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+  padding: clamp(14px, 2vw, 20px);
+  border: 1px dashed var(--c-line-2);
+  border-radius: var(--c-radius);
+  background: rgba(139, 240, 95, 0.06);
+  text-align: center;
+}
+
+/* Trayectoria (historial) -------------------------------------------------- */
+
+.career-toggle {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 7px 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.career-toggle:hover {
+  border-color: var(--c-line-2);
+  color: var(--c-text);
+}
+
+.career-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.career-timeline-item {
+  display: flex;
+  gap: 11px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--c-line);
+  border-left: 3px solid #33475C;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.career-timeline-season {
+  flex: 0 0 auto;
+  color: var(--c-accent);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.career-timeline-body {
+  min-width: 0;
+}
+
+.career-timeline-body strong {
+  display: block;
+  color: var(--c-text);
+  font-size: 0.96rem;
+  overflow-wrap: anywhere;
+}
+
+.career-timeline-body span {
+  color: var(--c-muted);
+  font-size: 0.85rem;
+}
+
+.career-timeline-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.career-timeline-tags i {
+  padding: 2px 8px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-2);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.career-stints {
+  display: grid;
+  gap: 8px;
+}
+
+.career-stint {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--c-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.career-stint-body {
+  min-width: 0;
+}
+
+.career-stint-body strong {
+  display: block;
+  font-size: 0.98rem;
+  overflow-wrap: anywhere;
+}
+
+.career-stint-body span {
+  color: var(--c-muted);
+  font-size: 0.84rem;
+}
+
+/* --------------------------------------------------------------------------
+   Setup (sin carrera): elegir jugador y arrancar
+   -------------------------------------------------------------------------- */
+
+.career-setup {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2vw, 20px);
+  width: min(100%, 1080px);
+  margin: 0 auto;
+}
+
+.career-setup-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(20px, 4vw, 38px);
+  border: 1px solid var(--c-line-2);
+  border-radius: calc(var(--c-radius) + 6px);
+  background:
+  radial-gradient(
+    ellipse 80% 120% at 18% -20%,
+    rgba(103, 202, 238, 0.34),
+    transparent 62%
+  ),
+  linear-gradient(
+    140deg,
+    rgba(40, 75, 97, 0.98),
+    rgba(10, 19, 26, 0.98)
+  );
+  box-shadow: var(--c-shadow);
+}
+
+.career-setup-kicker {
+  color: var(--c-accent);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.career-setup-title {
+  margin-top: 5px;
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif;
+  font-size: clamp(2.3rem, 7vw, 4.2rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+}
+
+.career-setup-copy {
+  max-width: 60ch;
+  margin-top: 10px;
+  color: var(--c-text-2);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.career-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  gap: 10px;
+}
+
+.career-player-chip {
+  justify-content: start !important;
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.24));
+  color: var(--c-text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.career-player-chip:hover {
+  transform: translateY(-2px);
+  border-color: var(--c-line-2);
+}
+
+.career-player-chip.is-active {
+  border-color: var(--c-accent);
+  background:
+  radial-gradient(
+    ellipse 80% 120% at 18% -20%,
+    rgba(103, 202, 238, 0.34),
+    transparent 62%
+  ),
+  linear-gradient(
+    140deg,
+    rgba(40, 75, 97, 0.98),
+    rgba(10, 19, 26, 0.98)
+  );
+  box-shadow: 0 0 0 1px rgba(139, 240, 95, 0.4), 0 14px 28px rgba(0, 0, 0, 0.4);
+}
+
+.career-player-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  background: linear-gradient(160deg, #2A3650, #101923);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.career-player-body {
+  min-width: 0;
+}
+
+.career-player-body strong {
+  display: block;
+  font-size: 1.02rem;
+  overflow-wrap: anywhere;
+}
+
+.career-player-body span {
+  display: block;
+  color: var(--c-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.career-player-rating {
+  margin-left: auto;
+  color: var(--c-gold);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.career-setup-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.career-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.career-field-label {
+  color: var(--c-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.career-input {
+  width: 132px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--c-line-2);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--c-text);
+  font-family: inherit;
+  font-size: 0.98rem;
+}
+
+.career-difficulties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.career-difficulty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 148px;
+  padding: 10px 13px;
+  border: 1px solid var(--c-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-2);
+  text-align: left;
+  cursor: pointer;
+}
+
+.career-difficulty strong {
+  color: var(--c-text);
+  font-size: 0.98rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.career-difficulty span {
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.career-difficulty.is-active {
+  border-color: var(--c-accent);
+  background:
+  radial-gradient(
+    ellipse 80% 120% at 18% -20%,
+    rgba(103, 202, 238, 0.34),
+    transparent 62%
+  ),
+  linear-gradient(
+    140deg,
+    rgba(40, 75, 97, 0.98),
+    rgba(10, 19, 26, 0.98)
+  );
+  box-shadow: 0 0 0 1px rgba(139, 240, 95, 0.36);
+}
+
+.career-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.career-setup-note {
+  color: var(--c-muted);
+  font-size: 0.88rem;
+}
+
+/* --------------------------------------------------------------------------
+   Footer: reinicio del save con confirmación en dos pasos
+   -------------------------------------------------------------------------- */
+
+.career-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+  color: var(--c-muted);
+  font-size: 0.86rem;
+}
+
+.career-footer-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.career-reset-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(212, 92, 106, 0.45);
+  border-radius: 12px;
+  background: var(--c-danger-soft);
+  color: #F0BFC6;
+  font-size: 0.88rem;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile: menos padding, menos columnas, nada cortado
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+  .career-screen {
+    padding: 14px 12px 108px;
+    font-size: 15px;
+  }
+
+  .career-header-main {
+    align-items: flex-start;
+  }
+
+  .career-ovr {
+    min-width: 108px;
+    padding: 10px 14px;
+  }
+
+  .career-grid {
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  }
+
+  .career-offer-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .career-setup-options {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .career-input,
+  .career-difficulty {
+    width: 100%;
+  }
+}
+/* Refactor UX estilo deportivo: panel único + tabla compacta (sin scroll interno) */
+.career-decision-panel { display: flex; flex-direction: column; gap: 10px; padding: clamp(12px,1.8vw,16px); border: 1px solid var(--c-line); border-radius: var(--c-radius); background: var(--c-panel); box-shadow: var(--c-shadow); }
+.career-actions--stack { grid-template-columns: minmax(0,1fr); }
+.career-action--big { min-height: 56px; align-items: center; }
+.career-offers--stack { grid-template-columns: minmax(0,1fr); }
+.career-offer--compact { gap: 10px; }
+.career-offer-reason { color: var(--c-accent); font-size: 0.82rem; font-weight: 700; }
+.career-offer-meta--compact { grid-template-columns: repeat(2,minmax(0,1fr)); }
+@keyframes career-spin { to { transform: rotate(360deg); } }
+.career-decision-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; padding-bottom: 8px; border-bottom: 1px solid var(--c-line); }
+.career-decision-tag { padding: 3px 9px; border-radius: 999px; background: rgba(88,101,199,0.18); color: var(--c-accent); font-size: 0.7rem; font-weight: 800; letter-spacing: 1.2px; }
+.career-decision-title { font-family: 'Barlow Condensed','Rajdhani',sans-serif; font-size: 1.35rem; line-height: 1.05; letter-spacing: 0.3px; text-transform: uppercase; }
+.career-decision-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.career-result-inline { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid rgba(82,200,120,0.35); border-radius: 10px; background: rgba(82,200,120,0.08); }
+.career-result-inline-head { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; justify-content: space-between; }
+.career-result-inline-ovr { font-family: 'Barlow Condensed','Rajdhani',sans-serif; font-size: 1.15rem; }
+.career-result-inline-ovr.is-up { color: var(--c-success); }
+.career-result-inline-ovr.is-down { color: var(--c-danger); }
+.career-result-inline-meta { color: var(--c-muted); font-size: 0.85rem; }
+.career-table-card { display: flex; flex-direction: column; gap: 8px; padding: clamp(12px,1.8vw,16px); border: 1px solid var(--c-line); border-radius: var(--c-radius); background: var(--c-panel); }
+.career-table-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
+.career-table { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.career-table-row { display: grid; grid-template-columns: 40px minmax(0,1fr) 64px 36px 36px 36px; gap: 8px; align-items: baseline; padding: 6px 8px; border-radius: 8px; font-size: 0.88rem; }
+.career-table-row--head { padding: 2px 8px; color: var(--c-dim); font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; }
+.career-table-age { color: var(--c-gold); font-weight: 800; }
+.career-table-club { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-text); font-weight: 700; }
+.career-table-num { text-align: right; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
+.career-table-flags { font-style: normal; }
+.career-table-row--current { border: 1px solid var(--c-accent); background: linear-gradient(160deg, rgba(88,101,199,0.18), rgba(13,20,33,0.95)); }
+.career-table-now { margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--c-primary); color: #FFFFFF; font-style: normal; font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; }
+.career-table-row--decision { border: 1px dashed var(--c-gold); background: rgba(214,168,79,0.08); }
+.career-table-row--decision .career-table-club { color: var(--c-gold); }
+.career-table-row--future { opacity: 0.38; }
+.career-table-empty { padding: 4px 2px; }
+@media (prefers-reduced-motion: reduce) { .career-flash-spinner { animation: none; } }
+.career-flash--busy { border-color: var(--c-line-2); background: var(--c-panel-2); }
+.career-flash-spinner { width: 15px; height: 15px; flex: 0 0 auto; border: 2px solid var(--c-line-2); border-top-color: var(--c-accent); border-radius: 50%; animation: career-spin 0.8s linear infinite; }
+.career-flash-kicker { color: var(--c-text-2); font-size: 0.82rem; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; }
+.career-flash-delta { font-family: 'Barlow Condensed','Rajdhani',sans-serif; font-size: 1.35rem; }
+.career-flash-delta.is-up { color: var(--c-success); }
+.career-flash-delta.is-down { color: var(--c-danger); }
+.career-flash-meta { color: var(--c-muted); font-size: 0.88rem; }
+.career-button--block { width: 100%; justify-content: center; }
+.career-button--big { min-height: 48px; font-size: 1.02rem; }
+.career-season-hint { color: var(--c-muted); font-size: 0.85rem; text-align: center; }
+.career-section--compact { padding: clamp(12px,1.8vw,16px); }
+.career-retired-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+.career-retired-cell { display: flex; flex-direction: column; gap: 2px; padding: 10px; border: 1px solid var(--c-line); border-radius: 12px; background: rgba(0,0,0,0.3); text-align: center; }
+.career-retired-cell span { color: var(--c-muted); font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+.career-retired-cell b { font-size: 1.4rem; }
+.career-retired-achievements { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
+.career-retired-achievements li { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid rgba(214,168,79,0.35); border-radius: 10px; background: rgba(214,168,79,0.08); font-size: 0.92rem; }
+.career-shell--main { width: min(100%, 1240px); }
+.career-topbar { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; min-width: 0; padding: 7px 10px; border: 1px solid var(--c-line); border-radius: 10px; background: var(--c-panel); }
+.career-topbar-spell { margin-left: auto; min-width: 0; overflow-wrap: anywhere; color: var(--c-muted); font-size: 0.8rem; text-align: right; }
+.career-badge--xs { width: 40px; height: 40px; border-radius: 9px 9px 13px 13px; font-size: 0.88rem; }
+.career-pcard { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--c-line); border-radius: 10px; background: linear-gradient(165deg, rgba(88,101,199,0.14), rgba(11,18,29,0.96) 48%), var(--c-panel); box-shadow: var(--c-shadow); }
+.career-pcard--compact { gap: 6px; padding: 9px 10px; }
+.career-pcard-head { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.career-pcard-id { flex: 1 1 auto; min-width: 0; }
+.career-pcard-name { font-family: 'Barlow Condensed','Rajdhani',sans-serif; font-size: 1.12rem; line-height: 1; letter-spacing: 0.4px; text-transform: uppercase; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.career-pcard-meta { margin: 1px 0 0; color: var(--c-muted); font-size: 0.8rem; line-height: 1.25; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.career-pcard-pos { color: var(--c-text-2); font-weight: 700; }
+.career-pcard-retired { color: var(--c-gold); }
+.career-pcard-ovr { display: flex; flex: 0 0 auto; flex-direction: column; align-items: center; gap: 0; min-width: 58px; padding: 3px 8px 5px; border: 1px solid var(--c-line-2); border-radius: 9px; background: rgba(0,0,0,0.42); text-align: center; }
+.career-ovr-value--sm { font-size: 1.55rem; line-height: 1; }
+.career-ovr-value--xl { font-size: 2.4rem; }
+.career-pcard-line { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; padding: 6px 2px 0; border-top: 1px solid var(--c-line); }
+.career-pcard-line div { display: inline-flex; gap: 4px; align-items: baseline; min-width: 0; }
+.career-pcard-line dt { color: var(--c-muted); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; }
+.career-pcard-line dd { margin: 0; color: var(--c-text); font-size: 0.88rem; font-weight: 700; overflow-wrap: anywhere; }
+.career-pcard-titles { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; margin: 0; padding-top: 5px; border-top: 1px dashed var(--c-line); color: var(--c-gold); font-size: 0.78rem; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.career-tline-foot { color: var(--c-dim); font-size: 0.76rem; }
+.career-section--action { border-color: var(--c-line-2); }
+.career-section-head--tight { margin-bottom: 6px; padding-bottom: 6px; }
+.career-season-action--flat { margin-top: 8px; padding: 8px; gap: 6px; }
+.career-phase { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.career-decision-panel { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 10px 11px; border: 1px solid var(--c-line); border-radius: 12px; background: var(--c-panel); box-shadow: var(--c-shadow); }
+.career-decision-tag { padding: 2px 8px; border-radius: 999px; background: rgba(88,101,199,0.18); color: var(--c-accent); font-size: 0.64rem; font-weight: 800; letter-spacing: 1.1px; }
+.career-decision-title { font-family: 'Barlow Condensed','Rajdhani',sans-serif; font-size: 1.12rem; line-height: 1.02; letter-spacing: 0.3px; text-transform: uppercase; }
+.career-decision-title--clamp { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.career-decision-lead { margin: 0; color: var(--c-muted); font-size: 0.82rem; line-height: 1.35; }
+.career-event-cat { margin: 0; color: var(--c-accent); font-size: 0.66rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; }
+.career-event-head { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 2px; }
+.career-event-icon { flex: 0 0 auto; font-size: 1.25rem; line-height: 1; }
+.career-phase-copy--clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.career-choices { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.career-choice-cta { display: inline-flex; gap: 5px; align-items: center; color: var(--c-accent); font-size: 0.8rem; font-weight: 800; }
+.career-choice-desc--clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.career-actions--compact { gap: 6px; margin-top: 2px; }
+.career-action-desc--clamp { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.career-alert--tight { margin: 0; padding: 7px 9px; font-size: 0.83rem; }
+.career-offers--rows { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.career-offer--row { display: flex; gap: 8px; align-items: center; padding: 7px 8px; }
+.career-offer--row .career-badge--sm { width: 38px; height: 38px; font-size: 0.82rem; }
+.career-offer-row-main { display: flex; flex-direction: column; gap: 0; flex: 1 1 auto; min-width: 0; }
+.career-offer-row-club { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; }
+.career-offer-row-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-muted); font-size: 0.76rem; }
+.career-offer--row .career-button { flex: 0 0 auto; min-height: 0; padding: 7px 12px; font-size: 0.86rem; }
+.career-table-card { gap: 6px; padding: 10px 11px; }
+.career-table { gap: 2px; }
+.career-table-row { gap: 6px; padding: 4px 7px; font-size: 0.83rem; }
+.career-header { gap: 8px; padding: clamp(10px, 1.4vw, 14px); }
+.career-header-main { gap: 10px; }
+.career-name { font-size: clamp(1.5rem, 3vw, 2.2rem); }
+.career-footer { gap: 6px; padding: 8px 10px; font-size: 0.8rem; }
+.career-decision-head { gap: 4px 8px; padding-bottom: 6px; }
+.career-choice { gap: 2px; padding: 8px 10px; }
+.career-choice-label { font-size: 0.95rem; }
+.career-choice-desc { font-size: 0.8rem; line-height: 1.35; }
+.career-pills { gap: 4px; margin-top: 2px; }
+.career-pill { padding: 1px 7px; font-size: 0.68rem; }
+.career-action { gap: 8px; padding: 8px 10px; }
+.career-action--big { min-height: 0; padding: 9px 10px; }
+.career-action-icon { width: 30px; height: 30px; }
+.career-action-label { font-size: 0.95rem; }
+.career-action-desc { font-size: 0.78rem; line-height: 1.3; }
+.career-season-action { gap: 6px; margin-top: 6px; padding: 9px 10px; }
+.career-season-action-kicker { font-size: 0.66rem; }
+.career-season-action-title { font-size: 1.25rem; }
+.career-season-action-copy { font-size: 0.83rem; }
+.career-season-hint { font-size: 0.78rem; }
+.career-season-cell { padding: 5px 4px; }
+.career-season-num { font-size: 0.98rem; }
+.career-season-lab { font-size: 0.6rem; }
+.career-result-inline { gap: 1px; padding: 6px 8px; }
+.career-result-inline-ovr { font-size: 1.02rem; }
+.career-result-inline-meta { font-size: 0.78rem; }
+.career-flash-inline { margin-top: 4px; padding: 7px 9px; gap: 5px; }
+.career-flash-delta { font-size: 1.1rem; }
+.career-flash-meta { font-size: 0.8rem; }
+.career-table-row--future { padding: 1px 7px; font-size: 0.76rem; }
+.career-table-now { padding: 0 6px; font-size: 0.6rem; }
+.career-header-facts { gap: 6px 12px; padding: 6px 2px 0; }
+.career-fact { font-size: 0.82rem; }
+@media (min-width: 1024px) {
+  .career-screen { --c-nav-clearance: 86px; }
+  .career-table-row--future:nth-of-type(n+9) { display: none; }
+}
+@media (max-width: 700px) { .career-screen { padding: 10px 10px 96px; } .career-topbar-spell { flex-basis: 100%; margin-left: 0; text-align: left; } .career-button--big { min-height: 44px; } .career-action--big { min-height: 0; } .career-section { padding: 12px; } .career-phase-copy--clamp { -webkit-line-clamp: 5; } }
+@media (max-width: 430px) { .career-pcard-line { gap: 3px 10px; } .career-table-row { grid-template-columns: 30px minmax(0,1fr) 56px 30px 30px 30px; gap: 6px; padding: 4px 6px; font-size: 0.8rem; } .career-table-now { display: none; } .career-table-club { white-space: normal; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; } .career-retired-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .career-offers--rows { gap: 6px; } }
+@media (max-width: 700px) { .career-screen { padding: 10px 10px 96px; } .career-topbar-spell { flex-basis: 100%; margin-left: 0; text-align: left; } .career-button--big { min-height: 48px; } .career-action--big { min-height: 56px; } .career-section { padding: 12px; } }
+@media (max-width: 430px) { .career-pcard-line { gap: 3px 10px; } .career-table-row { grid-template-columns: 30px minmax(0,1fr) 56px 30px 30px 30px; gap: 6px; padding: 6px; font-size: 0.82rem; } .career-table-now { display: none; } .career-table-club { white-space: normal; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; } .career-retired-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .career-offer .career-badge--lg { width: 56px; height: 56px; font-size: 1.1rem; } .career-offers--stack { grid-template-columns: minmax(0,1fr); } }
+/* Refactor UX compacto: barra + decision box (solo presentacion). */
+.app-shell--career { padding-bottom: 0; }
+.app-shell--career .bottom-nav { display: none; }
+.career-screen { --c-nav-clearance: 12px; min-height: auto; padding: 10px 10px 20px; }
+.career-shell--main { width: min(100%, 1120px); gap: 8px; }
+.career-header--bar { padding: 0; }
+.career-bar { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 7px 10px; border: 1px solid var(--c-line); border-radius: 10px; background: var(--c-panel); }
+.career-bar-id { display: flex; flex-direction: column; min-width: 0; line-height: 1.1; }
+.career-bar-title { color: var(--c-accent); font-size: 0.68rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; }
+.career-bar-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-text); font-size: 0.86rem; font-weight: 700; }
+.career-bar-season { color: var(--c-gold); }
+.career-bar-nav { display: flex; gap: 2px; margin-left: auto; }
+.career-bar-nav button { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 4px 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--c-muted); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; cursor: pointer; }
+.career-bar-nav button:hover { border-color: var(--c-line-2); color: var(--c-text); }
+.career-pcard { gap: 5px; max-height: 210px; padding: 8px 10px; overflow: hidden; }
+.career-pcard-head { gap: 7px; }
+.career-pcard-name { font-size: 1rem; }
+.career-pcard-meta { font-size: 0.76rem; }
+.career-pcard-line { gap: 2px 8px; }
+.career-pcard-line dt { font-size: 0.6rem; }
+.career-pcard-line dd { font-size: 0.8rem; }
+.career-pcard-titles { padding-top: 4px; font-size: 0.72rem; }
+.career-decision-panel { gap: 6px; padding: 9px 10px; }
+.career-decision-head { padding-bottom: 5px; }
+.career-decision-title { font-size: 1.02rem; }
+.career-decision-body--tight { gap: 6px; }
+.career-phase { gap: 6px; }
+.career-result-inline { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 5px 8px; }
+.career-result-inline-kicker { color: var(--c-gold); font-size: 0.72rem; font-weight: 800; letter-spacing: 1px; }
+.career-result-inline-meta { font-size: 0.8rem; }
+.career-result-inline-ovr { margin-left: auto; font-size: 0.92rem; }
+.career-season-hint { font-size: 0.76rem; }
+.career-event-kicker { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; margin: 0; }
+.career-event-pill { padding: 2px 8px; border-radius: 999px; background: rgba(88,101,199,0.18); color: var(--c-accent); font-size: 0.64rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; }
+.career-event-rival { color: var(--c-muted); font-size: 0.74rem; font-weight: 700; }
+.career-event-title { font-family: 'Barlow Condensed','Rajdhani',sans-serif; font-size: 1.18rem; line-height: 1.05; letter-spacing: 0.3px; text-transform: uppercase; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.career-event-copy { color: var(--c-text-2); font-size: 0.86rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.career-choices--grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px; }
+.career-choice--compact { gap: 3px; min-height: 0; padding: 8px 10px; }
+.career-choice--compact .career-choice-label { font-size: 0.9rem; }
+.career-choice-hint { color: var(--c-muted); font-size: 0.76rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.career-choice--compact .career-pills { margin: 0; }
+.career-actions--compact { gap: 6px; }
+.career-actions--duo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.career-action--compact { gap: 6px; min-height: 44px; padding: 7px 9px; align-items: center; }
+.career-action--compact .career-action-icon { width: 26px; height: 26px; }
+.career-action-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.career-action--compact .career-action-label { font-size: 0.86rem; white-space: normal; }
+.career-action-hint { color: var(--c-muted); font-size: 0.7rem; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.career-decision-lead--tight { font-size: 0.8rem; }
+.career-offers--tight { gap: 5px; }
+.career-button--compact { min-height: 42px; padding: 9px 12px; font-size: 0.9rem; }
+.career-table-card { gap: 5px; padding: 9px 10px; }
+.career-table { gap: 2px; }
+.career-table-row { padding: 3px 6px; font-size: 0.82rem; }
+.career-section--compact { gap: 6px; padding: 9px 10px; }
+.career-section-head--tight { margin-bottom: 0; }
+.career-flash { padding: 5px 8px; font-size: 0.8rem; }
+.career-footer { padding: 4px 2px 0; font-size: 0.76rem; }
+@media (max-width: 1023px) { .career-actions--duo { grid-template-columns: minmax(0, 1fr); } .career-choices--grid { grid-template-columns: minmax(0, 1fr); } .career-pcard { max-height: none; } }
+@media (max-width: 700px) {
+  .career-screen { padding: 8px 8px 16px; }
+  .career-bar { flex-wrap: wrap; }
+  .career-bar-nav { margin-left: 0; width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .career-bar-nav button { justify-content: center; padding: 6px 2px; }
+  .career-bar-nav button span { font-size: 0.62rem; }
+  .career-event-title { font-size: 1.08rem; }
+  .career-decision-title { font-size: 0.98rem; }
+  .career-action--compact { min-height: 48px; }
+  .career-choice--compact { min-height: 48px; }
+}
+/* Recibo post-decisión de evento: la narración completa aparece DESPUÉS de elegir. */
+.career-choice-result { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--c-line); border-radius: 12px; background: linear-gradient(155deg, rgba(24,33,50,0.96), rgba(9,14,22,0.96)); }
+.career-choice-result-kicker { display: inline-flex; gap: 6px; align-items: center; color: var(--c-accent); font-size: 0.72rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; }
+.career-choice-result-label { font-family: 'Barlow Condensed','Rajdhani',sans-serif; font-size: 1.05rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+.career-choice-result-copy { color: var(--c-text-2); font-size: 0.86rem; line-height: 1.4; }
+.career-decision-kicker { padding: 2px 8px; border-radius: 999px; background: rgba(88,101,199,0.18); color: var(--c-accent); font-size: 0.64rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; }
+@media (max-width: 430px) {
+  .career-bar-sub { font-size: 0.8rem; }
+  .career-pcard-line { gap: 2px 8px; }
+.career-decision-lead { margin: 0; font-size: 0.8rem; }
+.career-offers { gap: 5px; }
+}
+
+/* --------------------------------------------------------------------------
+   Selector de destino (mercado directo): miniaturas compactas en grilla.
+   Reemplaza el paso intermedio "Ver ofertas": club actual + ofertas + retirarse
+   visibles de una sola vez. Desktop ancho: una fila de miniaturas (la columna
+   de decisión se ensancha para que entren cómodas). Mobile: grilla de 2
+   columnas, touch-friendly, sin scroll interno.
+   -------------------------------------------------------------------------- */
+.career-dest-wrap { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.career-dest-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; min-width: 0; }
+.career-dest { display: flex; flex-direction: column; gap: 3px; align-items: center; justify-content: center; min-width: 0; padding: 8px 6px; border: 1px solid var(--c-line-2); border-radius: 12px; background: linear-gradient(160deg, rgba(24, 33, 50, 0.96), rgba(9, 14, 22, 0.96)); color: var(--c-text); text-align: center; cursor: pointer; transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease; }
+.career-dest:hover { transform: translateY(-2px); border-color: var(--c-accent); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(88, 101, 199, 0.28); }
+.career-dest:disabled { transform: none; opacity: 0.62; cursor: not-allowed; }
+.career-dest--current { border-color: rgba(88, 101, 199, 0.5); background: linear-gradient(160deg, rgba(88, 101, 199, 0.2), rgba(10, 15, 25, 0.92)); }
+.career-dest--retire { border-color: rgba(212, 92, 106, 0.38); background: linear-gradient(160deg, rgba(43, 25, 25, 0.86), rgba(10, 9, 12, 0.94)); }
+.career-dest-badge { width: 42px; height: 42px; border-radius: 10px 10px 15px 15px; font-size: 0.9rem; }
+.career-dest-icon { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(212, 92, 106, 0.45); border-radius: 12px; background: var(--c-danger-soft); color: var(--c-danger); }
+.career-dest-tag { padding: 1px 7px; border-radius: 999px; background: rgba(88, 101, 199, 0.2); color: var(--c-accent); font-size: 0.6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.career-dest-tag--danger { background: var(--c-danger-soft); color: #F0BFC6; }
+.career-dest-club { min-width: 0; overflow-wrap: anywhere; font-family: 'Barlow Condensed','Rajdhani',sans-serif; font-size: 0.86rem; font-weight: 700; letter-spacing: 0.3px; line-height: 1.05; text-transform: uppercase; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.career-dest-meta { min-width: 0; color: var(--c-muted); font-size: 0.66rem; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.career-dest-foot { color: var(--c-text); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.4px; }
+.career-dest-role { min-width: 0; color: var(--c-text-2); font-size: 0.64rem; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+/* Desktop/tablet: una sola fila de miniaturas (4 columnas; con 5+ baja a 2 filas). */
+@media (min-width: 701px) {
+  .career-dest-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 540px; }
+}
+/* Desktop: la columna de decisión necesita ancho para la fila de miniaturas
+   (la trayectoria se queda con el resto del ancho). */
+@media (min-width: 1024px) {
+}
+
+/* Ofertas de debut: tres decisiones comparables, sin detalles secundarios. */
+.career-offers--youth {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.career-offer--youth {
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 6px;
+  border-radius: 10px;
+  text-align: center;
+  justify-content: space-between;
+}
+
+.career-offer--youth .career-badge--sm { width: 42px; height: 42px; }
+
+.career-offer-youth-club {
+  width: 100%;
+  font-family: 'Barlow Condensed', 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.02;
+  letter-spacing: 0.25px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.career-offer-youth-meta {
+  width: 100%;
+  color: var(--c-muted);
+  font-size: 0.67rem;
+  line-height: 1.18;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.career-offer--youth .career-button {
+  min-height: 34px;
+  margin-top: 2px;
+  padding: 6px 7px;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 700px) {
+  .career-offers--youth { grid-template-columns: minmax(0, 1fr); }
+
+  .career-offer--youth {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 3px 8px;
+    padding: 8px;
+    text-align: left;
+  }
+
+  .career-offer--youth .career-badge--sm { grid-row: span 3; }
+  .career-offer-youth-club,
+  .career-offer-youth-meta { display: block; width: auto; }
+
+  .career-offer--youth .career-button {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+    width: auto;
+    min-height: 38px;
+    margin: 0;
+  }
+}
+
+/* ==========================================================================
+   AVISO TEMPORAL DE TÍTULOS — CareerTrophyToast (overlay de celebración)
+   ==========================================================================
+   Capa visual breve sobre el flujo actual: fondo oscuro tenue + panel índigo
+   con el sistema existente (dorado para logros). pointer-events: none en el
+   contenedor: NUNCA intercepta clicks ni bloquea el checkpoint de debajo. */
+.career-trophy-toast {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+  background: rgba(8, 13, 20, 0.55);
+}
+
+.career-trophy-toast__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 340px);
+  padding: 26px 22px 24px;
+  text-align: center;
+  border: 1px solid var(--c-line-2);
+  border-radius: var(--c-radius);
+  background: linear-gradient(168deg, var(--c-panel-2) 0%, var(--c-panel-3) 100%);
+  box-shadow: var(--c-shadow), 0 0 0 1px rgba(139, 147, 230, 0.18), 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.career-trophy-toast__icon-wrap {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 2px;
+  border: 1px solid rgba(214, 168, 79, 0.35);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, rgba(214, 168, 79, 0.2), rgba(214, 168, 79, 0.02) 70%);
+}
+
+.career-trophy-toast__icon {
+  color: var(--c-gold);
+  filter: drop-shadow(0 6px 14px rgba(214, 168, 79, 0.35));
+}
+
+.career-trophy-toast__kicker {
+  color: var(--c-gold);
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+}
+
+.career-trophy-toast__label {
+  color: var(--c-text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.career-trophy-toast__meta {
+  color: var(--c-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 430px) {
+  .career-trophy-toast__kicker { font-size: 1.2rem; }
+  .career-trophy-toast__icon-wrap { width: 84px; height: 84px; }
+}
+
+
+/* Layout neutral de la pantalla de Carrera: dos columnas con nombres distintos. */
+.career-dashboard {
+  display: grid;
+  grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
+  gap: clamp(8px, 1.2vw, 14px);
+  align-items: start;
+}
+.career-primary,
+.career-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.career-primary-left,
+.career-primary-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+@media (max-width: 1023px) {
+  .career-dashboard { grid-template-columns: minmax(0, 1fr); }
+  .career-secondary { order: 2; }
+}
+@media (min-width: 701px) and (max-width: 1023px) {
+  .career-dashboard { grid-template-columns: minmax(250px, 300px) minmax(0, 1fr); }
+}
+@media (min-width: 1024px) {
+  .career-dashboard { grid-template-columns: minmax(250px, 446px) minmax(0, 1fr); }
+}
+
