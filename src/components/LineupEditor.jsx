@@ -6,7 +6,7 @@ import { alignmentPlayers, players } from '../data.js';
 import useVotes from '../voting/useVotes.js';
 import MatchBar from './MatchBar.jsx';
 import {
-  benchOf,
+  benchByPool,
   beginDragRecord,
   changeMode as buildMode,
   clampToPitch,
@@ -123,7 +123,8 @@ export default function LineupEditor({ onPlayerSelect }) {
   const cycleStatus = (name) => {
     setStatuses((current) => ({ ...current, [name]: ((statusFor(name) % 5) + 1) }));
   };
-  const bench = benchOf(lineup);
+  const pools = benchByPool(lineup);
+  const benchCount = pools.squad.length + pools.randoms.length + pools.premium.length;
   const counts = countByTeam(lineup);
   const teamSize = sizeForMode(lineup.mode);
 
@@ -386,12 +387,30 @@ export default function LineupEditor({ onPlayerSelect }) {
 
       <section className="available-players" ref={listRef}>
         <div className="five-team-heading">
-          <span>DISPONIBLES <b>{bench.length}</b></span>
+          <span>DISPONIBLES <b>{benchCount}</b></span>
           <small>Arrastrá a la cancha para que jueguen. Cada equipo tiene 5 (o 6): si esa mitad está llena, sacá primero a alguien de la cancha</small>
         </div>
-        {bench.length
-          ? <div className="available-list">{bench.map((name) => renderAvailable(byName(name)))}</div>
-          : <p className="empty-injured">Están todos en la cancha.</p>}
+        {benchCount === 0
+          ? <p className="empty-injured">Están todos en la cancha.</p>
+          : (
+            <>
+              {pools.squad.length ? (
+                <div className="available-list">{pools.squad.map((name) => renderAvailable(byName(name)))}</div>
+              ) : null}
+              <div className="available-pool">
+                <div className="available-pool-heading">Randoms <b>{pools.randoms.length}</b></div>
+                {pools.randoms.length
+                  ? <div className="available-list">{pools.randoms.map((name) => renderAvailable(byName(name)))}</div>
+                  : <p className="empty-injured">No queda ninguno.</p>}
+              </div>
+              <div className="available-pool">
+                <div className="available-pool-heading">Randoms Premium Ultra <b>{pools.premium.length}</b></div>
+                {pools.premium.length
+                  ? <div className="available-list">{pools.premium.map((name) => renderAvailable(byName(name)))}</div>
+                  : <p className="empty-injured">No queda ninguno.</p>}
+              </div>
+            </>
+          )}
       </section>
 
       {/* Lesionados: sin drag and drop, se marca con check. Aparecen todos los

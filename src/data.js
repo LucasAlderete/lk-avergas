@@ -12,9 +12,13 @@
   { name: 'Nahue', pace: 6.3, shooting: 6.6, passing: 6.6, dribbling: 6.3, defense: 7, physical: 6.2, phrase: 'Mis 3 dedos es lo único que tengo', lore: { perfil: 'El más pajero.', rasgos: ['es el más pajero (siempre sin ganas)', 'es el más falopero'], cargadas: ['estar siempre sin ganas', 'el falopero (chiste)'] } },
   { name: 'JJ', pace: 8.1, shooting: 7.8, passing: 8, dribbling: 8.5, defense: 7.7, physical: 8.5, phrase: '¿A qué hora te vas?', lore: { perfil: 'El conquistador.', rasgos: ['siempre quiere conquistar a las mujeres de los amigos'], cargadas: ['quiere levantarse a las mujeres de los amigos'] } },
   { name: 'Luquitas', pace: 6, shooting: 6, passing: 6, dribbling: 6, defense: 6, physical: 6, phrase: 'Equilibrio total', lore: { perfil: 'El equilibrado.', rasgos: ['es parejo en todo'], cargadas: [] } },
-  { name: 'Kike', pace: 7.4, shooting: 8.2, passing: 7, dribbling: 8.1, defense: 4.8, physical: 6.5, phrase: 'Un toque más y era gol', lore: { perfil: 'El del toque extra.', rasgos: ['casi siempre mete gol'], cargadas: [] } },
+  { name: 'Kike', pace: 7.4, shooting: 8.2, passing: 7, dribbling: 8.1, defense: 4.8, physical: 6.5, phrase: 'Un toque más y era gol', pool: 'premium', lore: { perfil: 'El del toque extra.', rasgos: ['casi siempre mete gol'], cargadas: [] } },
   { name: 'Alan', pace: 6, shooting: 5.3, passing: 7.9, dribbling: 6.9, defense: 7.6, physical: 7.1, phrase: 'Yo la veo, vos correte', lore: { perfil: 'El armador.', rasgos: ['ve todos los pases'], cargadas: [] } },
 ];
+
+const even70 = {
+  pace: 7, shooting: 7, passing: 7, dribbling: 7, defense: 7, physical: 7,
+};
 
 // ============================================================================
 // JUGADORES SOLO DE ALINEACIÓN
@@ -23,11 +27,14 @@
 // (cancha y lista de disponibles). Sirven para completar los equipos hasta 5 o
 // 6 por lado sin tocar el roster real.
 const lineupOnlyRoster = [
-  { name: 'Random 1', pace: 5.5, shooting: 5.5, passing: 5.5, dribbling: 5.5, defense: 5.5, physical: 5.5, phrase: 'Recién llegando', lineupOnly: true },
-  { name: 'Random 2', pace: 5.8, shooting: 6.2, passing: 5.4, dribbling: 5.9, defense: 5.1, physical: 6.4, phrase: 'Prestón del barrio', lineupOnly: true },
-  { name: 'Random 3', pace: 6.1, shooting: 6.6, passing: 6.3, dribbling: 6.0, defense: 5.8, physical: 6.2, phrase: 'Juega de a poco', lineupOnly: true },
-  { name: 'Random 4', pace: 6.4, shooting: 7.0, passing: 6.8, dribbling: 7.1, defense: 6.0, physical: 6.6, phrase: 'Silencioso y rápido', lineupOnly: true },
-  { name: 'Random 5', pace: 6.9, shooting: 7.6, passing: 7.2, dribbling: 7.4, defense: 6.4, physical: 7.1, phrase: 'La figura del partido', lineupOnly: true },
+  { name: 'Random 1', pace: 5.5, shooting: 5.5, passing: 5.5, dribbling: 5.5, defense: 5.5, physical: 5.5, phrase: 'Recién llegando', lineupOnly: true, pool: 'randoms' },
+  { name: 'Random 2', pace: 5.8, shooting: 6.2, passing: 5.4, dribbling: 5.9, defense: 5.1, physical: 6.4, phrase: 'Prestón del barrio', lineupOnly: true, pool: 'randoms' },
+  { name: 'Random 3', pace: 6.1, shooting: 6.6, passing: 6.3, dribbling: 6.0, defense: 5.8, physical: 6.2, phrase: 'Juega de a poco', lineupOnly: true, pool: 'randoms' },
+  { name: 'Random 4', pace: 6.4, shooting: 7.0, passing: 6.8, dribbling: 7.1, defense: 6.0, physical: 6.6, phrase: 'Silencioso y rápido', lineupOnly: true, pool: 'randoms' },
+  { name: 'Random 5', pace: 6.9, shooting: 7.6, passing: 7.2, dribbling: 7.4, defense: 6.4, physical: 7.1, phrase: 'La figura del partido', lineupOnly: true, pool: 'randoms' },
+  { name: 'Pablito Lechuga', ...even70, phrase: 'La lechuga', lineupOnly: true, pool: 'randoms' },
+  { name: 'Joni Pelado 2', ...even70, phrase: 'El pelado 2', lineupOnly: true, pool: 'randoms' },
+  { name: 'Fede', ...even70, phrase: 'Randoms Premium Ultra', lineupOnly: true, pool: 'premium' },
 ];
 
 // ============================================================================
@@ -74,3 +81,16 @@ export const alignmentPlayers = [...players, ...lineupOnlyRoster.map((player) =>
 // OJO: `lineupOnlyPlayers` sale de `alignmentPlayers` para que sea el mismo
 // objeto que usa la pantalla de Alineación.
 export const lineupOnlyPlayers = alignmentPlayers.filter((player) => player.lineupOnly);
+
+export const POOL = Object.freeze({
+  squad: 'squad',
+  randoms: 'randoms',
+  premium: 'premium',
+});
+
+export const poolOf = (player) => {
+  if (player?.pool === POOL.premium || player?.pool === POOL.randoms || player?.pool === POOL.squad) {
+    return player.pool;
+  }
+  return player?.lineupOnly ? POOL.randoms : POOL.squad;
+};

@@ -228,6 +228,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .available-player-row > button:hover { background: rgba(231, 173, 78, .1); }
 .available-player-row strong { color: var(--accent); }
 .available-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.available-pool { border-top: 1px solid var(--line); }
+.available-pool-heading { padding: 10px 14px 6px; color: var(--accent); font: 800 .78rem 'Barlow Condensed', sans-serif; letter-spacing: .8px; text-transform: uppercase; }
+.available-pool-heading b { margin-left: 6px; color: var(--muted); }
 /* Lesionados: grilla de checks (sin drag and drop). */
 .injured-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .injured-option { display: grid; grid-template-columns: auto 1fr auto; gap: 9px; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255, 255, 255, .08); cursor: pointer; }

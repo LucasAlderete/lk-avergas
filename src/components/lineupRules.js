@@ -23,7 +23,7 @@
 // Funciones puras: reciben un lineup y devuelven uno nuevo, sin mutar el
 // original. Testeable sin DOM (scripts/smoke-lineup-rules.mjs).
 
-import { alignmentPlayers, players as plantel } from '../data.js';
+import { alignmentPlayers, players as plantel, poolOf, POOL } from '../data.js';
 
 const clamp = (value, minimum = 0, maximum = 100) => Math.max(minimum, Math.min(maximum, value));
 
@@ -86,6 +86,16 @@ export function playedFromLineup(lineup) {
 export function benchOf(lineup) {
   const onPitch = new Set(lineup.slots.map((slot) => slot.name));
   return allNames().filter((name) => !onPitch.has(name));
+}
+
+export function benchByPool(lineup) {
+  const groups = { [POOL.squad]: [], [POOL.randoms]: [], [POOL.premium]: [] };
+  for (const name of benchOf(lineup)) {
+    const player = alignmentPlayers.find((item) => item.name === name);
+    const pool = poolOf(player);
+    (groups[pool] || groups[POOL.squad]).push(name);
+  }
+  return groups;
 }
 
 export function cloneLineup(lineup) {

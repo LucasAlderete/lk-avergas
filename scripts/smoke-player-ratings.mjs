@@ -75,13 +75,19 @@ console.log('== C) Rango, perfiles y datos que NO hay que romper ==');
   }
   // Los que sólo están en la Alineación no se tocan: siguen en 0-10 y su OVR
   // se recalcula por el mismo promedio.
-  assert(lineupOnlyPlayers.length === 5, 'siguen los 5 que sólo están en la Alineación');
+  assert(lineupOnlyPlayers.length === 8, 'hay 8 que sólo están en la Alineación');
   for (const player of lineupOnlyPlayers) {
     assert(overallOf(player) === player.rating, `${player.name}: su OVR también sale del promedio`);
     assert(player.rating > 0 && player.rating < 99, `${player.name} tiene un OVR de Randoms sensato`);
   }
+  const pablito = lineupOnlyPlayers.find((item) => item.name === 'Pablito Lechuga');
+  const joni = lineupOnlyPlayers.find((item) => item.name === 'Joni Pelado 2');
+  assert(pablito?.rating === 70, 'Pablito Lechuga es 70');
+  assert(joni?.rating === 70, 'Joni Pelado 2 es 70');
+  const kike = players.find((item) => item.name === 'Kike');
+  assert(kike?.pool === 'premium', 'Kike está en Randoms Premium Ultra');
   // Los lesionados por defecto no son los que arrancan (ver lineupRules).
-  assert(alignmentPlayers.length === 20, 'la Alineación tiene 20 (15 + 5)');
+  assert(alignmentPlayers.length === 23, 'la Alineación tiene 23 (15 + 8)');
 }
 
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);

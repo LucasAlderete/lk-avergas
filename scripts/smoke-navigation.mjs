@@ -85,7 +85,7 @@ assert(
 );
 assert(header.html.includes('>Plantel<'), 'el header de Carrera ofrece Plantel');
 assert(header.html.includes('>Alineación<'), 'el header de Carrera ofrece Alineación');
-assert(admin.html.includes('Esta vista es sólo del admin'), 'Votos pide la cuenta admin si no hay sesión');
+assert(admin.html.includes('Sólo el admin puede ver esto'), 'Votos pide la cuenta admin si no hay sesión');
 for (const retired of ['Juegos', 'Ficha', 'Volver a los juegos']) {
   assert(!header.html.includes(retired), `el header de Carrera no contiene ${retired}`);
 }
@@ -110,6 +110,7 @@ for (const player of lineupOnlyPlayers) {
 for (const player of lineupOnlyPlayers) {
   assert(lineup.html.includes(player.name), `Alineación ofrece al jugador ${player.name}`);
 }
+assert(lineup.html.includes('Randoms Premium Ultra'), 'Alineación muestra Randoms Premium Ultra');
 for (const pitchOnly of ['DISPONIBLES', 'LESIONADOS', 'shared-pitch', 'Restablecer alineación']) {
   assert(!squad.html.includes(pitchOnly), `Plantel ya no dibuja la cancha (${pitchOnly})`);
 }

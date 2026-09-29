@@ -9,7 +9,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { MongoClient, ObjectId } from "mongodb";
 
 import { isAdminEmail } from "../src/auth/admin.js";
-import { players, RATING_STATS } from "../src/data.js";
+import { alignmentPlayers, players, RATING_STATS } from "../src/data.js";
 import {
   POINTS_PER_PLAYER,
   TOTAL_POINTS,
@@ -166,9 +166,7 @@ function ah(fn) {
 }
 
 async function seedPlayers(col) {
-  const count = await col.countDocuments({ name: { $type: "string", $ne: "" } });
-  if (count > 0) return;
-  await col.insertMany(players.map((player) => ({
+  const docs = alignmentPlayers.map((player) => ({
     name: player.name,
     pace: player.pace,
     shooting: player.shooting,
@@ -179,6 +177,14 @@ async function seedPlayers(col) {
     phrase: player.phrase,
     lore: player.lore || null,
     lineupOnly: Boolean(player.lineupOnly),
+    pool: player.pool || (player.lineupOnly ? "randoms" : "squad"),
+  }));
+  await col.bulkWrite(docs.map((doc) => ({
+    updateOne: {
+      filter: { name: doc.name },
+      update: { $set: doc },
+      upsert: true,
+    },
   })));
 }
 

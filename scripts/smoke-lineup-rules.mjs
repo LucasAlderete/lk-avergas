@@ -6,7 +6,7 @@
 // fútbol 5, o 6 + 6 en fútbol 6. El tope es POR EQUIPO.
 //   A) La cancha es entera: se puede cruzar el medio sin ningún tope.
 //   B) Modalidades: 5, 6 o 7 jugadores por equipo.
-//   B-bis) Los 5 "Random" son sólo de alineación (no están en el Plantel).
+//   B-bis) Los Randoms son sólo de alineación (no están en el Plantel).
 //   C) Desde la lista SÓLO se agrega: nunca sustituye, y con la mitad llena
 //      no entra.
 //   D) Intercambio entre los que ya están en la cancha.
@@ -24,7 +24,7 @@ const rules = await import(pathToFileURL(path.join(root, 'src', 'components', 'l
 const { alignmentPlayers, lineupOnlyPlayers, players } = await import(pathToFileURL(path.join(root, 'src', 'data.js')).href);
 
 const {
-  benchOf, beginDragRecord, changeMode, clampToPitch, countByTeam, DEFAULT_INJURIES, dropPlayer,
+  benchOf, benchByPool, beginDragRecord, changeMode, clampToPitch, countByTeam, DEFAULT_INJURIES, dropPlayer,
   findSlot, freshLineup, MODES, normalizeLineup, playedFromLineup, removeFromPitch, sizeForMode, STARTERS,
   starterLineup, swapTargetIndex, teamForY, totalForMode, SWAP_RADIUS,
 } = rules;
@@ -148,16 +148,18 @@ console.log('\n== B) Modalidades: 5, 6 o 7 por equipo ==');
   assert(benchOf(back).length === names.length - 10, 'nadie se pierde al cambiar de modalidad');
 }
 
-console.log('\n== B-bis) Los 5 "Random" son sólo de alineación ==');
+console.log('\n== B-bis) Los Randoms son sólo de alineación ==');
 {
-  assert(lineupOnlyPlayers.length === 5, 'hay 5 jugadores exclusivos de alineación');
-  assert(lineupOnlyPlayers.map((item) => item.name).join() === 'Random 1,Random 2,Random 3,Random 4,Random 5', 'se llaman Random 1..5');
+  assert(lineupOnlyPlayers.length === 8, 'hay 8 jugadores exclusivos de alineación');
+  assert(lineupOnlyPlayers.some((item) => item.name === 'Pablito Lechuga'), 'está Pablito Lechuga');
+  assert(lineupOnlyPlayers.some((item) => item.name === 'Joni Pelado 2'), 'está Joni Pelado 2');
+  assert(lineupOnlyPlayers.some((item) => item.name === 'Fede'), 'está Fede');
   // No forman parte del Plantel.
   for (const item of lineupOnlyPlayers) {
     assert(!players.some((real) => real.name === item.name), `${item.name} no está en el Plantel`);
     assert(item.lineupOnly === true, `${item.name} está marcado como sólo de alineación`);
   }
-  assert(alignmentPlayers.length === players.length + 5, 'el roster de alineación es el Plantel + 5');
+  assert(alignmentPlayers.length === players.length + 8, 'el roster de alineación es el Plantel + 8');
   assert(players.length === 15, 'el Plantel sigue teniendo 15');
 
   // En la alineación sí se pueden usar: entran desde la lista (hay que liberar
@@ -176,6 +178,11 @@ console.log('\n== B-bis) Los 5 "Random" son sólo de alineación ==');
   assert(!voted.includes('Random 1'), 'Random no entra en el partido para votar');
   assert(voted.every((name) => players.some((player) => player.name === name)), 'sólo sale gente del plantel');
   assert(playedFromLineup({ slots: [] }).length === 0, 'cancha vacía no abre partido');
+
+  const grouped = benchByPool({ mode: 5, slots: [] });
+  assert(grouped.randoms.includes('Pablito Lechuga') && grouped.randoms.includes('Joni Pelado 2'), 'Randoms tiene a Pablito y Joni');
+  assert(grouped.premium.includes('Kike') && grouped.premium.includes('Fede'), 'Premium Ultra tiene a Kike y Fede');
+  assert(!grouped.squad.includes('Kike'), 'Kike no queda en el plantel de disponibles');
 }
 
 
