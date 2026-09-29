@@ -5,6 +5,7 @@ import { RotateCcw, Star } from 'lucide-react';
 import { alignmentPlayers, players, poolOf, POOL } from '../data.js';
 import useVotes from '../voting/useVotes.js';
 import MatchBar from './MatchBar.jsx';
+import PlayerAudioButton from './PlayerAudioButton.jsx';
 import {
   addToPitch,
   benchByPool,
@@ -439,6 +440,7 @@ export default function LineupEditor({ onPlayerSelect }) {
         aria-label={`${name}, ${rated(name).rating}`}
       >
         {tone === 'ultra' && <Star className="five-player-star" size={13} fill="currentColor" aria-hidden="true" />}
+        <PlayerAudioButton name={name} className="five-player-audio" />
         <small>{rated(name).rating}</small>
         <span className="five-player-label" aria-hidden="true">{byName(name).name}</span>
         {!isInjured(name) && <StatusArrow status={statusFor(name)} onClick={() => cycleStatus(name)} playerName={name} />}
@@ -460,6 +462,7 @@ export default function LineupEditor({ onPlayerSelect }) {
           <span className="available-player-name">
             {item.name}
             {tone === 'ultra' && <Star className="ultra-star" size={13} fill="currentColor" aria-hidden="true" />}
+            <PlayerAudioButton name={item.name} />
           </span>
           <small>{rated(item.name).rating}</small>
           {!isInjured(item.name) && <StatusArrow status={statusFor(item.name)} onClick={() => cycleStatus(item.name)} playerName={item.name} />}

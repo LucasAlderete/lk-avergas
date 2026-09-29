@@ -11,6 +11,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import PlayerStatsSheet from './PlayerStatsSheet.jsx';
 import SectionHeader from './SectionHeader.jsx';
 import { useSelectedPlayer } from './playerSelection.js';
+import PlayerAudioButton from './PlayerAudioButton.jsx';
 import { photoOf } from '../playerPhotos.js';
 import ResetVoteButton from '../voting/ResetVoteButton.jsx';
 import VoteSheet from '../voting/VoteSheet.jsx';
@@ -51,6 +52,7 @@ function PlayerCard({ player, active, playing, dimmed, onClick }) {
         <strong>{player.name}</strong>
         <small>{player.phrase}</small>
       </span>
+      <PlayerAudioButton name={player.name} />
       <b>{player.rating}</b>
     </button>
   );

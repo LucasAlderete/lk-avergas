@@ -291,5 +291,22 @@ console.log('\n== 7) Fotos de los jugadores ==');
   assert(/\.stats-sheet-head\.is-over \{[^}]*margin-top:\s*-\d/.test(css), 'el header se superpone al banner');
 }
 
+console.log('\n== 8) Audios de los jugadores ==');
+{
+  const info = ui.audioInfo();
+  assert(info.keyFrom('rui_1') === 'rui', 'rui_1.m4a se asocia a Rui');
+  assert(info.keyFrom('rui') === 'rui', 'rui.m4a también');
+  assert(info.keyFrom('chino_2') === 'chino', 'chino_2.m4a se asocia a Chino');
+  assert(info.unused.length === 0, `no sobran audios sin jugador (sobran: ${info.unused.join(', ')})`);
+  assert(info.withAudio.includes('Rui'), 'Rui tiene al menos un audio');
+  assert(info.clips('Rui').length >= 1, 'Rui tiene clips para reproducir');
+  assert(info.clips('Rui').every((url) => typeof url === 'string' && url.length > 0), 'los clips de Rui son URLs del bundle');
+  assert(squad.html.includes('Reproducir audio de Rui'), 'Plantel muestra el 🔈 de Rui');
+  assert(!squad.html.includes('Reproducir audio de Chino'), 'quien no tiene audio no muestra el 🔈');
+  const rui = players.find((player) => player.name === 'Rui');
+  const ruiSheet = ui.renderStatsSheet(rui);
+  assert(ruiSheet.html.includes('Reproducir audio de Rui'), 'la ficha de Rui también tiene el 🔈');
+}
+
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);
 process.exit(failures === 0 ? 0 : 1);

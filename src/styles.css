@@ -82,6 +82,32 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .player-card-copy strong { font-family: 'Rajdhani', sans-serif; font-size: 1.05rem; }
 .player-card-copy small { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
 .player-card > b { color: var(--accent); font: 700 1.2rem 'Rajdhani', sans-serif; }
+.player-audio-btn {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(231, 173, 78, .12);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.player-audio-btn:hover { background: rgba(231, 173, 78, .28); }
+.player-audio-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.five-player-audio {
+  position: absolute;
+  bottom: -6px;
+  left: -8px;
+  z-index: 4;
+  width: 24px;
+  height: 24px;
+  font-size: .78rem;
+  background: rgba(10, 20, 14, .78);
+}
 
 /* Ficha de stats: hoja desde abajo (mobile first). En el celu el tooltip no
    existe, así que va como modal y se opera con el pulgar. */
@@ -113,7 +139,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .stats-sheet-close:hover { border-color: var(--accent); color: #fff; }
 .stats-sheet-head { display: flex; align-items: center; gap: 14px; padding-right: 44px; margin-bottom: 18px; }
 .stats-ovr { display: grid; flex: none; place-items: center; width: 66px; height: 66px; border: 2px solid var(--accent); border-radius: 50%; color: var(--accent); font: 800 1.7rem/1 'Rajdhani', sans-serif; }
-.stats-sheet-head h3 { margin: 0; font: 700 1.5rem/1.1 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+.stats-sheet-head h3 { display: flex; align-items: center; gap: 8px; margin: 0; font: 700 1.5rem/1.1 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
 .stats-sheet-head p { margin: 5px 0 0; color: var(--muted); font-size: .88rem; }
 .stat-list { display: grid; gap: 11px; margin: 0; padding: 0; list-style: none; }
 .stat-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }

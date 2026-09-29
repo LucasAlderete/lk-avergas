@@ -9,6 +9,7 @@ import { Minus, Plus, X } from 'lucide-react';
 
 import { RATING_STATS } from '../data.js';
 import { photoOf } from '../playerPhotos.js';
+import PlayerAudioButton from '../components/PlayerAudioButton.jsx';
 import PlayerBanner from '../components/PlayerBanner.jsx';
 import ResetVoteButton from './ResetVoteButton.jsx';
 import { buildReport } from './voteReport.js';
@@ -139,7 +140,10 @@ export default function VoteSheet({ player, deltas, myBallot, onCast, remaining,
         <header className={`stats-sheet-head${photoOf(player.name) ? ' is-over' : ''}`}>
           <span className="stats-ovr" aria-label={`OVR ${player.rating}`}>{player.rating}</span>
           <div>
-            <h3>{player.name}</h3>
+            <h3>
+              {player.name}
+              <PlayerAudioButton name={player.name} />
+            </h3>
             {eligible
               ? (
                 <p className="vote-budget">

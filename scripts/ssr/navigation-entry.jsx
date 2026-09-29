@@ -11,6 +11,7 @@ import SectionNav, { SectionNav as NamedSectionNav } from '../../src/components/
 import SquadScreen from '../../src/components/SquadScreen.jsx';
 import { overallOf, players } from '../../src/data.js';
 import * as photoModule from '../../src/playerPhotos.js';
+import * as audioModule from '../../src/playerAudio.js';
 
 const noop = () => {};
 
@@ -38,6 +39,15 @@ export const photoInfo = () => {
     withoutPhoto: players.filter((player) => !hasPhoto(player.name)).map((player) => player.name),
     unused: unusedPhotos(),
     of: (name) => photoOf(name),
+  };
+};
+export const audioInfo = () => {
+  const { hasAudio, clipsOf, unusedAudios, playerKeyFromStem } = audioModule;
+  return {
+    withAudio: players.filter((player) => hasAudio(player.name)).map((player) => player.name),
+    unused: unusedAudios(),
+    clips: (name) => clipsOf(name),
+    keyFrom: playerKeyFromStem,
   };
 };
 export const renderLineup = () => render(<LineupScreen onBack={noop} onNavigate={noop} />);

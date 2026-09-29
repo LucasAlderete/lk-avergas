@@ -10,6 +10,7 @@ import { X } from 'lucide-react';
 
 import { RATING_STATS, overallOf, statOf } from '../data.js';
 import { photoOf } from '../playerPhotos.js';
+import PlayerAudioButton from './PlayerAudioButton.jsx';
 import PlayerBanner from './PlayerBanner.jsx';
 
 // Color por rango, como los medidores de FIFA.
@@ -66,7 +67,10 @@ export default function PlayerStatsSheet({ player, onClose }) {
         <header className={`stats-sheet-head${photoOf(player.name) ? ' is-over' : ''}`}>
           <span className="stats-ovr" aria-label={`OVR ${overall}`}>{overall}</span>
           <div>
-            <h3>{player.name}</h3>
+            <h3>
+              {player.name}
+              <PlayerAudioButton name={player.name} />
+            </h3>
             <p>{player.lore?.perfil || player.phrase}</p>
           </div>
         </header>
