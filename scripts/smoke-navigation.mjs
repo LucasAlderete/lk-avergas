@@ -305,10 +305,11 @@ console.log('\n== 8) Audios de los jugadores ==');
   assert(info.keyFrom('gonzi_1') === 'gonzi', 'gonzi_1.m4a se asocia a Gonzi');
   assert(info.keyFrom('sailor_1') === 'sailor', 'sailor_1.m4a se asocia a Sailor');
   assert(info.keyFrom('mati_1') === 'mati', 'mati_1.m4a se asocia a Mati');
+  assert(info.keyFrom('cru_1') === 'cru', 'cru_1.m4a se asocia a Cru');
   assert(info.keyFrom('rui') === 'rui', 'rui.m4a también');
   assert(info.keyFrom('chino_2') === 'chino', 'chino_2.m4a se asocia a Chino');
   assert(info.unused.length === 0, `no sobran audios sin jugador (sobran: ${info.unused.join(', ')})`);
-  for (const name of ['Rui', 'Gonzi', 'Sailor', 'Mati']) {
+  for (const name of ['Rui', 'Gonzi', 'Sailor', 'Mati', 'Cru']) {
     assert(info.withAudio.includes(name), `${name} tiene al menos un audio`);
     assert(info.clips(name).length >= (name === 'Rui' ? 5 : 1), `${name} tiene clips para reproducir`);
     assert(squad.html.includes(`Reproducir audio de ${name}`), `Plantel muestra el 🔈 de ${name}`);
