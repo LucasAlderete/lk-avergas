@@ -179,13 +179,19 @@ async function seedPlayers(col) {
     lineupOnly: Boolean(player.lineupOnly),
     pool: player.pool || (player.lineupOnly ? "randoms" : "squad"),
   }));
-  await col.bulkWrite(docs.map((doc) => ({
-    updateOne: {
-      filter: { name: doc.name },
-      update: { $set: doc },
-      upsert: true,
-    },
-  })));
+  await col.bulkWrite(docs.map((doc) => {
+    const { name, pace, shooting, passing, dribbling, defense, physical, phrase, lore, lineupOnly, pool } = doc;
+    return {
+      updateOne: {
+        filter: { name },
+        update: {
+          $set: { phrase, lore, lineupOnly, pool },
+          $setOnInsert: { name, pace, shooting, passing, dribbling, defense, physical },
+        },
+        upsert: true,
+      },
+    };
+  }), { ordered: false });
 }
 
 async function ensurePlayerNameIndex(col) {
@@ -230,9 +236,13 @@ async function start() {
     if (err.code !== 26) throw err;
   }
   await ballots.createIndex({ matchId: 1, googleId: 1 }, { unique: true });
-  await ensurePlayerNameIndex(playerCol);
   await matches.createIndex({ status: 1, createdAt: -1 });
-  await seedPlayers(playerCol);
+  try {
+    await ensurePlayerNameIndex(playerCol);
+    await seedPlayers(playerCol);
+  } catch (err) {
+    console.error("No se pudo sincronizar el plantel:", err);
+  }
 
   async function expireOpenMatches() {
     const today = dayKeyAR();

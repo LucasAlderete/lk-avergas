@@ -12,21 +12,27 @@ async function readJSON(url, opts) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [googleClientId, setGoogleClientId] = useState('');
+  const [apiUp, setApiUp] = useState(false);
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(async () => {
+    let up = false;
     try {
-      const [config, me] = await Promise.all([
-        readJSON('/api/config'),
-        readJSON('/api/auth/me'),
-      ]);
+      const config = await readJSON('/api/config');
       setGoogleClientId(config.googleClientId || '');
+      up = true;
+    } catch {
+      setGoogleClientId('');
+    }
+    try {
+      const me = await readJSON('/api/auth/me');
       setUser(me.user || null);
+      up = true;
     } catch {
       setUser(null);
-    } finally {
-      setReady(true);
     }
+    setApiUp(up);
+    setReady(true);
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -51,8 +57,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, googleClientId, ready, refresh, loginWithGoogle, logout }),
-    [user, googleClientId, ready, refresh, loginWithGoogle, logout],
+    () => ({ user, googleClientId, apiUp, ready, refresh, loginWithGoogle, logout }),
+    [user, googleClientId, apiUp, ready, refresh, loginWithGoogle, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

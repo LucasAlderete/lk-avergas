@@ -112,6 +112,26 @@ if [[ -f "$UNIT_SRC" ]] && command -v systemctl >/dev/null; then
     sudo systemctl restart "$SERVICE_NAME"
   fi
   rm -f "$tmp"
+
+  log "Chequeando API en ${HOST:-127.0.0.1}:${PORT:-3001}"
+  ok=0
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if curl -sf "http://${HOST:-127.0.0.1}:${PORT:-3001}/api/health" >/dev/null; then
+      ok=1
+      break
+    fi
+    sleep 1
+  done
+  if [[ "$ok" -ne 1 ]]; then
+    if [[ "$(id -u)" -eq 0 ]]; then
+      systemctl status "$SERVICE_NAME" --no-pager -l || true
+      journalctl -u "$SERVICE_NAME" -n 50 --no-pager || true
+    else
+      sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
+      sudo journalctl -u "$SERVICE_NAME" -n 50 --no-pager || true
+    fi
+    die "La API no respondió después del restart"
+  fi
 fi
 
 log "Deploy terminado"

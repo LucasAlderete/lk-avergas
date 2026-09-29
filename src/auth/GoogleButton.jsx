@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext.jsx';
 
 export default function GoogleButton({ onSignedIn }) {
-  const { googleClientId, loginWithGoogle } = useAuth();
+  const { googleClientId, apiUp, loginWithGoogle } = useAuth();
   const slot = useRef(null);
 
   useEffect(() => {
@@ -50,6 +50,9 @@ export default function GoogleButton({ onSignedIn }) {
     };
   }, [googleClientId, loginWithGoogle, onSignedIn]);
 
+  if (!apiUp) {
+    return <p className="auth-missing">La API no está levantada.</p>;
+  }
   if (!googleClientId) {
     return <p className="auth-missing">Falta configurar Google en el servidor.</p>;
   }
