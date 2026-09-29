@@ -227,14 +227,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .five-goal { position: absolute; left: 38%; width: 24%; height: 5%; border: 2px solid rgba(239, 245, 236, .55); }
 .top-goal { top: 1%; border-top: 0; }
 .bottom-goal { bottom: 1%; border-bottom: 0; }
-.shared-team-tag { position: absolute; z-index: 4; top: 8px; padding: 5px 8px; border: 1px solid rgba(255, 255, 255, .3); background: rgba(10, 20, 14, .78); font-size: .68rem; font-weight: 800; letter-spacing: .7px; }
-/* Contador por equipo: azul arriba, rojo abajo. */
-.pitch-count { position: absolute; z-index: 4; top: 8px; left: 50%; display: flex; gap: 6px; transform: translateX(-50%); }
-.pitch-count span { padding: 5px 9px; border: 1px solid rgba(255, 255, 255, .3); border-radius: 3px; background: rgba(10, 20, 14, .78); font-size: .68rem; font-weight: 800; letter-spacing: .7px; }
-.pitch-count-a { color: #8fc4f2; }
-.pitch-count-b { color: #f3a19c; }
-.tag-a { left: 8px; }
-.tag-b { right: 8px; }
+/* Contador por equipo: 5/5 y el OVR promedio, uno en cada esquina de arriba. */
+.pitch-count { position: absolute; z-index: 4; top: 8px; display: grid; justify-items: center; gap: 1px; padding: 6px 10px 7px; border: 1px solid rgba(255, 255, 255, .3); border-radius: 3px; background: rgba(10, 20, 14, .78); pointer-events: none; font-weight: 800; letter-spacing: .7px; }
+.pitch-count-a { left: 8px; color: #8fc4f2; }
+.pitch-count-b { right: 8px; color: #f3a19c; }
+.pitch-count-n { font-size: .68rem; line-height: 1; }
+.pitch-count-ovr { color: #f3f1eb; font: 800 1.2rem 'Rajdhani', sans-serif; line-height: 1; letter-spacing: 0; }
 
 /* __CSS_CONTINUE__ */
 .five-player { position: absolute; z-index: 3; display: grid; place-items: center; width: 54px; height: 54px; padding: 0; border: 2px solid white; border-radius: 50%; background: linear-gradient(145deg, #3e75a5, #173a5c); color: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, .45); transform: translate(-50%, -50%); touch-action: none; user-select: none; -webkit-touch-callout: none; }

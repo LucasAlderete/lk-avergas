@@ -17,6 +17,7 @@ import {
   countByTeam,
   DEFAULT_INJURIES,
   dropPlayer,
+  ratingsByTeam,
   findSlot,
   freshLineup,
   MODES,
@@ -527,6 +528,7 @@ export default function LineupEditor({ onPlayerSelect }) {
   // El OVR que se ve en la cancha también es el dinámico (con los votos).
   const { alignmentRoster: votedRoster, match, openMatch, closeMatch, matchBusy, matchError } = useVotes();
   const rated = (name) => votedRoster.find((item) => item.name === name) || byName(name);
+  const averages = ratingsByTeam(lineup, (name) => rated(name).rating);
 
   return (
     <section className="lineup-editor" aria-labelledby="lineup-title">
@@ -555,9 +557,13 @@ export default function LineupEditor({ onPlayerSelect }) {
 
       <section className="five-match-board">
         <div className="shared-pitch" ref={pitchRef}>
-          <div className="pitch-count">
-            <span className="pitch-count-a">{counts.teamA}/{teamSize}</span>
-            <span className="pitch-count-b">{counts.teamB}/{teamSize}</span>
+          <div className="pitch-count pitch-count-a" aria-label={`Equipo azul: ${counts.teamA} de ${teamSize}, promedio ${averages.teamA ?? 'sin jugadores'}`}>
+            <span className="pitch-count-n">{counts.teamA}/{teamSize}</span>
+            <span className="pitch-count-ovr">{averages.teamA ?? '–'}</span>
+          </div>
+          <div className="pitch-count pitch-count-b" aria-label={`Equipo rojo: ${counts.teamB} de ${teamSize}, promedio ${averages.teamB ?? 'sin jugadores'}`}>
+            <span className="pitch-count-n">{counts.teamB}/{teamSize}</span>
+            <span className="pitch-count-ovr">{averages.teamB ?? '–'}</span>
           </div>
           <div className="five-goal top-goal" /><div className="five-goal bottom-goal" />
           <div className="five-midline" /><div className="five-circle" />

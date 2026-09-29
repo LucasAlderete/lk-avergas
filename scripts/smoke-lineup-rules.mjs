@@ -25,7 +25,7 @@ const { alignmentPlayers, lineupOnlyPlayers, players } = await import(pathToFile
 
 const {
   addToPitch, benchOf, benchByPool, beginDragRecord, canPlaceOnPitch, changeMode, clampToPitch, countByTeam, DEFAULT_INJURIES, dropPlayer,
-  findSlot, freshLineup, MODES, normalizeLineup, playedFromLineup, removeFromPitch, sizeForMode, STARTERS,
+  findSlot, freshLineup, MODES, normalizeLineup, playedFromLineup, ratingsByTeam, removeFromPitch, sizeForMode, STARTERS,
   starterLineup, swapTargetIndex, teamForY, totalForMode, SWAP_RADIUS,
 } = rules;
 
@@ -427,6 +427,32 @@ console.log('\n== J) Doble toque agrega y saca ==');
   assert(onPitch(added).includes('Fede'), 'con lugar entra al hueco libre');
   const out = removeFromPitch(added, 'Fede');
   assert(!onPitch(out).includes('Fede'), 'sacarlo lo devuelve a la lista');
+}
+
+console.log('== K) Promedio entero por equipo ==');
+{
+  const empty = { mode: 5, slots: [] };
+  assert(ratingsByTeam(empty).teamA === null && ratingsByTeam(empty).teamB === null, 'cancha vacía sin promedio');
+
+  const one = { mode: 5, slots: [{ name: 'X', x: 50, y: 10 }] };
+  assert(ratingsByTeam(one, () => 80).teamA === 80, 'un solo OVR es el promedio');
+  assert(ratingsByTeam(one, () => 80).teamB === null, 'la otra mitad vacía no tiene promedio');
+
+  const two = { mode: 5, slots: [{ name: 'A', x: 40, y: 10 }, { name: 'B', x: 60, y: 20 }] };
+  assert(ratingsByTeam(two, (name) => (name === 'A' ? 80 : 91)).teamA === 86, 'redondea (80+91)/2 = 85.5 -> 86');
+
+  const split = { mode: 5, slots: [{ name: 'A', x: 50, y: 10 }, { name: 'B', x: 50, y: 80 }] };
+  const ovrs = ratingsByTeam(split, (name) => (name === 'A' ? 70 : 90));
+  assert(ovrs.teamA === 70 && ovrs.teamB === 90, 'cada mitad promedia por su cuenta');
+
+  const starters = freshLineup();
+  const fromData = ratingsByTeam(starters);
+  const meanOf = (names) => {
+    const ratings = names.map((name) => alignmentPlayers.find((player) => player.name === name).rating);
+    return Math.round(ratings.reduce((sum, value) => sum + value, 0) / ratings.length);
+  };
+  assert(fromData.teamA === meanOf(STARTERS.slice(0, 5)), 'el arranque usa los OVR reales de arriba');
+  assert(fromData.teamB === meanOf(STARTERS.slice(5, 10)), 'y los de abajo');
 }
 
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);

@@ -232,6 +232,25 @@ export function countByTeam(lineup) {
   return counts;
 }
 
+// Promedio entero del OVR de cada mitad. Sin jugadores: null (en la cancha se
+// muestra un guión). `ratingOf` es opcional: si no viene, se usa el OVR base.
+export function ratingsByTeam(lineup, ratingOf) {
+  const lookup = typeof ratingOf === 'function'
+    ? ratingOf
+    : (name) => alignmentPlayers.find((player) => player.name === name)?.rating;
+  const buckets = { teamA: [], teamB: [] };
+  for (const slot of lineup.slots || []) {
+    const team = teamForY(slot.y);
+    const rating = Number(lookup(slot.name));
+    if (!Number.isFinite(rating)) continue;
+    buckets[team].push(rating);
+  }
+  const average = (list) => (
+    list.length ? Math.round(list.reduce((sum, value) => sum + value, 0) / list.length) : null
+  );
+  return { teamA: average(buckets.teamA), teamB: average(buckets.teamB) };
+}
+
 // Soltar un jugador.
 //   - Si ya estaba en la cancha: se queda donde se soltó, o se intercambia con
 //     el que tenía justo debajo del punto de caída. El intercambio siempre se

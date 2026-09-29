@@ -125,6 +125,18 @@ assert(lineup.html.includes('Alineación'), 'Alineación renderiza su pantalla')
 assert(lineup.html.includes('DISPONIBLES'), 'Alineación renderiza disponibles');
 assert(lineup.html.includes('LESIONADOS'), 'Alineación renderiza lesionados');
 assert(lineup.html.includes('shared-pitch'), 'Alineación renderiza la cancha');
+assert(lineup.html.includes('pitch-count-a'), 'contador del equipo azul a la izquierda');
+assert(lineup.html.includes('pitch-count-b'), 'contador del equipo rojo a la derecha');
+assert((lineup.html.match(/pitch-count-ovr/g) || []).length === 2, 'cada equipo muestra su promedio');
+assert(lineup.html.includes('5/5'), 'con fútbol 5 el contador es 5/5');
+{
+  const css = fs.readFileSync(path.join(root, 'src', 'styles.css'), 'utf8');
+  const leftRule = /\.pitch-count-a \{([^}]*)\}/.exec(css)?.[1] || '';
+  const rightRule = /\.pitch-count-b \{([^}]*)\}/.exec(css)?.[1] || '';
+  assert(/left:\s*8px/.test(leftRule), 'el 5/5 azul va a la esquina izquierda');
+  assert(/right:\s*8px/.test(rightRule), 'el 5/5 rojo va a la esquina derecha');
+  assert(!/left:\s*50%/.test(/\.pitch-count \{([^}]*)\}/.exec(css)?.[1] || ''), 'ya no están centrados juntos');
+}
 // La flechita de estado: clickeable y con el estado actual expuesto.
 assert((lineup.html.match(/class="status-arrow status-/g) || []).length > 0, 'Alineación muestra las flechas de estado');
 assert(lineup.html.includes('data-status="'), 'cada flecha expone su estado en data-status');
