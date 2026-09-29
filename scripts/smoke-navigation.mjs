@@ -301,24 +301,22 @@ console.log('\n== 8) Audios de los jugadores ==');
 {
   const info = ui.audioInfo();
   assert(info.keyFrom('rui_1') === 'rui', 'rui_1.m4a se asocia a Rui');
+  assert(info.keyFrom('rui_5') === 'rui', 'rui_5.m4a también se asocia a Rui');
   assert(info.keyFrom('gonzi_1') === 'gonzi', 'gonzi_1.m4a se asocia a Gonzi');
+  assert(info.keyFrom('sailor_1') === 'sailor', 'sailor_1.m4a se asocia a Sailor');
+  assert(info.keyFrom('mati_1') === 'mati', 'mati_1.m4a se asocia a Mati');
   assert(info.keyFrom('rui') === 'rui', 'rui.m4a también');
   assert(info.keyFrom('chino_2') === 'chino', 'chino_2.m4a se asocia a Chino');
   assert(info.unused.length === 0, `no sobran audios sin jugador (sobran: ${info.unused.join(', ')})`);
-  assert(info.withAudio.includes('Rui'), 'Rui tiene al menos un audio');
-  assert(info.withAudio.includes('Gonzi'), 'Gonzi tiene al menos un audio');
-  assert(info.clips('Rui').length >= 1, 'Rui tiene clips para reproducir');
-  assert(info.clips('Gonzi').length >= 1, 'Gonzi tiene clips para reproducir');
+  for (const name of ['Rui', 'Gonzi', 'Sailor', 'Mati']) {
+    assert(info.withAudio.includes(name), `${name} tiene al menos un audio`);
+    assert(info.clips(name).length >= (name === 'Rui' ? 5 : 1), `${name} tiene clips para reproducir`);
+    assert(squad.html.includes(`Reproducir audio de ${name}`), `Plantel muestra el 🔈 de ${name}`);
+    const sheet = ui.renderStatsSheet(players.find((player) => player.name === name));
+    assert(sheet.html.includes(`Reproducir audio de ${name}`), `la ficha de ${name} también tiene el 🔈`);
+  }
   assert(info.clips('Rui').every((url) => typeof url === 'string' && url.length > 0), 'los clips de Rui son URLs del bundle');
-  assert(squad.html.includes('Reproducir audio de Rui'), 'Plantel muestra el 🔈 de Rui');
-  assert(squad.html.includes('Reproducir audio de Gonzi'), 'Plantel muestra el 🔈 de Gonzi');
   assert(!squad.html.includes('Reproducir audio de Chino'), 'quien no tiene audio no muestra el 🔈');
-  const rui = players.find((player) => player.name === 'Rui');
-  const gonzi = players.find((player) => player.name === 'Gonzi');
-  const ruiSheet = ui.renderStatsSheet(rui);
-  const gonziSheet = ui.renderStatsSheet(gonzi);
-  assert(ruiSheet.html.includes('Reproducir audio de Rui'), 'la ficha de Rui también tiene el 🔈');
-  assert(gonziSheet.html.includes('Reproducir audio de Gonzi'), 'la ficha de Gonzi también tiene el 🔈');
 }
 
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);
