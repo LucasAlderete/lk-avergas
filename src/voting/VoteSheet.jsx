@@ -142,7 +142,7 @@ export default function VoteSheet({ player, deltas, myBallot, onCast, remaining,
           <div>
             <h3>
               {player.name}
-              <PlayerAudioButton name={player.name} />
+              {!photoOf(player.name) && <PlayerAudioButton name={player.name} />}
             </h3>
             {eligible
               ? (

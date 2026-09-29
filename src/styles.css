@@ -122,6 +122,18 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
      hasta los bordes (las esquinas redondeadas de arriba la recortan solas). */
 .stats-banner { position: relative; display: flex; align-items: center; justify-content: center; margin: -20px -18px 0; overflow: hidden; background: #0b0d08; }
 .stats-banner-img { display: block; width: 100%; height: auto; max-height: 60vh; object-fit: contain; }
+.stats-banner-audio {
+  position: absolute;
+  z-index: 3;
+  top: 16px;
+  left: 16px;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--accent);
+  background: rgba(12, 14, 10, .78);
+  font-size: 1.45rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .45);
+}
 /* El velo: arriba apenas oscurece (para que la foto se vea), abajo se funde con
    el fondo de la hoja. Eso es lo que permite poner el nombre encima. */
 .stats-banner-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 13, 8, .35) 0%, rgba(11, 13, 8, 0) 26%, rgba(11, 13, 8, .55) 62%, rgba(20, 22, 14, .97) 100%); }

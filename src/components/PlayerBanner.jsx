@@ -6,7 +6,9 @@
 // cualquier foto. Si el jugador no tiene foto no se pinta nada y la hoja queda
 // como estaba: las iniciales siguen siendo el plan B.
 // ============================================================================
+import { hasAudio } from '../playerAudio.js';
 import { photoOf } from '../playerPhotos.js';
+import PlayerAudioButton from './PlayerAudioButton.jsx';
 
 export function PlayerBanner({ player }) {
   const photo = photoOf(player.name);
@@ -16,6 +18,9 @@ export function PlayerBanner({ player }) {
     <div className="stats-banner">
       <img className="stats-banner-img" src={photo} alt="" decoding="async" fetchPriority="high" />
       <span className="stats-banner-scrim" aria-hidden="true" />
+      {hasAudio(player.name) && (
+        <PlayerAudioButton name={player.name} className="stats-banner-audio" />
+      )}
     </div>
   );
 }

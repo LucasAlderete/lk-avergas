@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { RotateCcw, Star } from 'lucide-react';
 
 import { alignmentPlayers, players, poolOf, POOL } from '../data.js';
+import { readJSON } from '../auth/AuthContext.jsx';
 import useVotes from '../voting/useVotes.js';
 import MatchBar from './MatchBar.jsx';
 import PlayerAudioButton from './PlayerAudioButton.jsx';
@@ -115,6 +116,56 @@ export default function LineupEditor({ onPlayerSelect }) {
   useEffect(() => { save(lineupKey, lineup); }, [lineup]);
   useEffect(() => { save(injuryKey, injured); }, [injured]);
   useEffect(() => { save(statusKey, statuses); }, [statuses]);
+
+  const remoteReadyRef = useRef(false);
+  const skipRemotePutRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let fromServer = false;
+      let gotOk = false;
+      try {
+        const data = await readJSON('/api/lineup');
+        gotOk = true;
+        if (cancelled) return;
+        if (data.lineup && Array.isArray(data.lineup.slots)) {
+          fromServer = true;
+          skipRemotePutRef.current = true;
+          setLineup(normalizeLineup(data.lineup));
+        }
+      } catch {
+        // Sin API nos quedamos con lo del navegador y no pisamos el server.
+      }
+      if (cancelled) return;
+      remoteReadyRef.current = true;
+      if (gotOk && !fromServer) {
+        const current = lineupRef.current;
+        readJSON('/api/lineup', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: current.mode, slots: current.slots }),
+        }).catch(() => {});
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!remoteReadyRef.current) return;
+    if (skipRemotePutRef.current) {
+      skipRemotePutRef.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      readJSON('/api/lineup', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: lineup.mode, slots: lineup.slots }),
+      }).catch(() => {});
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [lineup]);
   // El "no animar" dura un sólo render: en el siguiente ya vuelve el resorte.
   useEffect(() => {
     if (!settled) return undefined;
@@ -524,21 +575,21 @@ export default function LineupEditor({ onPlayerSelect }) {
           ? <p className="empty-injured">Están todos en la cancha.</p>
           : (
             <>
+              {pools.squad.length ? (
+                <div className="available-pool available-pool--squad">
+                  <div className="available-pool-heading">Avergas <b>{pools.squad.length}</b></div>
+                  <div className="available-list">{pools.squad.map((name) => renderAvailable(byName(name)))}</div>
+                </div>
+              ) : null}
               <div className="available-pool available-pool--ultra">
                 <div className="available-pool-heading">
                   <Star className="ultra-star" size={14} fill="currentColor" aria-hidden="true" />
-                  Avergas Premium Ultra <b>{pools.premium.length}</b>
+                  Randoms Premium Ultra <b>{pools.premium.length}</b>
                 </div>
                 {pools.premium.length
                   ? <div className="available-list">{pools.premium.map((name) => renderAvailable(byName(name)))}</div>
                   : <p className="empty-injured">No queda ninguno.</p>}
               </div>
-              {pools.squad.length ? (
-                <div className="available-pool available-pool--squad">
-                  <div className="available-pool-heading">Plantel <b>{pools.squad.length}</b></div>
-                  <div className="available-list">{pools.squad.map((name) => renderAvailable(byName(name)))}</div>
-                </div>
-              ) : null}
               <div className="available-pool available-pool--randoms">
                 <div className="available-pool-heading">Randoms <b>{pools.randoms.length}</b></div>
                 {pools.randoms.length

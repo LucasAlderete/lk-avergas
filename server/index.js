@@ -10,6 +10,7 @@ import { MongoClient, ObjectId } from "mongodb";
 
 import { isAdminEmail } from "../src/auth/admin.js";
 import { alignmentPlayers, players, RATING_STATS } from "../src/data.js";
+import { normalizeLineup } from "../src/components/lineupRules.js";
 import {
   POINTS_PER_PLAYER,
   TOTAL_POINTS,
@@ -222,6 +223,7 @@ async function start() {
   const ballots = db.collection("ballots");
   const playerCol = db.collection("players");
   const matches = db.collection("matches");
+  const lineupCol = db.collection("lineup");
 
   await users.createIndex({ googleId: 1 }, { unique: true });
   try {
@@ -294,6 +296,31 @@ async function start() {
   app.get("/api/config", (_req, res) => {
     res.json({ googleClientId: GOOGLE_CLIENT_ID });
   });
+
+  function packedLineup(doc) {
+    if (!doc) return null;
+    const clean = normalizeLineup({ mode: doc.mode, slots: doc.slots });
+    return { mode: clean.mode, slots: clean.slots };
+  }
+
+  app.get("/api/lineup", ah(async (_req, res) => {
+    const doc = await lineupCol.findOne({ _id: "club" });
+    res.json({ lineup: packedLineup(doc) });
+  }));
+
+  app.put("/api/lineup", ah(async (req, res) => {
+    if (!Array.isArray(req.body?.slots)) {
+      res.status(400).json({ error: "Formación inválida" });
+      return;
+    }
+    const clean = packedLineup({ mode: req.body.mode, slots: req.body.slots });
+    await lineupCol.updateOne(
+      { _id: "club" },
+      { $set: { mode: clean.mode, slots: clean.slots, updatedAt: new Date() } },
+      { upsert: true },
+    );
+    res.json({ ok: true, lineup: clean });
+  }));
 
   app.get("/api/auth/me", (req, res) => {
     res.json({ user: req.user ? publicUser(req.user) : null });

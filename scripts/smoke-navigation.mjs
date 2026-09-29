@@ -110,7 +110,13 @@ for (const player of lineupOnlyPlayers) {
 for (const player of lineupOnlyPlayers) {
   assert(lineup.html.includes(player.name), `Alineación ofrece al jugador ${player.name}`);
 }
-assert(lineup.html.includes('Avergas Premium Ultra'), 'Alineación muestra Avergas Premium Ultra');
+assert(lineup.html.includes('Randoms Premium Ultra'), 'Alineación muestra Randoms Premium Ultra');
+{
+  const plantelAt = lineup.html.indexOf('available-pool--squad');
+  const ultraAt = lineup.html.indexOf('available-pool--ultra');
+  const randomsAt = lineup.html.indexOf('available-pool--randoms');
+  assert(plantelAt >= 0 && ultraAt > plantelAt && randomsAt > ultraAt, 'el orden es Avergas, Randoms Premium Ultra, Randoms');
+}
 for (const pitchOnly of ['DISPONIBLES', 'LESIONADOS', 'shared-pitch', 'Restablecer alineación']) {
   assert(!squad.html.includes(pitchOnly), `Plantel ya no dibuja la cancha (${pitchOnly})`);
 }
