@@ -186,8 +186,8 @@ async function seedPlayers(col) {
       updateOne: {
         filter: { name },
         update: {
-          $set: { phrase, lore, lineupOnly, pool },
-          $setOnInsert: { name, pace, shooting, passing, dribbling, defense, physical },
+          $set: { phrase, lore, lineupOnly, pool, pace, shooting, passing, dribbling, defense, physical },
+          $setOnInsert: { name },
         },
         upsert: true,
       },

@@ -24,8 +24,8 @@ const assert = (condition, label) => { if (!condition) fail(label); };
 
 // OVR acordados. Si se cambia alguno, se cambia acá también.
 const EXPECTED = {
-  Chino: 80, Emi: 76, Mati: 69, Rui: 66, Gonzi: 87, Lucas: 75, Tigre: 99,
-  Rulo: 66, Sailor: 80, Cru: 72, Nahue: 65, JJ: 81, Luquitas: 60, Kike: 70, Alan: 68,
+  Chino: 79, Emi: 76, Mati: 69, Rui: 71, Gonzi: 87, Lucas: 75, Tigre: 99,
+  Rulo: 66, Sailor: 80, Cru: 72, Nahue: 70, JJ: 81, Luquitas: 70, Kike: 70, Alan: 70,
 };
 
 console.log('== A) Cada jugador tiene el OVR pedido ==');
@@ -39,7 +39,7 @@ console.log('== A) Cada jugador tiene el OVR pedido ==');
   // Orden por OVR, como se ve en pantalla.
   const sorted = [...players].sort((a, b) => b.rating - a.rating).map((item) => item.name);
   assert(sorted[0] === 'Tigre', `el más rated es Tigre (fue: ${sorted[0]})`);
-  assert(sorted[sorted.length - 1] === 'Luquitas', `el menos rated es Luquitas (fue: ${sorted[sorted.length - 1]})`);
+  assert(sorted[sorted.length - 1] === 'Rulo', `el menos rated es Rulo (fue: ${sorted[sorted.length - 1]})`);
 }
 
 console.log('== B) El OVR se CALCULA, no está escrito ==');
