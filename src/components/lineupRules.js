@@ -285,6 +285,30 @@ export function removeFromPitch(lineup, name) {
   return next;
 }
 
+export function canPlaceOnPitch(lineup) {
+  const counts = countByTeam(lineup);
+  const cap = sizeForMode(lineup.mode);
+  return counts.teamA < cap || counts.teamB < cap;
+}
+
+// Entra al primer hueco libre (el equipo con menos gente; empate, arriba).
+export function addToPitch(lineup, name) {
+  if (!name || findSlot(lineup, name)) return lineup;
+  if (!allNames().includes(name)) return lineup;
+  const counts = countByTeam(lineup);
+  const cap = sizeForMode(lineup.mode);
+  let team = null;
+  if (counts.teamA < cap && counts.teamB < cap) {
+    team = counts.teamA <= counts.teamB ? 'teamA' : 'teamB';
+  } else if (counts.teamA < cap) team = 'teamA';
+  else if (counts.teamB < cap) team = 'teamB';
+  else return lineup;
+  const [x, y] = FORMATION[team][counts[team]];
+  const next = cloneLineup(lineup);
+  next.slots.push({ name, x, y });
+  return next;
+}
+
 // Cambio de modalidad: completa cada mitad desde la lista y recorta si sobra.
 export function changeMode(lineup, nextMode) {
   if (nextMode === lineup.mode) return lineup;

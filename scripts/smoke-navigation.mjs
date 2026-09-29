@@ -110,7 +110,7 @@ for (const player of lineupOnlyPlayers) {
 for (const player of lineupOnlyPlayers) {
   assert(lineup.html.includes(player.name), `Alineación ofrece al jugador ${player.name}`);
 }
-assert(lineup.html.includes('Randoms Premium Ultra'), 'Alineación muestra Randoms Premium Ultra');
+assert(lineup.html.includes('Avergas Premium Ultra'), 'Alineación muestra Avergas Premium Ultra');
 for (const pitchOnly of ['DISPONIBLES', 'LESIONADOS', 'shared-pitch', 'Restablecer alineación']) {
   assert(!squad.html.includes(pitchOnly), `Plantel ya no dibuja la cancha (${pitchOnly})`);
 }

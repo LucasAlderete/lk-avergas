@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Star } from 'lucide-react';
 
-import { alignmentPlayers, players } from '../data.js';
+import { alignmentPlayers, players, poolOf, POOL } from '../data.js';
 import useVotes from '../voting/useVotes.js';
 import MatchBar from './MatchBar.jsx';
 import {
+  addToPitch,
   benchByPool,
   beginDragRecord,
+  canPlaceOnPitch,
   changeMode as buildMode,
   clampToPitch,
   countByTeam,
@@ -99,6 +101,12 @@ export default function LineupEditor({ onPlayerSelect }) {
   const ghostRef = useRef(null);
   const lineupRef = useRef(lineup);
   const suppressClickRef = useRef(false);
+  const pendingRef = useRef(null);
+  const lastTapRef = useRef(null);
+  const selectTimerRef = useRef(null);
+  const onPlayerSelectRef = useRef(onPlayerSelect);
+  onPlayerSelectRef.current = onPlayerSelect;
+  const [menu, setMenu] = useState(null);
   // Espejo del lineup para poder leer el estado actual desde los listeners
   // (que se registran una sola vez) sin volver a suscribirse.
   lineupRef.current = lineup;
@@ -112,6 +120,23 @@ export default function LineupEditor({ onPlayerSelect }) {
     const frame = requestAnimationFrame(() => setSettled(null));
     return () => cancelAnimationFrame(frame);
   }, [settled]);
+
+  useEffect(() => {
+    if (!menu) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape') setMenu(null);
+    };
+    const onDown = (event) => {
+      if (event.target.closest('.lineup-action-menu')) return;
+      setMenu(null);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onDown);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onDown);
+    };
+  }, [menu]);
 
   const byName = (name) => alignmentPlayers.find((item) => item.name === name) || alignmentPlayers[0];
   const isInjured = (name) => injured.includes(name);
@@ -143,6 +168,35 @@ export default function LineupEditor({ onPlayerSelect }) {
   };
 
   const takeOffPitch = (name) => setLineup((current) => removeFromPitch(current, name));
+
+  const placeOnPitch = (name) => {
+    const current = lineupRef.current;
+    const next = addToPitch(current, name);
+    if (next === current) return false;
+    setSettled(name);
+    setLineup(next);
+    return true;
+  };
+
+  const poolTone = (name) => {
+    const pool = poolOf(byName(name));
+    if (pool === POOL.premium) return 'ultra';
+    if (pool === POOL.randoms) return 'randoms';
+    return 'squad';
+  };
+
+  const clearSelectTimer = () => {
+    if (!selectTimerRef.current) return;
+    window.clearTimeout(selectTimerRef.current);
+    selectTimerRef.current = null;
+  };
+
+  const clearPendingTimer = () => {
+    const pending = pendingRef.current;
+    if (!pending?.longPress) return;
+    window.clearTimeout(pending.longPress);
+    pending.longPress = null;
+  };
 
   // --- Arrastre (receta de Red Blob Games: making-of/draggable) ---------------
   // 1) La posición se guarda en una variable (dragRef), no en el estado.
@@ -208,79 +262,138 @@ export default function LineupEditor({ onPlayerSelect }) {
     paint(drag, drag.clientX, drag.clientY);
   };
 
-  const beginDrag = (event, payload) => {
-    // Sólo botón principal: el derecho abre el menú contextual.
+  const actionsRef = useRef({});
+  actionsRef.current = { applyDrop, takeOffPitch, placeOnPitch };
+
+  const startDragFromPending = (event, pending) => {
+    clearPendingTimer();
+    const { payload, rect, startX, startY, pointerId } = pending;
+    dragRef.current = {
+      ...beginDragRecord(lineupRef.current, payload, rect, startX, startY),
+      pointerId,
+      moved: true,
+      clientX: event.clientX,
+      clientY: event.clientY,
+    };
+    setDragged(payload);
+    const spot = findSlot(lineupRef.current, payload.name);
+    setGhost({
+      name: payload.name,
+      source: payload.source,
+      team: teamForY(spot ? spot.y : 20),
+      tone: poolTone(payload.name),
+    });
+    if (event.cancelable) event.preventDefault();
+    if (dragRef.current.frame == null) dragRef.current.frame = requestAnimationFrame(paintOnFrame);
+  };
+
+  const armPointer = (event, payload) => {
     if (event.button !== undefined && event.button !== 0) return;
     const rect = pitchRef.current?.getBoundingClientRect();
     if (!rect) return;
-    event.preventDefault();
-
-    // La geometría vive en lineupRules (testeable): acá sólo se le pasa el
-    // punto de inicio.
-    dragRef.current = { ...beginDragRecord(lineupRef.current, payload, rect, event.clientX, event.clientY), pointerId: event.pointerId };
-
+    setMenu(null);
+    clearPendingTimer();
+    const pending = {
+      payload,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      rect,
+      openedMenu: false,
+      longPress: null,
+    };
+    pending.longPress = window.setTimeout(() => {
+      if (pendingRef.current !== pending) return;
+      pending.openedMenu = true;
+      pending.longPress = null;
+      try { navigator.vibrate?.(12); } catch { /* desktop */ }
+      setMenu({ name: payload.name, source: payload.source, x: pending.startX, y: pending.startY });
+    }, 520);
+    pendingRef.current = pending;
     try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* navegador sin soporte */ }
-    setDragged(payload);
-    // El ghost se monta siempre: para los que vienen de la lista es lo que
-    // sigue al cursor, y para los de la cancha aparece al sacarlos de ella.
-    const spot = findSlot(lineupRef.current, payload.name);
-    setGhost({ name: payload.name, source: payload.source, team: teamForY(spot ? spot.y : 20) });
   };
+
+  const startDragRef = useRef(startDragFromPending);
+  startDragRef.current = startDragFromPending;
+  const paintOnFrameRef = useRef(paintOnFrame);
+  paintOnFrameRef.current = paintOnFrame;
 
   useEffect(() => {
     const onMove = (event) => {
+      const pending = pendingRef.current;
+      if (pending && !dragRef.current) {
+        if (pending.openedMenu) return;
+        if (Math.hypot(event.clientX - pending.startX, event.clientY - pending.startY) < 6) return;
+        startDragRef.current(event, pending);
+      }
       const drag = dragRef.current;
       if (!drag) return;
-      // Un movimiento chico no es un arrastre: así el click sigue funcionando.
-      if (!drag.moved) {
-        if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 6) return;
-        drag.moved = true;
-      }
       if (event.cancelable) event.preventDefault();
       drag.clientX = event.clientX;
       drag.clientY = event.clientY;
-      // Un solo pintado por frame, no uno por evento.
-      if (drag.frame == null) drag.frame = requestAnimationFrame(paintOnFrame);
+      if (drag.frame == null) drag.frame = requestAnimationFrame(() => paintOnFrameRef.current());
     };
 
     const onUp = (event) => {
+      const pending = pendingRef.current;
       const drag = dragRef.current;
-      if (!drag) return;
-      dragRef.current = null;
-      try { event.target.releasePointerCapture?.(drag.pointerId); } catch { /* no estaba capturado */ }
-      // Frame pendiente: se fuerza para que caiga en la posición final.
-      if (drag.frame != null) {
-        cancelAnimationFrame(drag.frame);
-        drag.frame = null;
-        paint(drag, event.clientX, event.clientY);
-      }
-      setDragged(null);
-      setGhost(null);
-      if (!drag.moved) return;
-      suppressClickRef.current = true;
-      window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+      clearPendingTimer();
+      pendingRef.current = null;
 
-      // Soltarlo en la lista lo saca de la cancha (y al revés no hace nada).
-      const listRect = listRef.current?.getBoundingClientRect();
-      const overList = listRect
-        && event.clientX >= listRect.left && event.clientX <= listRect.right
-        && event.clientY >= listRect.top && event.clientY <= listRect.bottom;
-      if (overList) {
-        if (drag.source === 'pitch') takeOffPitch(drag.name);
+      if (drag) {
+        dragRef.current = null;
+        try { event.target.releasePointerCapture?.(drag.pointerId); } catch { /* no estaba capturado */ }
+        if (drag.frame != null) {
+          cancelAnimationFrame(drag.frame);
+          drag.frame = null;
+          paint(drag, event.clientX, event.clientY);
+        }
+        setDragged(null);
+        setGhost(null);
+        if (!drag.moved) return;
+        suppressClickRef.current = true;
+        window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+
+        const listRect = listRef.current?.getBoundingClientRect();
+        const overList = listRect
+          && event.clientX >= listRect.left && event.clientX <= listRect.right
+          && event.clientY >= listRect.top && event.clientY <= listRect.bottom;
+        if (overList) {
+          if (drag.source === 'pitch') actionsRef.current.takeOffPitch(drag.name);
+          return;
+        }
+
+        const { rect } = drag;
+        const inside = event.clientX >= rect.left && event.clientX <= rect.right
+          && event.clientY >= rect.top && event.clientY <= rect.bottom;
+        if (!inside) {
+          restore(drag);
+          return;
+        }
+        if (!actionsRef.current.applyDrop(drag.name, drag.x, drag.y)) restore(drag);
         return;
       }
 
-      const { rect } = drag;
-      const inside = event.clientX >= rect.left && event.clientX <= rect.right
-        && event.clientY >= rect.top && event.clientY <= rect.bottom;
-      if (!inside) {
-        // Se lo sacó de la cancha: vuelve a su casilla.
-        restore(drag);
+      if (!pending || pending.openedMenu) return;
+      try { event.target.releasePointerCapture?.(pending.pointerId); } catch { /* no estaba capturado */ }
+
+      const { name, source } = pending.payload;
+      const now = Date.now();
+      const last = lastTapRef.current;
+      if (last && last.name === name && last.source === source && now - last.at < 340) {
+        lastTapRef.current = null;
+        clearSelectTimer();
+        if (source === 'pitch') actionsRef.current.takeOffPitch(name);
+        else actionsRef.current.placeOnPitch(name);
         return;
       }
-      // Acá recién se toca el lineup: entra, se mueve o se intercambia.
-      // Si lo rechazaron (la mitad destino está llena), vuelve a su casilla.
-      if (!applyDrop(drag.name, drag.x, drag.y)) restore(drag);
+      lastTapRef.current = { name, source, at: now };
+      clearSelectTimer();
+      selectTimerRef.current = window.setTimeout(() => {
+        selectTimerRef.current = null;
+        if (suppressClickRef.current) return;
+        onPlayerSelectRef.current?.(name);
+      }, 300);
     };
 
     window.addEventListener('pointermove', onMove, { passive: false });
@@ -294,20 +407,25 @@ export default function LineupEditor({ onPlayerSelect }) {
   }, []);
 
   const resetLineup = () => setLineup(freshLineup());
-  const handleSelect = (name) => {
-    if (suppressClickRef.current) return;
-    if (typeof onPlayerSelect === 'function') onPlayerSelect(name);
+  const closeMenu = () => setMenu(null);
+  const menuAdd = () => {
+    if (menu?.name) placeOnPitch(menu.name);
+    closeMenu();
+  };
+  const menuRemove = () => {
+    if (menu?.name) takeOffPitch(menu.name);
+    closeMenu();
   };
 
   const renderPlayer = (slot) => {
     const { name, x, y } = slot;
     const isDragged = dragged?.source === 'pitch' && dragged.name === name;
-    // Recién soltado: framer escribe la posición final de una, sin volar.
     const isSettled = settled === name;
+    const tone = poolTone(name);
     return (
       <motion.button
         type="button"
-        className={`five-player${teamForY(y) === 'teamB' ? ' team-b-player' : ''}${isDragged || isSettled ? ' dragging' : ''}`}
+        className={`five-player${teamForY(y) === 'teamB' ? ' team-b-player' : ''}${isDragged || isSettled ? ' dragging' : ''}${tone === 'ultra' ? ' is-ultra' : ''}${tone === 'randoms' ? ' is-randoms' : ''}`}
         animate={{ left: `${x}%`, top: `${y}%` }}
         transition={isDragged || isSettled ? { duration: 0 } : { type: 'spring', stiffness: 700, damping: 34, mass: .22 }}
         key={name}
@@ -315,11 +433,12 @@ export default function LineupEditor({ onPlayerSelect }) {
           if (node) nodeRefs.current.set(name, node);
           else nodeRefs.current.delete(name);
         }}
-        onPointerDown={(event) => beginDrag(event, { source: 'pitch', name })}
-        onClick={() => handleSelect(name)}
+        onPointerDown={(event) => armPointer(event, { source: 'pitch', name })}
+        onContextMenu={(event) => event.preventDefault()}
         whileTap={{ scale: .9 }}
         aria-label={`${name}, ${rated(name).rating}`}
       >
+        {tone === 'ultra' && <Star className="five-player-star" size={13} fill="currentColor" aria-hidden="true" />}
         <small>{rated(name).rating}</small>
         <span className="five-player-label" aria-hidden="true">{byName(name).name}</span>
         {!isInjured(name) && <StatusArrow status={statusFor(name)} onClick={() => cycleStatus(name)} playerName={name} />}
@@ -328,18 +447,26 @@ export default function LineupEditor({ onPlayerSelect }) {
     );
   };
 
-  const renderAvailable = (item) => (
-    <div className="available-player-row" key={item.name}>
-      <button
-        type="button"
-        onPointerDown={(event) => beginDrag(event, { source: 'bench', name: item.name })}
-        onClick={() => handleSelect(item.name)}
-      >
-        <strong>{item.name.slice(0, 2).toUpperCase()}</strong><span>{item.name}</span><small>{rated(item.name).rating}</small>
-        {!isInjured(item.name) && <StatusArrow status={statusFor(item.name)} onClick={() => cycleStatus(item.name)} playerName={item.name} />}
-      </button>
-    </div>
-  );
+  const renderAvailable = (item) => {
+    const tone = poolTone(item.name);
+    return (
+      <div className={`available-player-row${tone === 'ultra' ? ' is-ultra' : ''}${tone === 'randoms' ? ' is-randoms' : ''}`} key={item.name}>
+        <button
+          type="button"
+          onPointerDown={(event) => armPointer(event, { source: 'bench', name: item.name })}
+          onContextMenu={(event) => event.preventDefault()}
+        >
+          <strong>{item.name.slice(0, 2).toUpperCase()}</strong>
+          <span className="available-player-name">
+            {item.name}
+            {tone === 'ultra' && <Star className="ultra-star" size={13} fill="currentColor" aria-hidden="true" />}
+          </span>
+          <small>{rated(item.name).rating}</small>
+          {!isInjured(item.name) && <StatusArrow status={statusFor(item.name)} onClick={() => cycleStatus(item.name)} playerName={item.name} />}
+        </button>
+      </div>
+    );
+  };
 
   // Los lesionados son sólo del Plantel real: los "Random" no se pueden marcar.
   const injuredPlayers = players.filter((item) => isInjured(item.name));
@@ -381,32 +508,38 @@ export default function LineupEditor({ onPlayerSelect }) {
           <div className="five-goal top-goal" /><div className="five-goal bottom-goal" />
           <div className="five-midline" /><div className="five-circle" />
           {lineup.slots.map((slot) => renderPlayer(slot))}
-          {!lineup.slots.length && <p className="empty-pitch">Arrastrá un jugador de la lista a la cancha.</p>}
+          {!lineup.slots.length && <p className="empty-pitch">Arrastrá, dos toques o mantené para armar la cancha.</p>}
         </div>
       </section>
 
       <section className="available-players" ref={listRef}>
         <div className="five-team-heading">
           <span>DISPONIBLES <b>{benchCount}</b></span>
-          <small>Arrastrá a la cancha para que jueguen. Cada equipo tiene 5 (o 6): si esa mitad está llena, sacá primero a alguien de la cancha</small>
+          <small>Arrastrá, dos toques para entrar o salir, o mantené para el menú. Si esa mitad está llena, sacá primero a alguien</small>
         </div>
         {benchCount === 0
           ? <p className="empty-injured">Están todos en la cancha.</p>
           : (
             <>
+              <div className="available-pool available-pool--ultra">
+                <div className="available-pool-heading">
+                  <Star className="ultra-star" size={14} fill="currentColor" aria-hidden="true" />
+                  Avergas Premium Ultra <b>{pools.premium.length}</b>
+                </div>
+                {pools.premium.length
+                  ? <div className="available-list">{pools.premium.map((name) => renderAvailable(byName(name)))}</div>
+                  : <p className="empty-injured">No queda ninguno.</p>}
+              </div>
               {pools.squad.length ? (
-                <div className="available-list">{pools.squad.map((name) => renderAvailable(byName(name)))}</div>
+                <div className="available-pool available-pool--squad">
+                  <div className="available-pool-heading">Plantel <b>{pools.squad.length}</b></div>
+                  <div className="available-list">{pools.squad.map((name) => renderAvailable(byName(name)))}</div>
+                </div>
               ) : null}
-              <div className="available-pool">
+              <div className="available-pool available-pool--randoms">
                 <div className="available-pool-heading">Randoms <b>{pools.randoms.length}</b></div>
                 {pools.randoms.length
                   ? <div className="available-list">{pools.randoms.map((name) => renderAvailable(byName(name)))}</div>
-                  : <p className="empty-injured">No queda ninguno.</p>}
-              </div>
-              <div className="available-pool">
-                <div className="available-pool-heading">Randoms Premium Ultra <b>{pools.premium.length}</b></div>
-                {pools.premium.length
-                  ? <div className="available-list">{pools.premium.map((name) => renderAvailable(byName(name)))}</div>
                   : <p className="empty-injured">No queda ninguno.</p>}
               </div>
             </>
@@ -441,12 +574,36 @@ export default function LineupEditor({ onPlayerSelect }) {
           aparece sólo cuando salen de ella. */}
       {ghost && (
         <div
-          className={`drag-ghost${ghost.source === 'pitch' ? (ghost.team === 'teamB' ? ' drag-ghost-b' : ' drag-ghost-a') : ''}`}
+          className={`drag-ghost${ghost.source === 'pitch' ? (ghost.team === 'teamB' ? ' drag-ghost-b' : ' drag-ghost-a') : ''}${ghost.tone === 'ultra' ? ' is-ultra' : ''}${ghost.tone === 'randoms' ? ' is-randoms' : ''}`}
           ref={ghostRef}
           style={{ display: 'none' }}
           aria-hidden="true"
         >
+          {ghost.tone === 'ultra' && <Star className="five-player-star" size={13} fill="currentColor" />}
           <strong>{byName(ghost.name).name.slice(0, 2).toUpperCase()}</strong><small>{byName(ghost.name).rating}</small>
+        </div>
+      )}
+
+      {menu && (
+        <div
+          className="lineup-action-menu"
+          role="menu"
+          style={{ left: menu.x, top: menu.y }}
+        >
+          {menu.source === 'bench' ? (
+            <button
+              type="button"
+              role="menuitem"
+              disabled={!canPlaceOnPitch(lineup)}
+              onClick={menuAdd}
+            >
+              {canPlaceOnPitch(lineup) ? 'Agregar a la cancha' : 'No hay lugar'}
+            </button>
+          ) : (
+            <button type="button" role="menuitem" onClick={menuRemove}>
+              Quitar de la cancha
+            </button>
+          )}
         </div>
       )}
     </section>

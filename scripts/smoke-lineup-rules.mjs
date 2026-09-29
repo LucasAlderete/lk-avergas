@@ -24,7 +24,7 @@ const rules = await import(pathToFileURL(path.join(root, 'src', 'components', 'l
 const { alignmentPlayers, lineupOnlyPlayers, players } = await import(pathToFileURL(path.join(root, 'src', 'data.js')).href);
 
 const {
-  benchOf, benchByPool, beginDragRecord, changeMode, clampToPitch, countByTeam, DEFAULT_INJURIES, dropPlayer,
+  addToPitch, benchOf, benchByPool, beginDragRecord, canPlaceOnPitch, changeMode, clampToPitch, countByTeam, DEFAULT_INJURIES, dropPlayer,
   findSlot, freshLineup, MODES, normalizeLineup, playedFromLineup, removeFromPitch, sizeForMode, STARTERS,
   starterLineup, swapTargetIndex, teamForY, totalForMode, SWAP_RADIUS,
 } = rules;
@@ -403,6 +403,30 @@ console.log('\n== I) Las reglas son puras ==');
   assert(JSON.stringify(base) === snapshot, 'ninguna función muta el lineup que recibe');
   assert(changeMode(base, 5) === base, 'changeMode a la misma modalidad devuelve la misma referencia');
   assert(removeFromPitch(base, 'Zombie') === base, 'removeFromPitch de un desconocido devuelve la misma referencia');
+  addToPitch(base, 'Fede');
+  assert(JSON.stringify(base) === snapshot, 'addToPitch tampoco muta el lineup');
+}
+
+console.log('\n== J) Doble toque agrega y saca ==');
+{
+  const empty = { mode: 5, slots: [] };
+  const first = addToPitch(empty, 'Fede');
+  assert(first !== empty && empty.slots.length === 0, 'en cancha vacía entra sin mutar el original');
+  assert(onPitch(first).includes('Fede'), 'Fede queda en la cancha');
+  assert(findSlot(first, 'Fede').y < 50, 'cae en el hueco de arriba');
+  assert(addToPitch(first, 'Fede') === first, 'si ya está, no duplica');
+  assert(addToPitch(empty, 'Zombie') === empty, 'un desconocido no entra');
+
+  const full = freshLineup();
+  assert(!canPlaceOnPitch(full), 'con 5 y 5 no hay lugar');
+  assert(addToPitch(full, 'Fede') === full, 'y no entra nadie más');
+
+  const room = removeFromPitch(full, full.slots[0].name);
+  assert(canPlaceOnPitch(room), 'al sacar a uno hay lugar');
+  const added = addToPitch(room, 'Fede');
+  assert(onPitch(added).includes('Fede'), 'con lugar entra al hueco libre');
+  const out = removeFromPitch(added, 'Fede');
+  assert(!onPitch(out).includes('Fede'), 'sacarlo lo devuelve a la lista');
 }
 
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);

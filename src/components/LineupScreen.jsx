@@ -11,7 +11,7 @@ export function LineupHeader({ onBack, onNavigate }) {
   return (
     <SectionHeader
       title="Alineación"
-      subtitle="Arrastrá a los jugadores por la cancha y armá el equipo."
+      subtitle="Armá los equipos: arrastrá, dos toques o mantené en el nombre."
       current="lineup"
       onHome={onBack}
       onNavigate={onNavigate}
