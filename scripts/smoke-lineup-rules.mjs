@@ -160,7 +160,7 @@ console.log('\n== B-bis) Los Randoms son sólo de alineación ==');
     assert(item.lineupOnly === true, `${item.name} está marcado como sólo de alineación`);
   }
   assert(alignmentPlayers.length === players.length + 8, 'el roster de alineación es el Plantel + 8');
-  assert(players.length === 15, 'el Plantel sigue teniendo 15');
+  assert(players.length === 16, 'el Plantel sigue teniendo 16');
 
   // En la alineación sí se pueden usar: entran desde la lista (hay que liberar
   // un lugar, porque abajo ya están los 5).

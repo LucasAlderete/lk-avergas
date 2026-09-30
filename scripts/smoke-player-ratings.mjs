@@ -25,12 +25,12 @@ const assert = (condition, label) => { if (!condition) fail(label); };
 // OVR acordados. Si se cambia alguno, se cambia acá también.
 const EXPECTED = {
   Chino: 79, Emi: 76, Mati: 69, Rui: 71, Gonzi: 87, Lucas: 75, Tigre: 99,
-  Rulo: 66, Sailor: 80, Cru: 72, Nahue: 70, JJ: 81, Luquitas: 70, Kike: 70, Alan: 70,
+  Rulo: 66, Sailor: 80, Cru: 72, Nahue: 70, JJ: 81, Luquitas: 70, Kike: 70, Alan: 70, Wini: 70,
 };
 
 console.log('== A) Cada jugador tiene el OVR pedido ==');
 {
-  assert(players.length === Object.keys(EXPECTED).length, 'el Plantel sigue teniendo 15 jugadores');
+  assert(players.length === Object.keys(EXPECTED).length, 'el Plantel sigue teniendo 16 jugadores');
   for (const [name, target] of Object.entries(EXPECTED)) {
     const player = players.find((item) => item.name === name);
     if (!player) { fail(`falta el jugador ${name}`); continue; }
@@ -87,7 +87,7 @@ console.log('== C) Rango, perfiles y datos que NO hay que romper ==');
   const kike = players.find((item) => item.name === 'Kike');
   assert(kike?.pool === 'premium', 'Kike está en Randoms Premium Ultra');
   // Los lesionados por defecto no son los que arrancan (ver lineupRules).
-  assert(alignmentPlayers.length === 23, 'la Alineación tiene 23 (15 + 8)');
+  assert(alignmentPlayers.length === 24, 'la Alineación tiene 24 (16 + 8)');
 }
 
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);

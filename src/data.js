@@ -14,6 +14,7 @@
   { name: 'Luquitas', pace: 7, shooting: 7, passing: 7, dribbling: 7, defense: 7, physical: 7, phrase: 'Equilibrio total', lore: { perfil: 'El equilibrado.', rasgos: ['es parejo en todo'], cargadas: [] } },
   { name: 'Kike', pace: 7.4, shooting: 8.2, passing: 7, dribbling: 8.1, defense: 4.8, physical: 6.5, phrase: 'Un toque más y era gol', pool: 'premium', lore: { perfil: 'El del toque extra.', rasgos: ['casi siempre mete gol'], cargadas: [] } },
   { name: 'Alan', pace: 6.2, shooting: 5.9, passing: 7.9, dribbling: 7.1, defense: 7.6, physical: 7.3, phrase: 'Yo la veo, vos correte', lore: { perfil: 'El armador.', rasgos: ['ve todos los pases'], cargadas: [] } },
+  { name: 'Wini', pace: 6.7, shooting: 6.9, passing: 7.4, dribbling: 6.8, defense: 7.2, physical: 7, phrase: 'Uno de los de siempre', lore: { perfil: 'Averga oficial del grupo.', rasgos: ['es un averga oficial'], cargadas: [] } },
 ];
 
 const even70 = {
@@ -69,7 +70,7 @@ export const overallOf = (player) => Math.round(
   RATING_STATS.reduce((sum, stat) => sum + statOf(player, stat.key), 0) / RATING_STATS.length,
 );
 
-// Plantel: los 15 amigos, con el OVR ya calculado.
+// Plantel: los 16 amigos, con el OVR ya calculado.
 export const players = roster.map((player) => ({ ...player, rating: overallOf(player) }));
 
 // Roster de la Alineación: el Plantel + los que sólo están acá.
