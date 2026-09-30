@@ -23,7 +23,7 @@ export default function MatchBar({ lineup, match, openMatch, closeMatch, matchBu
               type="button"
               className="match-bar-btn is-close"
               disabled={matchBusy}
-              onClick={() => closeMatch(resultPayload(draft))}
+              onClick={() => closeMatch(resultPayload(draft), lineup.slots)}
             >
               {matchBusy ? 'Cerrando…' : 'Cerrar partido'}
             </button>
@@ -35,7 +35,7 @@ export default function MatchBar({ lineup, match, openMatch, closeMatch, matchBu
                 ? 'Poné al menos 2 del plantel en la cancha para abrir el partido.'
                 : `Listos ${played.length} del plantel. Al abrir, cada uno tiene 5 puntos nuevos.`}
             </p>
-            <button type="button" className="match-bar-btn" disabled={!canOpen} onClick={() => openMatch({ players: played, mode: lineup.mode })}>
+            <button type="button" className="match-bar-btn" disabled={!canOpen} onClick={() => openMatch({ players: played, mode: lineup.mode, slots: lineup.slots })}>
               {matchBusy ? 'Abriendo…' : 'Abrir partido'}
             </button>
           </>

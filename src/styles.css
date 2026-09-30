@@ -340,7 +340,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .drag-ghost.is-randoms small { color: #4a4e55; }
 
 @media (max-width: 800px) {
-  .home-destinations, .squad-grid, .five-match-board { grid-template-columns: 1fr; }
+  .home-destinations, .squad-grid, .five-match-board, .history-card-teams, .history-card-swings { grid-template-columns: 1fr; }
   .home-destination--wide { grid-column: auto; }
   .section-header { align-items: flex-start; flex-direction: column; }
   .shared-pitch { min-height: 540px; }
@@ -408,12 +408,26 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .history-card-when { margin: 0; color: var(--muted); font-size: .78rem; text-transform: capitalize; }
 .history-card-head strong { font: 800 1.25rem/1.15 'Barlow Condensed', sans-serif; letter-spacing: .4px; text-transform: uppercase; }
 .history-card-head small { color: var(--muted); font-size: .78rem; }
-.history-card-teams { display: grid; gap: 8px; }
-.history-team { display: grid; gap: 2px; margin: 0; }
+.history-card-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.history-team { display: grid; gap: 6px; margin: 0; padding: 10px; border: 1px solid rgba(255, 255, 255, .08); border-radius: 4px; }
 .history-team b { font-size: .72rem; letter-spacing: .6px; text-transform: uppercase; }
+.history-team.is-a { background: rgba(80, 140, 200, .12); }
 .history-team.is-a b { color: #8fc4f2; }
+.history-team.is-b { background: rgba(180, 70, 70, .14); }
 .history-team.is-b b { color: #f3a19c; }
-.history-team span { color: #d4d5cd; font-size: .88rem; }
+.history-team ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; color: #f3f1eb; font-size: .92rem; }
+.history-team-empty { margin: 0; color: var(--muted); font-size: .82rem; }
+.history-card-swings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.history-swing { display: grid; gap: 6px; padding: 10px; border-radius: 4px; }
+.history-swing b { font-size: .72rem; letter-spacing: .6px; text-transform: uppercase; }
+.history-swing ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.history-swing li { display: flex; justify-content: space-between; gap: 8px; font-size: .9rem; }
+.history-swing em { font: 800 .95rem 'Rajdhani', sans-serif; font-style: normal; }
+.history-swing.is-up { background: rgba(78, 157, 84, .16); }
+.history-swing.is-up b, .history-swing.is-up em { color: #9fdc9f; }
+.history-swing.is-down { background: rgba(214, 76, 71, .16); }
+.history-swing.is-down b, .history-swing.is-down em { color: #ffb3b0; }
+.history-swing-empty { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: .82rem; }
 .history-card-marks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .history-mark { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 5px 9px; border-radius: 3px; font: 700 .78rem 'Rajdhani', sans-serif; }
 .history-mark.is-mvp { background: rgba(231, 173, 78, .18); color: var(--accent); }

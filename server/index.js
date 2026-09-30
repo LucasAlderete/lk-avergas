@@ -439,12 +439,13 @@ async function start() {
     }
     const mode = Number(req.body?.mode);
     const lineup = packedLineup(await lineupCol.findOne({ _id: "club" }));
+    const slots = packedSlots(req.body?.slots?.length ? req.body.slots : lineup?.slots);
     const doc = {
       status: "open",
       day: dayKeyAR(),
       players: roster,
       mode: [5, 6, 7].includes(mode) ? mode : 5,
-      slots: packedSlots(lineup?.slots || req.body?.slots),
+      slots,
       createdAt: new Date(),
       createdBy: {
         googleId: req.user.googleId,
@@ -466,6 +467,8 @@ async function start() {
     const closedAt = new Date();
     const patch = { status: "closed", closedAt, closedReason: "admin" };
     if (result) patch.result = result;
+    const slots = packedSlots(req.body?.slots);
+    if (slots.length && !packedSlots(open.slots).length) patch.slots = slots;
     await matches.updateOne(
       { _id: open._id, status: "open" },
       { $set: patch },
@@ -489,8 +492,16 @@ async function start() {
       res.status(404).json({ error: "No está ese partido" });
       return;
     }
-    await matches.updateOne({ _id }, { $set: { result, resultAt: new Date() } });
-    res.json({ match: publicMatch({ ...doc, result }) });
+    const patch = { result, resultAt: new Date() };
+    const fromBody = packedSlots(req.body?.slots);
+    const lineup = packedLineup(await lineupCol.findOne({ _id: "club" }));
+    const fromPitch = packedSlots(lineup?.slots);
+    if (!packedSlots(doc.slots).length) {
+      if (fromBody.length) patch.slots = fromBody;
+      else if (fromPitch.length) patch.slots = fromPitch;
+    }
+    await matches.updateOne({ _id }, { $set: patch });
+    res.json({ match: publicMatch({ ...doc, ...patch }) });
   }));
 
   app.delete("/api/matches/:id", requireAdmin, ah(async (req, res) => {

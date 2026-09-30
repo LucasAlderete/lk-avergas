@@ -169,6 +169,7 @@ assert(lineup.html.includes('data-navigation="squad"'), 'Alineación puede naveg
 assert(lineup.html.includes('data-navigation="history"'), 'Alineación puede navegar a Historial');
 
 assert(history.html.includes('Historial'), 'Historial renderiza su pantalla');
+assert(history.html.includes('quién subió o bajó puntos'), 'Historial avisa que muestra los movimientos de puntos');
 assert(history.html.includes('data-navigation="home"'), 'Historial puede volver a inicio');
 assert(history.html.includes('data-navigation="squad"'), 'Historial puede navegar a Plantel');
 

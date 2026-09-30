@@ -5,10 +5,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const story = await import(pathToFileURL(path.join(root, 'src', 'matches', 'matchStory.js')).href);
 
-const {
-  highlights, historyCard, medalsOf, netReceived, parseResult, playedIn,
-  playerTeam, resultLine, teamsFromSlots, wonMatch,
-} = story;
+  const {
+    highlights, historyCard, medalsOf, netReceived, parseResult, playedIn,
+    playerTeam, resultLine, signedNet, swingOf, teamsFromSlots, wonMatch,
+  } = story;
 
 let failures = 0;
 const fail = (label) => { failures += 1; console.error(`  x FAIL: ${label}`); };
@@ -57,6 +57,11 @@ console.log('== C) MVP y peor por votos del partido ==');
   const marks = highlights(nets);
   assert(JSON.stringify(marks.mvp) === JSON.stringify(['Gonzi']), 'MVP es quien más positivo recibió');
   assert(JSON.stringify(marks.worst) === JSON.stringify(['Chino']), 'el peor es quien más negativo recibió');
+  const swing = swingOf(nets);
+  assert(swing.up[0].name === 'Gonzi' && swing.up[0].net === 3, 'subió Gonzi +3');
+  assert(swing.down[0].name === 'Chino' && swing.down[0].net === -2, 'bajó más Chino');
+  assert(swing.down[1].name === 'Rui' && swing.down[1].net === -1, 'después Rui');
+  assert(signedNet(3) === '+3' && signedNet(-2) === '-2', 'el cartel lleva el signo');
   const tie = highlights({ Alan: 2, Nahue: 2, Rui: -1, Lucas: -1 });
   assert(JSON.stringify(tie.mvp) === JSON.stringify(['Alan', 'Nahue']), 'empate de MVP entra los dos');
   assert(JSON.stringify(tie.worst) === JSON.stringify(['Lucas', 'Rui']), 'empate de peor entra los dos');
@@ -116,6 +121,8 @@ console.log('== E) Tarjeta de historial ==');
   );
   assert(card.result.margin === 4, 'la tarjeta guarda la diferencia');
   assert(card.mvp[0] === 'Gonzi' && card.worst[0] === 'Rui', 'MVP y peor salen de los votos de ese partido');
+  assert(card.teams.teamA.join(',') === 'Gonzi' && card.teams.teamB.join(',') === 'Rui', 'la tarjeta lista los dos equipos');
+  assert(card.up[0].name === 'Gonzi' && card.down[0].name === 'Rui', 'quién subió y quién bajó va en la tarjeta');
 }
 
 if (failures) {

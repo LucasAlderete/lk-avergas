@@ -81,14 +81,14 @@ export default function useVotes() {
     }
   }, [user, matchOpen, load]);
 
-  const openMatch = useCallback(async ({ players, mode }) => {
+  const openMatch = useCallback(async ({ players, mode, slots }) => {
     setMatchBusy(true);
     setMatchError('');
     try {
       const data = await readJSON('/api/matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ players, mode }),
+        body: JSON.stringify({ players, mode, slots }),
       });
       setMatch(data.match || null);
       await load();
@@ -99,14 +99,17 @@ export default function useVotes() {
     }
   }, [load]);
 
-  const closeMatch = useCallback(async (result) => {
+  const closeMatch = useCallback(async (result, slots) => {
     setMatchBusy(true);
     setMatchError('');
     try {
+      const payload = {};
+      if (result) payload.result = result;
+      if (Array.isArray(slots) && slots.length) payload.slots = slots;
       await readJSON('/api/matches/close', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result ? { result } : {}),
+        body: JSON.stringify(payload),
       });
       setMatch(null);
       setMyBallot({});

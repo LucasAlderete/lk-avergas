@@ -131,10 +131,33 @@ export function highlights(nets) {
   return { mvp, worst };
 }
 
+// Quién subió y quién bajó en NETO en ese partido (todos los votos juntos).
+export function swingOf(nets) {
+  const up = [];
+  const down = [];
+  for (const [name, value] of Object.entries(nets || {})) {
+    const net = Number(value);
+    if (!name || !Number.isFinite(net) || net === 0) continue;
+    if (net > 0) up.push({ name, net });
+    else down.push({ name, net });
+  }
+  up.sort((a, b) => b.net - a.net || a.name.localeCompare(b.name, 'es'));
+  down.sort((a, b) => a.net - b.net || a.name.localeCompare(b.name, 'es'));
+  return { up, down };
+}
+
+export function signedNet(net) {
+  const value = Number(net);
+  if (!Number.isFinite(value) || value === 0) return '0';
+  return value > 0 ? `+${value}` : String(value);
+}
+
 export function historyCard(doc, ballots) {
   const slots = packedSlots(doc?.slots);
   const result = parseResult(doc?.result);
-  const marks = highlights(netReceived(ballots));
+  const nets = netReceived(ballots);
+  const marks = highlights(nets);
+  const swing = swingOf(nets);
   return {
     id: doc?.id || (doc?._id != null ? String(doc._id) : ''),
     status: doc?.status || 'closed',
@@ -148,6 +171,8 @@ export function historyCard(doc, ballots) {
     result,
     mvp: marks.mvp,
     worst: marks.worst,
+    up: swing.up,
+    down: swing.down,
   };
 }
 

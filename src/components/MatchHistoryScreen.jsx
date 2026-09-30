@@ -9,7 +9,7 @@ export default function MatchHistoryScreen({ onBack, onNavigate }) {
     <main className="page history-page">
       <SectionHeader
         title="Historial"
-        subtitle="Resultados por diferencia, MVP y el peor de cada partido."
+        subtitle="Formaciones, resultado por diferencia, y quién subió o bajó puntos."
         current="history"
         onHome={onBack}
         onNavigate={onNavigate}
