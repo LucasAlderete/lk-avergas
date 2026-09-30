@@ -9,6 +9,7 @@
 //   sailor_1.m4a   -> Sailor
 //   mati_1.m4a     -> Mati
 //   cru_1.m4a      -> Cru
+//   chino_1.m4a    -> Chino
 //   rui_2.m4a      -> Rui (se elige uno al azar al tocar el 🔈)
 //
 // El `_1`, `_2` al final es el índice del clip, no parte del nombre. Para
