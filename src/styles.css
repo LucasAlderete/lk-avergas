@@ -404,11 +404,24 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
 .history-list { display: grid; gap: 12px; }
 .history-card { padding: 14px; border: 1px solid var(--line); border-radius: 4px; background: linear-gradient(145deg, rgba(48, 49, 42, .9), rgba(20, 22, 18, .94)); }
-.history-card-head { display: grid; gap: 4px; margin-bottom: 12px; }
+.history-card-head { display: grid; gap: 4px; margin-bottom: 8px; }
 .history-card-when { margin: 0; color: var(--muted); font-size: .78rem; text-transform: capitalize; }
 .history-card-head strong { font: 800 1.25rem/1.15 'Barlow Condensed', sans-serif; letter-spacing: .4px; text-transform: uppercase; }
 .history-card-head small { color: var(--muted); font-size: .78rem; }
-.history-card-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.history-card-roster { display: grid; justify-items: start; gap: 10px; }
+.history-teams-toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: 700 .8rem 'Rajdhani', sans-serif;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.history-teams-toggle:hover { color: #f3c97a; }
+.history-card-teams { display: grid; width: 100%; grid-template-columns: 1fr 1fr; gap: 12px; }
 .history-team { display: grid; gap: 6px; margin: 0; padding: 10px; border: 1px solid rgba(255, 255, 255, .08); border-radius: 4px; }
 .history-team b { font-size: .72rem; letter-spacing: .6px; text-transform: uppercase; }
 .history-team.is-a { background: rgba(80, 140, 200, .12); }

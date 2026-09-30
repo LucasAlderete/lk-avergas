@@ -6,6 +6,7 @@ import CareerScreen from '../../src/features/career/components/CareerScreen.jsx'
 import CareerHeader from '../../src/features/career/components/CareerHeader.jsx';
 import HomeScreen, { HomeDestinations } from '../../src/components/HomeScreen.jsx';
 import LineupScreen from '../../src/components/LineupScreen.jsx';
+import MatchHistoryCard from '../../src/components/MatchHistoryCard.jsx';
 import MatchHistoryScreen from '../../src/components/MatchHistoryScreen.jsx';
 import PlayerStatsSheet from '../../src/components/PlayerStatsSheet.jsx';
 import SectionNav, { SectionNav as NamedSectionNav } from '../../src/components/SectionNav.jsx';
@@ -53,6 +54,23 @@ export const audioInfo = () => {
 };
 export const renderLineup = () => render(<LineupScreen onBack={noop} onNavigate={noop} />);
 export const renderHistory = () => render(<MatchHistoryScreen onBack={noop} onNavigate={noop} />);
+export const renderHistoryCard = () => render(
+  <MatchHistoryCard
+    match={{
+      id: 'abc',
+      status: 'closed',
+      mode: 5,
+      createdAt: '2026-01-02T12:00:00.000Z',
+      players: ['Gonzi', 'Rui'],
+      teams: { teamA: ['Gonzi'], teamB: ['Rui'] },
+      result: { winner: 'teamB', margin: 4 },
+      mvp: ['Gonzi'],
+      worst: ['Rui'],
+      up: [{ name: 'Gonzi', from: 87, to: 88 }],
+      down: [],
+    }}
+  />,
+);
 export const renderAdmin = () => render(<AdminScreen onBack={noop} onNavigate={noop} />);
 export const renderCareerHeader = (career = { name: 'Alan', age: 19, season: 2026 }, phase = 'season') => render(
   <CareerHeader career={career} phase={phase} onBack={noop} onNavigate={noop} />,

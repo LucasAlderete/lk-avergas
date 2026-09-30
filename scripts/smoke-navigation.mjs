@@ -172,6 +172,12 @@ assert(history.html.includes('Historial'), 'Historial renderiza su pantalla');
 assert(history.html.includes('quién subió o bajó de OVR'), 'Historial avisa que muestra los movimientos de OVR');
 assert(history.html.includes('data-navigation="home"'), 'Historial puede volver a inicio');
 assert(history.html.includes('data-navigation="squad"'), 'Historial puede navegar a Plantel');
+const historyCard = ui.renderHistoryCard();
+assert(historyCard.ok, 'una tarjeta de historial renderiza sin error');
+assert(historyCard.html.includes('Ver equipos'), 'la tarjeta ofrece Ver equipos');
+assert(!historyCard.html.includes('Ocultar equipos'), 'los equipos empiezan ocultos');
+assert(!historyCard.html.includes('history-card-teams'), 'las formaciones no aparecen hasta tocar Ver equipos');
+assert(historyCard.html.includes('87 → 88'), 'el salto de OVR sigue visible sin abrir los equipos');
 
 const homeCalls = ui.exerciseHomeCallbacks();
 assert(homeCalls.includes('career') === careerOn, careerOn ? 'Home -> Mi carrera ejecuta el callback' : 'Home no llama a Mi carrera');
