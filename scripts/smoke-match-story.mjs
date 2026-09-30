@@ -4,11 +4,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const story = await import(pathToFileURL(path.join(root, 'src', 'matches', 'matchStory.js')).href);
+const { players } = await import(pathToFileURL(path.join(root, 'src', 'data.js')).href);
+const { withVotes } = await import(pathToFileURL(path.join(root, 'src', 'voting', 'voteRules.js')).href);
 
-  const {
-    highlights, historyCard, medalsOf, netReceived, parseResult, playedIn,
-    playerTeam, resultLine, signedNet, swingOf, teamsFromSlots, wonMatch,
-  } = story;
+const {
+  buildHistory, highlights, historyCard, medalsOf, netReceived, ovrJump, parseResult, playedIn,
+  playerTeam, ratingMoves, resultLine, teamsFromSlots, wonMatch,
+} = story;
 
 let failures = 0;
 const fail = (label) => { failures += 1; console.error(`  x FAIL: ${label}`); };
@@ -57,11 +59,17 @@ console.log('== C) MVP y peor por votos del partido ==');
   const marks = highlights(nets);
   assert(JSON.stringify(marks.mvp) === JSON.stringify(['Gonzi']), 'MVP es quien más positivo recibió');
   assert(JSON.stringify(marks.worst) === JSON.stringify(['Chino']), 'el peor es quien más negativo recibió');
-  const swing = swingOf(nets);
-  assert(swing.up[0].name === 'Gonzi' && swing.up[0].net === 3, 'subió Gonzi +3');
-  assert(swing.down[0].name === 'Chino' && swing.down[0].net === -2, 'bajó más Chino');
-  assert(swing.down[1].name === 'Rui' && swing.down[1].net === -1, 'después Rui');
-  assert(signedNet(3) === '+3' && signedNet(-2) === '-2', 'el cartel lleva el signo');
+  const bump = { pace: 1, shooting: 1, passing: 1, dribbling: 1, defense: 1, physical: 1 };
+  const gonzi = players.find((player) => player.name === 'Gonzi');
+  const rui = players.find((player) => player.name === 'Rui');
+  const gonziTo = withVotes(gonzi, bump).rating;
+  const ruiTo = withVotes(rui, { pace: -1, shooting: -1, passing: -1, dribbling: -1, defense: -1, physical: -1 }).rating;
+  const ovr = ratingMoves({ Gonzi: bump, Rui: { pace: -1, shooting: -1, passing: -1, dribbling: -1, defense: -1, physical: -1 } });
+  assert(ovr.up[0].name === 'Gonzi' && ovr.up[0].from === gonzi.rating && ovr.up[0].to === gonziTo, 'subió el OVR de Gonzi, no el conteo de +1');
+  assert(ovr.down[0].name === 'Rui' && ovr.down[0].from === rui.rating && ovr.down[0].to === ruiTo, 'bajó el OVR de Rui');
+  assert(ovrJump(ovr.up[0]) === `${gonzi.rating} → ${gonziTo}`, 'el cartel es 87 → 88');
+  const ruiUp = ratingMoves({ Rui: bump });
+  assert(ovrJump(ruiUp.up[0]) === `${rui.rating} → ${rui.rating + 1}`, 'Rui 71 → 72 cuando el OVR global sube');
   const tie = highlights({ Alan: 2, Nahue: 2, Rui: -1, Lucas: -1 });
   assert(JSON.stringify(tie.mvp) === JSON.stringify(['Alan', 'Nahue']), 'empate de MVP entra los dos');
   assert(JSON.stringify(tie.worst) === JSON.stringify(['Lucas', 'Rui']), 'empate de peor entra los dos');
@@ -117,12 +125,27 @@ console.log('== E) Tarjeta de historial ==');
       slots: [{ name: 'Gonzi', x: 40, y: 20 }, { name: 'Rui', x: 40, y: 80 }],
       result: { winner: 'teamB', margin: 4 },
     },
-    [{ Gonzi: { pace: 2 }, Rui: { shooting: -1 } }],
+    [{ Gonzi: { pace: 1, shooting: 1, passing: 1, dribbling: 1, defense: 1, physical: 1 }, Rui: { pace: -1, shooting: -1, passing: -1, dribbling: -1, defense: -1, physical: -1 } }],
   );
+  const gonzi = players.find((player) => player.name === 'Gonzi');
+  const rui = players.find((player) => player.name === 'Rui');
   assert(card.result.margin === 4, 'la tarjeta guarda la diferencia');
   assert(card.mvp[0] === 'Gonzi' && card.worst[0] === 'Rui', 'MVP y peor salen de los votos de ese partido');
   assert(card.teams.teamA.join(',') === 'Gonzi' && card.teams.teamB.join(',') === 'Rui', 'la tarjeta lista los dos equipos');
-  assert(card.up[0].name === 'Gonzi' && card.down[0].name === 'Rui', 'quién subió y quién bajó va en la tarjeta');
+  assert(card.up[0].from === gonzi.rating && card.up[0].to === gonzi.rating + 1, 'Gonzi aparece con el OVR de antes y el de después');
+  assert(card.down[0].from === rui.rating && card.down[0].to === rui.rating - 1, 'Rui también');
+  const stacked = buildHistory(
+    [
+      { _id: '1', status: 'closed', createdAt: '2026-01-01', slots: [{ name: 'Gonzi', x: 40, y: 20 }] },
+      { _id: '2', status: 'closed', createdAt: '2026-01-02', slots: [{ name: 'Gonzi', x: 40, y: 20 }] },
+    ],
+    {
+      1: [{ Gonzi: { pace: 1, shooting: 1, passing: 1, dribbling: 1, defense: 1, physical: 1 } }],
+      2: [{ Gonzi: { pace: 1, shooting: 1, passing: 1, dribbling: 1, defense: 1, physical: 1 } }],
+    },
+  );
+  assert(stacked[0].id === '2', 'el historial se lista del más nuevo al más viejo');
+  assert(stacked[1].up[0].from === gonzi.rating && stacked[0].up[0].from === gonzi.rating + 1, 'el segundo partido parte del OVR que dejó el primero');
 }
 
 if (failures) {

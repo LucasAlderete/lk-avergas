@@ -1,6 +1,6 @@
 import { Medal } from 'lucide-react';
 
-import { resultLine, signedNet } from '../matches/matchStory.js';
+import { ovrJump, resultLine } from '../matches/matchStory.js';
 
 function formatWhen(value) {
   if (!value) return '';
@@ -36,7 +36,7 @@ function SwingList({ title, tone, rows }) {
         {rows.map((row) => (
           <li key={row.name}>
             <span>{row.name}</span>
-            <em>{signedNet(row.net)}</em>
+            <em>{ovrJump(row)}</em>
           </li>
         ))}
       </ul>
@@ -70,7 +70,7 @@ export default function MatchHistoryCard({ match }) {
         <SwingList title="Subieron" tone="up" rows={match.up} />
         <SwingList title="Bajaron" tone="down" rows={match.down} />
         {!match.up?.length && !match.down?.length ? (
-          <p className="history-swing-empty">Nadie cargó puntos en este partido.</p>
+          <p className="history-swing-empty">Nadie cambió de OVR en este partido.</p>
         ) : null}
       </div>
       <footer className="history-card-marks">

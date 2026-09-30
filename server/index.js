@@ -11,7 +11,7 @@ import { MongoClient, ObjectId } from "mongodb";
 import { isAdminEmail } from "../src/auth/admin.js";
 import { alignmentPlayers, players, RATING_STATS } from "../src/data.js";
 import { normalizeLineup } from "../src/components/lineupRules.js";
-import { historyCard, packedSlots, parseResult } from "../src/matches/matchStory.js";
+import { buildHistory, packedSlots, parseResult } from "../src/matches/matchStory.js";
 import {
   POINTS_PER_PLAYER,
   TOTAL_POINTS,
@@ -535,7 +535,7 @@ async function start() {
       (byMatch[id] ||= []).push(row.votes || {});
     }
     res.json({
-      matches: docs.map((doc) => historyCard(doc, byMatch[String(doc._id)] || [])),
+      matches: buildHistory(docs, byMatch),
     });
   }));
 

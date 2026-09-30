@@ -9,7 +9,7 @@ export default function MatchHistoryScreen({ onBack, onNavigate }) {
     <main className="page history-page">
       <SectionHeader
         title="Historial"
-        subtitle="Formaciones, resultado por diferencia, y quién subió o bajó puntos."
+        subtitle="Formaciones, resultado por diferencia, y quién subió o bajó de OVR."
         current="history"
         onHome={onBack}
         onNavigate={onNavigate}

@@ -8,6 +8,8 @@
 // con signo. El que más recibió en neto es MVP; el que más negativo, el peor.
 // Empates: entran todos los que empataron el máximo o el mínimo.
 import { teamForY } from '../components/lineupRules.js';
+import { alignmentPlayers } from '../data.js';
+import { aggregateBallots, withVotes } from '../voting/voteRules.js';
 
 export const TEAM_LABEL = Object.freeze({
   teamA: 'azul',
@@ -131,33 +133,60 @@ export function highlights(nets) {
   return { mvp, worst };
 }
 
-// Quién subió y quién bajó en NETO en ese partido (todos los votos juntos).
-export function swingOf(nets) {
+// Quién subió y quién bajó el OVR que se ve en el Plantel, no los +1/-1
+// sueltos: Gonzi 87 → 88. Se calcula con los votos de ESE partido encima de
+// los que ya venían de partidos anteriores.
+export function mergeDeltas(base, extra) {
+  const out = {};
+  for (const source of [base, extra]) {
+    for (const [name, deltas] of Object.entries(source || {})) {
+      out[name] = { ...(out[name] || {}) };
+      for (const [key, value] of Object.entries(deltas || {})) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) continue;
+        const next = (out[name][key] || 0) + n;
+        if (next === 0) delete out[name][key];
+        else out[name][key] = next;
+      }
+      if (!Object.keys(out[name]).length) delete out[name];
+    }
+  }
+  return out;
+}
+
+export function ratingOf(name, deltas) {
+  const player = alignmentPlayers.find((item) => item.name === name);
+  if (!player) return null;
+  return withVotes(player, deltas?.[name]).rating;
+}
+
+export function ratingMoves(matchDeltas, beforeDeltas = {}) {
   const up = [];
   const down = [];
-  for (const [name, value] of Object.entries(nets || {})) {
-    const net = Number(value);
-    if (!name || !Number.isFinite(net) || net === 0) continue;
-    if (net > 0) up.push({ name, net });
-    else down.push({ name, net });
+  for (const name of Object.keys(matchDeltas || {})) {
+    const from = ratingOf(name, beforeDeltas);
+    const to = ratingOf(name, mergeDeltas(beforeDeltas, { [name]: matchDeltas[name] }));
+    if (from == null || to == null || from === to) continue;
+    const row = { name, from, to };
+    if (to > from) up.push(row);
+    else down.push(row);
   }
-  up.sort((a, b) => b.net - a.net || a.name.localeCompare(b.name, 'es'));
-  down.sort((a, b) => a.net - b.net || a.name.localeCompare(b.name, 'es'));
+  up.sort((a, b) => (b.to - b.from) - (a.to - a.from) || a.name.localeCompare(b.name, 'es'));
+  down.sort((a, b) => (a.to - a.from) - (b.to - b.from) || a.name.localeCompare(b.name, 'es'));
   return { up, down };
 }
 
-export function signedNet(net) {
-  const value = Number(net);
-  if (!Number.isFinite(value) || value === 0) return '0';
-  return value > 0 ? `+${value}` : String(value);
+export function ovrJump(row) {
+  if (!row) return '';
+  return `${row.from} → ${row.to}`;
 }
 
-export function historyCard(doc, ballots) {
+export function historyCard(doc, ballots, beforeDeltas = {}) {
   const slots = packedSlots(doc?.slots);
   const result = parseResult(doc?.result);
   const nets = netReceived(ballots);
   const marks = highlights(nets);
-  const swing = swingOf(nets);
+  const moves = ratingMoves(aggregateBallots(ballots), beforeDeltas);
   return {
     id: doc?.id || (doc?._id != null ? String(doc._id) : ''),
     status: doc?.status || 'closed',
@@ -171,13 +200,26 @@ export function historyCard(doc, ballots) {
     result,
     mvp: marks.mvp,
     worst: marks.worst,
-    up: swing.up,
-    down: swing.down,
+    up: moves.up,
+    down: moves.down,
   };
 }
 
 function byCreatedAt(a, b) {
   return new Date(a?.createdAt || 0) - new Date(b?.createdAt || 0);
+}
+
+export function buildHistory(docs, ballotsByMatch = {}) {
+  const oldest = [...(docs || [])].sort(byCreatedAt);
+  let before = {};
+  const cards = [];
+  for (const doc of oldest) {
+    const id = doc?.id || (doc?._id != null ? String(doc._id) : '');
+    const votes = ballotsByMatch[id] || [];
+    cards.push(historyCard(doc, votes, before));
+    before = mergeDeltas(before, aggregateBallots(votes));
+  }
+  return cards.reverse();
 }
 
 export function medalsOf(name, matches) {
