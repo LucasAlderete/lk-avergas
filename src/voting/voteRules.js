@@ -15,7 +15,7 @@
 // Una boleta es un objeto: { [nombreJugador]: { pace: 1, shooting: -1 } }
 // Los deltas que valen 0 no se guardan.
 
-import { RATING_STATS, players, statOf } from '../data.js';
+import { RATING_STATS, overallOf, players, statOf } from '../data.js';
 
 export const TOTAL_POINTS = 5;
 export const POINTS_PER_PLAYER = 2;
@@ -123,6 +123,21 @@ export function withVotes(player, deltas) {
     attributes[stat.key] = clamp(baseOf(player, stat.key) + (deltas?.[stat.key] || 0), 0, 99);
   }
   return { ...player, attributes, rating: overallOfAttributes(attributes) };
+}
+
+// Lo que se pinta en la ficha: si el jugador viene del roster votado (tiene
+// `attributes`), se usan esos números. Si viene crudo de data.js, el base.
+export function displayStatOf(player, key) {
+  const voted = Number(player?.attributes?.[key]);
+  if (Number.isFinite(voted)) return clamp(Math.round(voted), 0, 99);
+  return statOf(player, key);
+}
+
+export function displayRatingOf(player) {
+  if (player?.attributes && Number.isFinite(Number(player.rating))) {
+    return Number(player.rating);
+  }
+  return overallOf(player);
 }
 
 // El roster completo (Plantel) con todos los votos aplicados.

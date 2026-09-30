@@ -255,6 +255,11 @@ console.log('\n== 6-bis) Ficha de stats ==');
   const chino = players.find((player) => player.name === 'Chino');
   assert(sheet.html.includes('Chino'), 'la ficha muestra el nombre del jugador');
   assert(sheet.html.includes(`OVR ${ui.playerOvr(chino)}`), 'la ficha muestra el OVR');
+  const votedSheet = ui.renderVotedStatsSheet();
+  assert(votedSheet.ok && votedSheet.html, 'la ficha con votos renderiza');
+  assert(votedSheet.voted !== votedSheet.base, 'el jugador de prueba de verdad cambió de OVR');
+  assert(votedSheet.html.includes(`OVR ${votedSheet.voted}`), 'la ficha muestra el OVR con votos, el mismo del Plantel');
+  assert(!votedSheet.html.includes(`OVR ${votedSheet.base}`), 'la ficha no se queda en el OVR base de data.js');
   for (const label of ['Ritmo', 'Tiro', 'Pase', 'Regate', 'Defensa', 'Físico']) {
     assert(sheet.html.includes(label), `la ficha muestra el atributo ${label}`);
   }

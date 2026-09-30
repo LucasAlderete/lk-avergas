@@ -4,14 +4,16 @@
 // Por qué modal y no tooltip: en el celu no existe el hover, así que un tooltip
 // no se puede abrir. Al tocar un jugador del Plantel sube esta hoja, que se
 // opera con el pulgar y muestra los 6 atributos de FIFA + el OVR.
-// El OVR es el promedio de esos 6 atributos (ver overallOf en data.js).
+// El OVR es el promedio de esos 6 atributos YA con los votos (el mismo número
+// que se ve en Plantel y Alineación). Ver displayRatingOf en voteRules.js.
 import { useEffect, useRef } from 'react';
 import { Medal, X } from 'lucide-react';
 
-import { RATING_STATS, overallOf, statOf } from '../data.js';
+import { RATING_STATS } from '../data.js';
 import { medalsOf } from '../matches/matchStory.js';
 import useMatchHistory from '../matches/useMatchHistory.js';
 import { photoOf } from '../playerPhotos.js';
+import { displayRatingOf, displayStatOf } from '../voting/voteRules.js';
 import PlayerAudioButton from './PlayerAudioButton.jsx';
 import PlayerBanner from './PlayerBanner.jsx';
 
@@ -19,7 +21,7 @@ import PlayerBanner from './PlayerBanner.jsx';
 const toneOf = (value) => (value >= 80 ? 'high' : value >= 65 ? 'mid' : value >= 50 ? 'low' : 'bad');
 
 function StatRow({ stat, player }) {
-  const value = statOf(player, stat.key);
+  const value = displayStatOf(player, stat.key);
   return (
     <li className="stat-row">
       <span className="stat-label">{stat.label}</span>
@@ -73,7 +75,7 @@ export default function PlayerStatsSheet({ player, onClose }) {
   }, [playerName]);
 
   if (!player) return null;
-  const overall = overallOf(player);
+  const overall = displayRatingOf(player);
 
   return (
     <>

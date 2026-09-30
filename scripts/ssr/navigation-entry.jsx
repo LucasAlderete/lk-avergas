@@ -12,6 +12,7 @@ import PlayerStatsSheet from '../../src/components/PlayerStatsSheet.jsx';
 import SectionNav, { SectionNav as NamedSectionNav } from '../../src/components/SectionNav.jsx';
 import SquadScreen from '../../src/components/SquadScreen.jsx';
 import { overallOf, players } from '../../src/data.js';
+import { withVotes } from '../../src/voting/voteRules.js';
 import * as photoModule from '../../src/playerPhotos.js';
 import * as audioModule from '../../src/playerAudio.js';
 
@@ -31,6 +32,12 @@ export const renderSquad = () => render(<SquadScreen onBack={noop} onNavigate={n
 // La ficha se abre con un toque, así que para el smoke se renderiza abierta.
 // Acepta el jugador: con foto y sin foto son dos casos distintos.
 export const renderStatsSheet = (player = players[0]) => render(<PlayerStatsSheet player={player} onClose={noop} />);
+export const renderVotedStatsSheet = () => {
+  const base = players[0];
+  const bump = { pace: 1, shooting: 1, passing: 1, dribbling: 1, defense: 1, physical: 1 };
+  const voted = withVotes(base, bump);
+  return { ...render(<PlayerStatsSheet player={voted} onClose={noop} />), base: base.rating, voted: voted.rating };
+};
 export const playerOvr = (player) => overallOf(player);
 // Las fotos se testean contra la pantalla real: qué jugadores tienen foto, y
 // que la miniatura del Plantel y el banner del modal usen la misma.

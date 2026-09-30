@@ -18,8 +18,8 @@ const v = await import(pathToFileURL(path.join(root, 'src', 'voting', 'voteRules
 
 const {
   POINTS_PER_PLAYER, TOTAL_POINTS, aggregateBallots, canCast, castVote, clearBallot,
-  costOfPlayer, dynamicAlignmentRoster, dynamicRoster, emptyBallot, remaining, spent, withVotes,
-  ballotSummary,
+  costOfPlayer, displayRatingOf, displayStatOf, dynamicAlignmentRoster, dynamicRoster,
+  emptyBallot, remaining, spent, withVotes, ballotSummary,
 } = v;
 
 let failures = 0;
@@ -86,6 +86,12 @@ console.log('\n== B) Sumar y restar recalcula el OVR ==');
 
   // Un voto de una sola persona (2 puntos como mucho) no puede hacer escudos.
   assert(ovrOf({ passing: 2 }) <= base + 1, 'una persona sola no puede subir más de 1 el OVR');
+
+  const voted = withVotes(chino, everyone);
+  assert(displayRatingOf(chino) === chino.rating, 'sin votos, la ficha muestra el OVR base');
+  assert(displayRatingOf(voted) === voted.rating, 'con votos, la ficha muestra el OVR del Plantel');
+  assert(displayRatingOf(voted) !== displayRatingOf(chino), 'la ficha no se queda en el OVR de data.js');
+  assert(displayStatOf(voted, 'pace') === voted.attributes.pace, 'las barras de la ficha siguen a los atributos votados');
 }
 
 console.log('\n== C) Se puede deshacer ==');
