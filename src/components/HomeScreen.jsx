@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, ChevronRight, ClipboardList, ListChecks, Users } from 'lucide-react';
+import { BriefcaseBusiness, ChevronRight, ClipboardList, History, ListChecks, Users } from 'lucide-react';
 
 import AccountBar from '../auth/AccountBar.jsx';
 import { useIsAdmin } from '../auth/AuthContext.jsx';
@@ -22,6 +22,13 @@ const destinations = [
     title: 'Alineación',
     description: 'Arrastrá a los jugadores por la cancha',
     icon: ClipboardList,
+    wide: true,
+  },
+  {
+    id: 'history',
+    title: 'Historial',
+    description: 'Quién ganó por diferencia, el MVP y el peor',
+    icon: History,
     wide: true,
   },
   {

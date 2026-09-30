@@ -1,10 +1,14 @@
+import { useState } from 'react';
+
 import { playedFromLineup } from './lineupRules.js';
 import { useAuth } from '../auth/AuthContext.jsx';
+import MatchResultFields, { resultPayload } from './MatchResultFields.jsx';
 
 export default function MatchBar({ lineup, match, openMatch, closeMatch, matchBusy, matchError }) {
   const { user } = useAuth();
   const played = playedFromLineup(lineup);
   const canOpen = played.length >= 2 && !matchBusy;
+  const [draft, setDraft] = useState({ winner: '', margin: 1 });
 
   if (user?.isAdmin) {
     return (
@@ -14,7 +18,13 @@ export default function MatchBar({ lineup, match, openMatch, closeMatch, matchBu
             <p>
               Partido abierto · se vota en Plantel a {match.players.join(', ')}.
             </p>
-            <button type="button" className="match-bar-btn is-close" disabled={matchBusy} onClick={() => closeMatch()}>
+            <MatchResultFields value={draft} onChange={setDraft} disabled={matchBusy} />
+            <button
+              type="button"
+              className="match-bar-btn is-close"
+              disabled={matchBusy}
+              onClick={() => closeMatch(resultPayload(draft))}
+            >
               {matchBusy ? 'Cerrando…' : 'Cerrar partido'}
             </button>
           </>

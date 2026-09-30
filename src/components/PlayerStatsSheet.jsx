@@ -6,9 +6,11 @@
 // opera con el pulgar y muestra los 6 atributos de FIFA + el OVR.
 // El OVR es el promedio de esos 6 atributos (ver overallOf en data.js).
 import { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { Medal, X } from 'lucide-react';
 
 import { RATING_STATS, overallOf, statOf } from '../data.js';
+import { medalsOf } from '../matches/matchStory.js';
+import useMatchHistory from '../matches/useMatchHistory.js';
 import { photoOf } from '../playerPhotos.js';
 import PlayerAudioButton from './PlayerAudioButton.jsx';
 import PlayerBanner from './PlayerBanner.jsx';
@@ -26,6 +28,24 @@ function StatRow({ stat, player }) {
       </span>
       <b className="stat-value">{value}</b>
     </li>
+  );
+}
+
+function PlayerMedals({ name }) {
+  const { matches } = useMatchHistory({ eager: false });
+  const medals = medalsOf(name, matches);
+  return (
+    <section className="player-medals" aria-label={`Medallas de ${name}`}>
+      <h4>Medallero</h4>
+      <ul>
+        {medals.map((medal) => (
+          <li key={medal.id} className={medal.earned ? 'is-earned' : 'is-locked'}>
+            <Medal size={16} aria-hidden="true" />
+            <span>{medal.label}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -78,6 +98,8 @@ export default function PlayerStatsSheet({ player, onClose }) {
         <ul className="stat-list">
           {RATING_STATS.map((stat) => <StatRow key={stat.key} stat={stat} player={player} />)}
         </ul>
+
+        <PlayerMedals name={player.name} />
 
         <p className="stats-sheet-foot">El OVR es el promedio de los seis atributos.</p>
       </section>

@@ -9,7 +9,7 @@
 // ============================================================================
 
 // Todas las pantallas que la app conoce, prendidas o apagadas.
-const ALL_APP_SCREENS = Object.freeze(['home', 'career', 'squad', 'lineup']);
+const ALL_APP_SCREENS = Object.freeze(['home', 'career', 'squad', 'lineup', 'history']);
 
 // Por sección: false = oculta. Lo que no está en el objeto va prendido.
 export const FEATURE_FLAGS = Object.freeze({ career: false });

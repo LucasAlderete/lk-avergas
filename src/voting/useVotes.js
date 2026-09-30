@@ -99,11 +99,15 @@ export default function useVotes() {
     }
   }, [load]);
 
-  const closeMatch = useCallback(async () => {
+  const closeMatch = useCallback(async (result) => {
     setMatchBusy(true);
     setMatchError('');
     try {
-      await readJSON('/api/matches/close', { method: 'POST' });
+      await readJSON('/api/matches/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result ? { result } : {}),
+      });
       setMatch(null);
       setMyBallot({});
       await load();

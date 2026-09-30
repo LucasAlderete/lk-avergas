@@ -23,6 +23,7 @@ export function SectionHeader({ title, subtitle, current, onHome, onNavigate }) 
           onCareer={() => go('career')}
           onSquad={() => go('squad')}
           onLineup={() => go('lineup')}
+          onHistory={() => go('history')}
           onAdmin={() => go('admin')}
           isAdmin={isAdmin}
         />

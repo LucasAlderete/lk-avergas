@@ -11,6 +11,7 @@ import { MongoClient, ObjectId } from "mongodb";
 import { isAdminEmail } from "../src/auth/admin.js";
 import { alignmentPlayers, players, RATING_STATS } from "../src/data.js";
 import { normalizeLineup } from "../src/components/lineupRules.js";
+import { historyCard, packedSlots, parseResult } from "../src/matches/matchStory.js";
 import {
   POINTS_PER_PLAYER,
   TOTAL_POINTS,
@@ -76,6 +77,8 @@ function publicMatch(doc) {
     mode: doc.mode || 5,
     createdAt: doc.createdAt,
     closedAt: doc.closedAt || null,
+    result: parseResult(doc.result),
+    slots: packedSlots(doc.slots),
   };
 }
 
@@ -435,11 +438,13 @@ async function start() {
       return;
     }
     const mode = Number(req.body?.mode);
+    const lineup = packedLineup(await lineupCol.findOne({ _id: "club" }));
     const doc = {
       status: "open",
       day: dayKeyAR(),
       players: roster,
       mode: [5, 6, 7].includes(mode) ? mode : 5,
+      slots: packedSlots(lineup?.slots || req.body?.slots),
       createdAt: new Date(),
       createdBy: {
         googleId: req.user.googleId,
@@ -457,11 +462,70 @@ async function start() {
       res.status(404).json({ error: "No hay partido abierto" });
       return;
     }
+    const result = parseResult(req.body?.result);
+    const closedAt = new Date();
+    const patch = { status: "closed", closedAt, closedReason: "admin" };
+    if (result) patch.result = result;
     await matches.updateOne(
       { _id: open._id, status: "open" },
-      { $set: { status: "closed", closedAt: new Date(), closedReason: "admin" } },
+      { $set: patch },
     );
-    res.json({ match: publicMatch({ ...open, status: "closed", closedAt: new Date() }) });
+    res.json({ match: publicMatch({ ...open, ...patch }) });
+  }));
+
+  app.put("/api/matches/:id/result", requireAdmin, ah(async (req, res) => {
+    const _id = matchObjectId(req.params.id);
+    if (!_id) {
+      res.status(400).json({ error: "Partido inválido" });
+      return;
+    }
+    const result = parseResult(req.body?.result);
+    if (!result) {
+      res.status(400).json({ error: "Decí quién ganó y por cuántos goles de diferencia" });
+      return;
+    }
+    const doc = await matches.findOne({ _id });
+    if (!doc) {
+      res.status(404).json({ error: "No está ese partido" });
+      return;
+    }
+    await matches.updateOne({ _id }, { $set: { result, resultAt: new Date() } });
+    res.json({ match: publicMatch({ ...doc, result }) });
+  }));
+
+  app.delete("/api/matches/:id", requireAdmin, ah(async (req, res) => {
+    const _id = matchObjectId(req.params.id);
+    if (!_id) {
+      res.status(400).json({ error: "Partido inválido" });
+      return;
+    }
+    const doc = await matches.findOne({ _id });
+    if (!doc) {
+      res.status(404).json({ error: "No está ese partido" });
+      return;
+    }
+    const matchId = String(doc._id);
+    await ballots.deleteMany({ matchId });
+    await matches.deleteOne({ _id });
+    res.json({ ok: true, id: matchId });
+  }));
+
+  app.get("/api/history", ah(async (_req, res) => {
+    await expireOpenMatches();
+    const docs = await matches.find({ status: "closed" }).sort({ createdAt: -1 }).toArray();
+    const ids = docs.map((doc) => String(doc._id));
+    const rows = ids.length
+      ? await ballots.find({ matchId: { $in: ids } }).project({ _id: 0, matchId: 1, votes: 1 }).toArray()
+      : [];
+    const byMatch = {};
+    for (const row of rows) {
+      const id = String(row.matchId || "");
+      if (!id) continue;
+      (byMatch[id] ||= []).push(row.votes || {});
+    }
+    res.json({
+      matches: docs.map((doc) => historyCard(doc, byMatch[String(doc._id)] || [])),
+    });
   }));
 
   app.get("/api/admin/matches", requireAdmin, ah(async (_req, res) => {

@@ -36,9 +36,10 @@ const home = ui.renderHome();
 const career = ui.renderCareer();
 const squad = ui.renderSquad();
 const lineup = ui.renderLineup();
+const history = ui.renderHistory();
 const admin = ui.renderAdmin();
 const header = ui.renderCareerHeader();
-for (const [name, result] of Object.entries({ home, career, squad, lineup, admin, header })) {
+for (const [name, result] of Object.entries({ home, career, squad, lineup, history, admin, header })) {
   assert(result.ok, `${name} renderiza sin error`);
   assert(Boolean(result.html), `${name} produce HTML`);
 }
@@ -54,6 +55,7 @@ assert(
 );
 assert(home.html.includes('Plantel'), 'Home contiene Plantel');
 assert(home.html.includes('Alineación'), 'Home contiene Alineación');
+assert(home.html.includes('Historial'), 'Home contiene Historial');
 assert(home.html.includes('Puntaje y frase de cada jugador'), 'Home muestra la descripción de Plantel');
 assert(home.html.includes('Arrastrá a los jugadores por la cancha'), 'Home muestra la descripción de Alineación');
 assert(
@@ -64,8 +66,8 @@ for (const retired of ['Juegos', 'Ficha', 'Copero', 'Cartas', 'Partido en vivo',
   assert(!home.html.includes(retired), `Home no contiene la sección retirada ${retired}`);
 }
 assert(
-  (home.html.match(/data-navigation=/g) || []).length === (careerOn ? 3 : 2),
-  `Home ofrece exactamente ${careerOn ? 3 : 2} accesos navegables`,
+  (home.html.match(/data-navigation=/g) || []).length === (careerOn ? 4 : 3),
+  `Home ofrece exactamente ${careerOn ? 4 : 3} accesos navegables`,
 );
 
 console.log('\n== 4) Pantallas y callbacks ==');
@@ -86,6 +88,17 @@ assert(
 assert(header.html.includes('>Plantel<'), 'el header de Carrera ofrece Plantel');
 assert(header.html.includes('>Alineación<'), 'el header de Carrera ofrece Alineación');
 assert(admin.html.includes('Sólo el admin puede ver esto'), 'Votos pide la cuenta admin si no hay sesión');
+{
+  const adminSource = fs.readFileSync(path.join(root, 'src', 'components', 'AdminScreen.jsx'), 'utf8');
+  assert(adminSource.includes('Borrar partido'), 'el admin puede borrar un partido');
+  assert(adminSource.includes("method: 'DELETE'"), 'el borrado pega al API');
+  assert(adminSource.includes('¿Borrar este partido y sus votos?'), 'pide confirmación antes de borrar');
+}
+{
+  const serverSource = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8');
+  assert(serverSource.includes('app.delete("/api/matches/:id"'), 'el API borra el partido');
+  assert(serverSource.includes('ballots.deleteMany({ matchId })'), 'y también las boletas de ese partido');
+}
 for (const retired of ['Juegos', 'Ficha', 'Volver a los juegos']) {
   assert(!header.html.includes(retired), `el header de Carrera no contiene ${retired}`);
 }
@@ -97,6 +110,7 @@ assert(
   careerOn ? 'Plantel puede navegar a Mi carrera' : 'Plantel no ofrece Mi carrera',
 );
 assert(squad.html.includes('data-navigation="lineup"'), 'Plantel puede navegar a Alineación');
+assert(squad.html.includes('data-navigation="history"'), 'Plantel puede navegar a Historial');
 for (const player of players) {
   assert(squad.html.includes(player.name), `Plantel conserva el jugador ${player.name}`);
   assert(squad.html.includes(player.phrase), `Plantel conserva la frase de ${player.name}`);
@@ -152,24 +166,32 @@ assert(
   careerOn ? 'Alineación puede navegar a Mi carrera' : 'Alineación no ofrece Mi carrera',
 );
 assert(lineup.html.includes('data-navigation="squad"'), 'Alineación puede navegar a Plantel');
+assert(lineup.html.includes('data-navigation="history"'), 'Alineación puede navegar a Historial');
+
+assert(history.html.includes('Historial'), 'Historial renderiza su pantalla');
+assert(history.html.includes('data-navigation="home"'), 'Historial puede volver a inicio');
+assert(history.html.includes('data-navigation="squad"'), 'Historial puede navegar a Plantel');
 
 const homeCalls = ui.exerciseHomeCallbacks();
 assert(homeCalls.includes('career') === careerOn, careerOn ? 'Home -> Mi carrera ejecuta el callback' : 'Home no llama a Mi carrera');
 assert(homeCalls.includes('squad'), 'Home -> Plantel ejecuta el callback');
 assert(homeCalls.includes('lineup'), 'Home -> Alineación ejecuta el callback');
+assert(homeCalls.includes('history'), 'Home -> Historial ejecuta el callback');
 const careerCalls = ui.exerciseCareerCallbacks();
-for (const target of ['home', 'career', 'squad', 'lineup'].filter((id) => id !== 'career' || careerOn)) {
+for (const target of ['home', 'career', 'squad', 'lineup', 'history'].filter((id) => id !== 'career' || careerOn)) {
   assert(careerCalls.includes(target), `Mi carrera -> ${target} ejecuta el callback`);
 }
 const squadCalls = ui.exerciseSquadCallbacks();
 assert(squadCalls.includes('home'), 'Plantel -> Inicio ejecuta el callback');
 assert(squadCalls.includes('career') === careerOn, careerOn ? 'Plantel -> Mi carrera ejecuta el callback' : 'Plantel no llama a Mi carrera');
 assert(squadCalls.includes('lineup'), 'Plantel -> Alineación ejecuta el callback');
+assert(squadCalls.includes('history'), 'Plantel -> Historial ejecuta el callback');
 assert(!squadCalls.includes('squad'), 'Plantel no navega a sí mismo');
 const lineupCalls = ui.exerciseLineupCallbacks();
 assert(lineupCalls.includes('home'), 'Alineación -> Inicio ejecuta el callback');
 assert(lineupCalls.includes('career') === careerOn, careerOn ? 'Alineación -> Mi carrera ejecuta el callback' : 'Alineación no llama a Mi carrera');
 assert(lineupCalls.includes('squad'), 'Alineación -> Plantel ejecuta el callback');
+assert(lineupCalls.includes('history'), 'Alineación -> Historial ejecuta el callback');
 assert(!lineupCalls.includes('lineup'), 'Alineación no navega a sí misma');
 
 console.log('\n== 5) Máquina de navegación ==');
@@ -182,6 +204,7 @@ for (const from of routes) {
   }
 }
 assert(navigation.isAppScreen('lineup'), 'lineup es una pantalla válida');
+assert(navigation.isAppScreen('history'), 'history es una pantalla válida');
 assert(navigation.isAppScreen('career') === careerOn, 'el estado de Mi carrera sigue al flag');
 for (const retired of ['games', 'match', 'cards', 'profile', 'formation', 'career2']) {
   assert(navigation.transitionScreen('home', retired) === 'home', `la ruta ${retired} no es accesible`);
@@ -195,6 +218,7 @@ if (!careerOn) {
   assert(navigation.resolveStoredScreen('career') === 'home', 'el storage no restaura Mi carrera');
 }
 assert(navigation.resolveStoredScreen('lineup') === 'lineup', 'el storage restaura la pantalla Alineación');
+assert(navigation.resolveStoredScreen('history') === 'history', 'el storage restaura el Historial');
 assert(!navigation.isAppScreen('admin'), 'Votos no es una ruta pública');
 assert(!navigation.canOpenScreen('admin'), 'sin admin no entra a Votos');
 assert(navigation.canOpenScreen('admin', { isAdmin: true }), 'el admin sí entra a Votos');
@@ -229,6 +253,8 @@ console.log('\n== 6-bis) Ficha de stats ==');
   }
   assert(sheet.html.includes('role="dialog"'), 'es un diálogo modal accesible');
   assert(sheet.html.includes('Cerrar stats'), 'tiene botón de cerrar');
+  assert(sheet.html.includes('Medallero'), 'la ficha muestra el medallero');
+  assert(sheet.html.includes('MVP por primera vez'), 'lista la medalla de primer MVP');
   // El OVR es exactamente el promedio de los 6 atributos de FIFA, ya pasados a
   // 0-99 (los mismos números que muestran las barras).
   for (const player of players) {

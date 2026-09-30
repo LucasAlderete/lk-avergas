@@ -388,6 +388,45 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .match-bar-btn:disabled { opacity: .4; cursor: not-allowed; }
 .match-bar-btn.is-close { background: transparent; color: var(--accent); }
 
+.match-result-fields { flex: 1 1 100%; margin: 4px 0 0; padding: 10px 12px; border: 1px dashed rgba(231, 173, 78, .45); border-radius: 3px; }
+.match-result-fields legend { padding: 0 6px; color: var(--accent); font: 800 .72rem 'Rajdhani', sans-serif; letter-spacing: .6px; text-transform: uppercase; }
+.match-result-hint { margin: 0 0 8px; color: var(--muted); font-size: .78rem; }
+.match-result-sides { display: flex; flex-wrap: wrap; gap: 10px 14px; }
+.match-result-sides label { display: inline-flex; gap: 6px; align-items: center; color: #f3f1eb; font-size: .86rem; }
+.match-result-margin { display: grid; gap: 4px; margin-top: 10px; color: var(--muted); font-size: .78rem; font-weight: 700; }
+.match-result-margin input { width: 88px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 3px; background: #171914; color: #f3f1eb; }
+.admin-result { display: grid; gap: 10px; }
+.admin-result .match-bar-btn { justify-self: start; }
+.admin-result-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.admin-delete-btn { padding: 9px 14px; border: 1px solid rgba(214, 76, 71, .7); border-radius: 3px; background: transparent; color: #ffb3b0; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; }
+.admin-delete-btn:hover:not(:disabled) { background: rgba(214, 76, 71, .15); }
+.admin-delete-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.history-list { display: grid; gap: 12px; }
+.history-card { padding: 14px; border: 1px solid var(--line); border-radius: 4px; background: linear-gradient(145deg, rgba(48, 49, 42, .9), rgba(20, 22, 18, .94)); }
+.history-card-head { display: grid; gap: 4px; margin-bottom: 12px; }
+.history-card-when { margin: 0; color: var(--muted); font-size: .78rem; text-transform: capitalize; }
+.history-card-head strong { font: 800 1.25rem/1.15 'Barlow Condensed', sans-serif; letter-spacing: .4px; text-transform: uppercase; }
+.history-card-head small { color: var(--muted); font-size: .78rem; }
+.history-card-teams { display: grid; gap: 8px; }
+.history-team { display: grid; gap: 2px; margin: 0; }
+.history-team b { font-size: .72rem; letter-spacing: .6px; text-transform: uppercase; }
+.history-team.is-a b { color: #8fc4f2; }
+.history-team.is-b b { color: #f3a19c; }
+.history-team span { color: #d4d5cd; font-size: .88rem; }
+.history-card-marks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.history-mark { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 5px 9px; border-radius: 3px; font: 700 .78rem 'Rajdhani', sans-serif; }
+.history-mark.is-mvp { background: rgba(231, 173, 78, .18); color: var(--accent); }
+.history-mark.is-worst { background: rgba(214, 76, 71, .2); color: #ffb3b0; }
+
+.player-medals { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.player-medals h4 { margin: 0 0 10px; color: var(--accent); font: 800 .78rem 'Rajdhani', sans-serif; letter-spacing: .7px; text-transform: uppercase; }
+.player-medals ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.player-medals li { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: .88rem; }
+.player-medals li.is-earned { color: #f3f1eb; }
+.player-medals li.is-earned svg { color: var(--accent); }
+.player-medals li.is-locked { opacity: .45; }
+
 .admin-panel { display: grid; gap: 14px; }
 .admin-select { display: grid; gap: 8px; color: var(--muted); font-size: .82rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
 .admin-select select { padding: 11px 12px; border: 1px solid var(--line); border-radius: 3px; background: #171914; text-transform: none; letter-spacing: 0; font-weight: 500; }

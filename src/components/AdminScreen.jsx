@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 
 import AccountBar from '../auth/AccountBar.jsx';
 import { readJSON, useAuth } from '../auth/AuthContext.jsx';
+import { resultLine } from '../matches/matchStory.js';
+import MatchResultFields, { resultPayload } from './MatchResultFields.jsx';
 import SectionHeader from './SectionHeader.jsx';
 import { ballotSummary, spent } from '../voting/voteRules.js';
 
@@ -59,6 +61,10 @@ export default function AdminScreen({ onBack, onNavigate }) {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState({ winner: '', margin: 1 });
+  const [saving, setSaving] = useState(false);
+  const [askingDelete, setAskingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const canSee = Boolean(user?.isAdmin);
 
@@ -101,11 +107,60 @@ export default function AdminScreen({ onBack, onNavigate }) {
     return () => { alive = false; };
   }, [canSee, selectedId]);
 
+  useEffect(() => {
+    const current = matches.find((row) => row.id === selectedId);
+    if (current?.result) setDraft(current.result);
+    else setDraft({ winner: '', margin: 1 });
+    setAskingDelete(false);
+  }, [selectedId, matches]);
+
   const selected = useMemo(
     () => matches.find((row) => row.id === selectedId) || detail?.match || null,
     [matches, selectedId, detail],
   );
   const ballots = detail?.ballots || [];
+
+  const saveResult = async () => {
+    const result = resultPayload(draft);
+    if (!selectedId || !result) {
+      setError('Decí quién ganó y por cuántos goles de diferencia');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const data = await readJSON(`/api/matches/${selectedId}/result`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ result }),
+      });
+      setMatches((current) => current.map((row) => (
+        row.id === selectedId ? { ...row, result: data.match?.result || result } : row
+      )));
+    } catch (err) {
+      setError(err.message || 'No se pudo guardar el resultado');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteMatch = async () => {
+    if (!selectedId) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await readJSON(`/api/matches/${selectedId}`, { method: 'DELETE' });
+      const leftover = matches.filter((row) => row.id !== selectedId);
+      setMatches(leftover);
+      setSelectedId(leftover[0]?.id || '');
+      setDetail(null);
+      setAskingDelete(false);
+    } catch (err) {
+      setError(err.message || 'No se pudo borrar el partido');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <main className="page admin-page">
@@ -149,8 +204,33 @@ export default function AdminScreen({ onBack, onNavigate }) {
           {selected ? (
             <p className="admin-match-meta">
               {selected.status === 'open' ? 'Abierto' : 'Cerrado'}
+              {' · '}{resultLine(selected.result)}
               {' · '}jugaron {selected.players.join(', ') || 'nadie'}
             </p>
+          ) : null}
+
+          {selected ? (
+            <div className="admin-result">
+              <MatchResultFields value={draft} onChange={setDraft} disabled={saving || deleting} />
+              <div className="admin-result-actions">
+                <button type="button" className="match-bar-btn" disabled={saving || deleting} onClick={saveResult}>
+                  {saving ? 'Guardando…' : 'Guardar resultado'}
+                </button>
+                {askingDelete ? (
+                  <span className="vote-reset-confirm" role="alert">
+                    <b>¿Borrar este partido y sus votos?</b>
+                    <button type="button" className="is-yes" disabled={deleting} onClick={deleteMatch}>
+                      {deleting ? 'Borrando…' : 'Sí'}
+                    </button>
+                    <button type="button" disabled={deleting} onClick={() => setAskingDelete(false)}>No</button>
+                  </span>
+                ) : (
+                  <button type="button" className="admin-delete-btn" disabled={saving || deleting} onClick={() => setAskingDelete(true)}>
+                    Borrar partido
+                  </button>
+                )}
+              </div>
+            </div>
           ) : null}
 
           {selected && !ballots.length ? (

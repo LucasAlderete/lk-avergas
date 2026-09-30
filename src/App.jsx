@@ -6,6 +6,7 @@ import AdminScreen from './components/AdminScreen.jsx';
 import CareerScreen from './features/career/components/CareerScreen.jsx';
 import HomeScreen from './components/HomeScreen.jsx';
 import LineupScreen from './components/LineupScreen.jsx';
+import MatchHistoryScreen from './components/MatchHistoryScreen.jsx';
 import SquadScreen from './components/SquadScreen.jsx';
 import { resolveStoredScreen, transitionScreen } from './navigation.js';
 
@@ -47,6 +48,8 @@ export default function App() {
     content = <SquadScreen onBack={() => navigate('home')} onNavigate={navigate} />;
   } else if (screen === 'lineup') {
     content = <LineupScreen onBack={() => navigate('home')} onNavigate={navigate} />;
+  } else if (screen === 'history') {
+    content = <MatchHistoryScreen onBack={() => navigate('home')} onNavigate={navigate} />;
   } else if (screen === 'admin') {
     content = <AdminScreen onBack={() => navigate('home')} onNavigate={navigate} />;
   } else {

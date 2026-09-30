@@ -6,6 +6,7 @@ import CareerScreen from '../../src/features/career/components/CareerScreen.jsx'
 import CareerHeader from '../../src/features/career/components/CareerHeader.jsx';
 import HomeScreen, { HomeDestinations } from '../../src/components/HomeScreen.jsx';
 import LineupScreen from '../../src/components/LineupScreen.jsx';
+import MatchHistoryScreen from '../../src/components/MatchHistoryScreen.jsx';
 import PlayerStatsSheet from '../../src/components/PlayerStatsSheet.jsx';
 import SectionNav, { SectionNav as NamedSectionNav } from '../../src/components/SectionNav.jsx';
 import SquadScreen from '../../src/components/SquadScreen.jsx';
@@ -51,6 +52,7 @@ export const audioInfo = () => {
   };
 };
 export const renderLineup = () => render(<LineupScreen onBack={noop} onNavigate={noop} />);
+export const renderHistory = () => render(<MatchHistoryScreen onBack={noop} onNavigate={noop} />);
 export const renderAdmin = () => render(<AdminScreen onBack={noop} onNavigate={noop} />);
 export const renderCareerHeader = (career = { name: 'Alan', age: 19, season: 2026 }, phase = 'season') => render(
   <CareerHeader career={career} phase={phase} onBack={noop} onNavigate={noop} />,
@@ -102,6 +104,7 @@ function exerciseSectionNav(current, extra = {}) {
     onCareer: () => calls.push('career'),
     onSquad: () => calls.push('squad'),
     onLineup: () => calls.push('lineup'),
+    onHistory: () => calls.push('history'),
     ...extra,
   }), () => {});
   return calls;
@@ -120,5 +123,6 @@ export const componentIdentity = {
   career: CareerScreen ? 'career' : 'invalid',
   squad: SquadScreen ? 'squad' : 'invalid',
   lineup: LineupScreen ? 'lineup' : 'invalid',
+  history: MatchHistoryScreen ? 'history' : 'invalid',
   players: players.length,
 };

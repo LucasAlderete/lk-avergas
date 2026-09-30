@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { motion } from 'framer-motion';
-import { ArrowLeft, ClipboardList, Home, UserRound, Users } from 'lucide-react';
+import { ArrowLeft, ClipboardList, History, Home, UserRound, Users } from 'lucide-react';
 
 import { isFeatureEnabled } from '../../../navigation.js';
 import { phaseLabel } from './careerFormat.js';
@@ -25,6 +25,7 @@ export default function CareerHeader({ career, phase, onBack, onNavigate }) {
     { id: 'career', label: 'Mi carrera', Icon: UserRound },
     { id: 'squad', label: 'Plantel', Icon: Users },
     { id: 'lineup', label: 'Alineación', Icon: ClipboardList },
+    { id: 'history', label: 'Historial', Icon: History },
   ].filter((row) => isFeatureEnabled(row.id));
 
   return (
