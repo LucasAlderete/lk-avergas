@@ -92,12 +92,12 @@ const cases = [
   { name: 'Rui', bucket: 'OVR BAJO' },      // rating 60 → solo Segunda
   { name: 'Luquitas', bucket: 'OVR BAJO' }, // rating 60 → solo Segunda
   { name: 'Mati', bucket: 'OVR MEDIO' },    // rating 69 → solo Segunda
-  { name: 'Lucas', bucket: 'OVR MEDIO' },   // rating 75 → solo Segunda
+  { name: 'Lk', bucket: 'OVR MEDIO' },      // rating 75 → solo Segunda
   { name: 'Alan', bucket: 'OVR MEDIO' },    // rating 77 → Primera o Segunda
   { name: 'Kike', bucket: 'OVR MEDIO' },    // rating 79 → Primera o Segunda
   { name: 'JJ', bucket: 'OVR ALTO' },       // rating 81 → Primera o Segunda
   { name: 'Gonzi', bucket: 'OVR ALTO' },    // rating 87 → Primera o Segunda
-  { name: 'Tigre', bucket: 'OVR ALTO' },    // rating 99 → capped 92 → Primera o Segunda
+  { name: 'Tigre', bucket: 'OVR BAJO' },    // rating 70 → solo Segunda
 ];
 
 assert(cases.length >= 6, `se prueban ${cases.length} jugadores reales (>= 6)`);

@@ -9,7 +9,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { MongoClient, ObjectId } from "mongodb";
 
 import { isAdminEmail } from "../src/auth/admin.js";
-import { alignmentPlayers, players, RATING_STATS } from "../src/data.js";
+import { alignmentPlayers, currentNameOf, PLAYER_RENAMES, players, RATING_STATS } from "../src/data.js";
 import { normalizeLineup } from "../src/components/lineupRules.js";
 import { buildHistory, packedSlots, parseResult } from "../src/matches/matchStory.js";
 import {
@@ -96,7 +96,7 @@ function cleanPlayerList(raw) {
   const names = [];
   const seen = new Set();
   for (const item of Array.isArray(raw) ? raw : []) {
-    const name = String(item || "").trim();
+    const name = currentNameOf(item);
     if (!PLAYER_NAMES.has(name) || seen.has(name)) continue;
     seen.add(name);
     names.push(name);
@@ -134,7 +134,8 @@ async function readSession(token) {
 function cleanVotes(raw, allowedNames) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const votes = {};
-  for (const [name, deltas] of Object.entries(raw)) {
+  for (const [rawName, deltas] of Object.entries(raw)) {
+    const name = currentNameOf(rawName);
     if (!PLAYER_NAMES.has(name) || !deltas || typeof deltas !== "object") continue;
     if (allowedNames && !allowedNames.has(name)) {
       const error = new Error("Solo se puntúa a los que jugaron este partido");
@@ -153,7 +154,11 @@ function cleanVotes(raw, allowedNames) {
       error.status = 400;
       throw error;
     }
-    if (Object.keys(next).length) votes[name] = next;
+    if (!Object.keys(next).length) continue;
+    votes[name] = { ...(votes[name] || {}) };
+    for (const [key, amount] of Object.entries(next)) {
+      votes[name][key] = (votes[name][key] || 0) + amount;
+    }
   }
   if (spent(votes) > TOTAL_POINTS) {
     const error = new Error("No te quedan puntos");
@@ -196,6 +201,54 @@ async function seedPlayers(col) {
       },
     };
   }), { ordered: false });
+}
+
+function mergeVoteMaps(base, extra) {
+  const out = { ...(base || {}) };
+  for (const [key, value] of Object.entries(extra || {})) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n === 0) continue;
+    const next = (out[key] || 0) + n;
+    if (next === 0) delete out[key];
+    else out[key] = next;
+  }
+  return out;
+}
+
+async function applyPlayerRenames({ playerCol, ballots, matches, lineupCol }) {
+  for (const [from, to] of Object.entries(PLAYER_RENAMES)) {
+    if (!from || !to || from === to) continue;
+    const oldDoc = await playerCol.findOne({ name: from });
+    const newDoc = await playerCol.findOne({ name: to });
+    if (oldDoc && !newDoc) await playerCol.updateOne({ _id: oldDoc._id }, { $set: { name: to } });
+    else if (oldDoc && newDoc) await playerCol.deleteOne({ _id: oldDoc._id });
+
+    const ballotRows = await ballots.find({ [`votes.${from}`]: { $exists: true } }).toArray();
+    for (const row of ballotRows) {
+      const votes = { ...(row.votes || {}) };
+      const incoming = votes[from];
+      delete votes[from];
+      if (incoming && typeof incoming === "object") votes[to] = mergeVoteMaps(votes[to], incoming);
+      await ballots.updateOne({ _id: row._id }, { $set: { votes } });
+    }
+
+    const matchDocs = await matches.find({
+      $or: [{ players: from }, { "slots.name": from }],
+    }).toArray();
+    for (const doc of matchDocs) {
+      const nextPlayers = (doc.players || []).map((name) => (name === from ? to : name));
+      const nextSlots = (doc.slots || []).map((slot) => (
+        slot?.name === from ? { ...slot, name: to } : slot
+      ));
+      await matches.updateOne({ _id: doc._id }, { $set: { players: nextPlayers, slots: nextSlots } });
+    }
+
+    const lineup = await lineupCol.findOne({ _id: "club" });
+    if (lineup?.slots?.some((slot) => slot?.name === from)) {
+      const slots = lineup.slots.map((slot) => (slot?.name === from ? { ...slot, name: to } : slot));
+      await lineupCol.updateOne({ _id: "club" }, { $set: { slots } });
+    }
+  }
 }
 
 async function ensurePlayerNameIndex(col) {
@@ -244,6 +297,7 @@ async function start() {
   await matches.createIndex({ status: 1, createdAt: -1 });
   try {
     await ensurePlayerNameIndex(playerCol);
+    await applyPlayerRenames({ playerCol, ballots, matches, lineupCol });
     await seedPlayers(playerCol);
   } catch (err) {
     console.error("No se pudo sincronizar el plantel:", err);

@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { alignmentPlayers, lineupOnlyPlayers, players, RATING_STATS, overallOf, statOf } = await import(
+const { alignmentPlayers, currentNameOf, lineupOnlyPlayers, players, RATING_STATS, overallOf, statOf } = await import(
   pathToFileURL(path.join(root, 'src', 'data.js')).href
 );
 
@@ -24,7 +24,7 @@ const assert = (condition, label) => { if (!condition) fail(label); };
 
 // OVR acordados. Si se cambia alguno, se cambia acá también.
 const EXPECTED = {
-  Chino: 79, Emi: 76, Mati: 69, Rui: 71, Gonzi: 87, Lucas: 75, Tigre: 99,
+  Chino: 79, Emi: 76, Mati: 69, Rui: 71, Gonzi: 87, Lk: 75, Tigre: 70,
   Rulo: 66, Sailor: 80, Cru: 72, Nahue: 70, JJ: 81, Luquitas: 70, Kike: 70, Alan: 70, Wini: 70,
 };
 
@@ -38,8 +38,10 @@ console.log('== A) Cada jugador tiene el OVR pedido ==');
   }
   // Orden por OVR, como se ve en pantalla.
   const sorted = [...players].sort((a, b) => b.rating - a.rating).map((item) => item.name);
-  assert(sorted[0] === 'Tigre', `el más rated es Tigre (fue: ${sorted[0]})`);
+  assert(sorted[0] === 'Gonzi', `el más rated es Gonzi (fue: ${sorted[0]})`);
   assert(sorted[sorted.length - 1] === 'Rulo', `el menos rated es Rulo (fue: ${sorted[sorted.length - 1]})`);
+  assert(currentNameOf('Lucas') === 'Lk', 'Lucas se lee como Lk');
+  assert(currentNameOf('Lk') === 'Lk', 'Lk se queda en Lk');
 }
 
 console.log('== B) El OVR se CALCULA, no está escrito ==');

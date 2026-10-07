@@ -4,8 +4,8 @@
   { name: 'Mati', pace: 6.2, shooting: 6.1, passing: 7.9, dribbling: 6.5, defense: 7.5, physical: 7.2, phrase: 'Real Madrid fan', lore: { perfil: 'El fanático del Real Madrid.', rasgos: ['hincha del Real Madrid'], cargadas: [] } },
   { name: 'Rui', pace: 5.8, shooting: 7.5, passing: 7.2, dribbling: 6.9, defense: 8.4, physical: 6.8, phrase: 'Exportador de ruilleros', lore: { perfil: 'El gordo bajón.', rasgos: ['es gordo (+100 kg)', 'es súper pesimista'], cargadas: ['es el rey del malviaje', 'siempre la está bajando ("la baja")'] } },
   { name: 'Gonzi', pace: 9.3, shooting: 8.4, passing: 7.9, dribbling: 9.3, defense: 7.8, physical: 9.5, phrase: '¿Qué le faltó a tu equipo?', lore: { perfil: 'La estrella del grupo.', rasgos: ['es el crack'], cargadas: [] } },
-  { name: 'Lucas', pace: 6.9, shooting: 8.3, passing: 8.4, dribbling: 8.8, defense: 6.5, physical: 6.1, phrase: '$5000. Winter is here', lore: { perfil: 'El hombre de los $5000.', rasgos: ['cobra $5000', 'Winter is here'], cargadas: [] } },
-  { name: 'Tigre', pace: 9.9, shooting: 9.9, passing: 9.9, dribbling: 9.9, defense: 9.9, physical: 9.9, phrase: 'La amenaza silenciosa', lore: { perfil: 'El sensible.', rasgos: ['es muy sensible'], cargadas: ['sus problemas con las drogas (chiste)'] } },
+  { name: 'Lk', pace: 6.9, shooting: 8.3, passing: 8.4, dribbling: 8.8, defense: 6.5, physical: 6.1, phrase: '$5000. Winter is here', lore: { perfil: 'El hombre de los $5000.', rasgos: ['cobra $5000', 'Winter is here'], cargadas: [] } },
+  { name: 'Tigre', pace: 7.3, shooting: 6.4, passing: 6.6, dribbling: 6.8, defense: 7.1, physical: 7.8, phrase: 'La amenaza silenciosa', lore: { perfil: 'El sensible.', rasgos: ['es muy sensible'], cargadas: ['sus problemas con las drogas (chiste)'] } },
   { name: 'Rulo', pace: 6, shooting: 5.8, passing: 7.6, dribbling: 6.8, defense: 6.7, physical: 6.7, phrase: 'Desde la lesión ya no soy el mismo', lore: { perfil: 'El bajito de rulos que vive en kinesiología.', rasgos: ['es muy enano', 'tiene rulos', 'siempre está lesionado'], cargadas: ['está siempre lesionado'] } },
   { name: 'Sailor', pace: 9.5, shooting: 7.8, passing: 6.3, dribbling: 8, defense: 6.7, physical: 9.7, phrase: 'Malviajo, luego existo', lore: { perfil: 'El insoportable intenso del grupo.', rasgos: ['es el insoportable', 'es simpático pero intenso'], cargadas: ['siempre está malviajando'] } },
   { name: 'Cru', pace: 7.2, shooting: 6.6, passing: 6.7, dribbling: 6.7, defense: 7.2, physical: 8.8, phrase: '¿Alguien dijo hermana?', lore: { perfil: 'El ratón de gimnasio.', rasgos: ['es fanático del gimnasio', 'siempre se quiere sacar la remera para mostrar su físico'], cargadas: ['quiere acostarse con las hermanas de los amigos'] } },
@@ -95,3 +95,14 @@ export const poolOf = (player) => {
   }
   return player?.lineupOnly ? POOL.randoms : POOL.squad;
 };
+
+// Nombres viejos que todavía pueden estar en Mongo, boletas o una formación
+// guardada. Se reescriben al nombre actual para no perder votos ni huecos.
+export const PLAYER_RENAMES = Object.freeze({
+  Lucas: 'Lk',
+});
+
+export function currentNameOf(name) {
+  const clean = String(name || '').trim();
+  return PLAYER_RENAMES[clean] || clean;
+}

@@ -70,9 +70,9 @@ console.log('== C) MVP y peor por votos del partido ==');
   assert(ovrJump(ovr.up[0]) === `${gonzi.rating} → ${gonziTo}`, 'el cartel es 87 → 88');
   const ruiUp = ratingMoves({ Rui: bump });
   assert(ovrJump(ruiUp.up[0]) === `${rui.rating} → ${rui.rating + 1}`, 'Rui 71 → 72 cuando el OVR global sube');
-  const tie = highlights({ Alan: 2, Nahue: 2, Rui: -1, Lucas: -1 });
+  const tie = highlights({ Alan: 2, Nahue: 2, Rui: -1, Lk: -1 });
   assert(JSON.stringify(tie.mvp) === JSON.stringify(['Alan', 'Nahue']), 'empate de MVP entra los dos');
-  assert(JSON.stringify(tie.worst) === JSON.stringify(['Lucas', 'Rui']), 'empate de peor entra los dos');
+  assert(JSON.stringify(tie.worst) === JSON.stringify(['Lk', 'Rui']), 'empate de peor entra los dos');
   const none = highlights({ Alan: 0, Rui: 0 });
   assert(none.mvp.length === 0 && none.worst.length === 0, 'todo en 0 no destaca a nadie');
 }

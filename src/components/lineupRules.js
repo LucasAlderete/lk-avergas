@@ -23,7 +23,7 @@
 // Funciones puras: reciben un lineup y devuelven uno nuevo, sin mutar el
 // original. Testeable sin DOM (scripts/smoke-lineup-rules.mjs).
 
-import { alignmentPlayers, players as plantel, poolOf, POOL } from '../data.js';
+import { alignmentPlayers, currentNameOf, players as plantel, poolOf, POOL } from '../data.js';
 
 const clamp = (value, minimum = 0, maximum = 100) => Math.max(minimum, Math.min(maximum, value));
 
@@ -116,7 +116,7 @@ function toCoordinate(value, fallback) {
 // Es una lista fija, no "los primeros N de la lista": así la formación es la
 // que querés y no depende del orden en que estén cargados en data.js.
 export const STARTERS = [
-  'Lucas', 'Rui', 'Chino', 'Gonzi', 'Nahue',
+  'Lk', 'Rui', 'Chino', 'Gonzi', 'Nahue',
   'JJ', 'Alan', 'Kike', 'Sailor', 'Cru',
 ];
 
@@ -158,13 +158,14 @@ export function normalizeLineup(lineup) {
   const slots = [];
 
   const add = (name, x, y, forcedTeam) => {
-    if (!known.has(name) || seen.has(name)) return;
+    const current = currentNameOf(name);
+    if (!known.has(current) || seen.has(current)) return;
     const [px, py] = clampToPitch(toCoordinate(x, MIDLINE), toCoordinate(y, MIDLINE));
     const team = forcedTeam || teamForY(py);
     if (perHalf[team] >= perTeam) return;
-    seen.add(name);
+    seen.add(current);
     perHalf[team] += 1;
-    slots.push({ name, x: px, y: forcedTeam ? forceHalf(py, team) : py });
+    slots.push({ name: current, x: px, y: forcedTeam ? forceHalf(py, team) : py });
   };
 
   if (Array.isArray(source?.slots)) {

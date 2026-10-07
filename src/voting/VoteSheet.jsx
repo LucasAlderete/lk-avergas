@@ -181,7 +181,7 @@ export default function VoteSheet({ player, deltas, myBallot, onCast, remaining,
             className="vote-report-input"
             value={voterLabel}
             onChange={(event) => onLabelChange(event.target.value)}
-            placeholder="Ej: Lucas"
+            placeholder="Ej: Gonzi"
             maxLength={24}
           />
           <div className="vote-report-actions">

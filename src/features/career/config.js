@@ -12,8 +12,8 @@
 // - Tasas de gol/asistencia recalibradas (futsal = más goles por partido).
 // - Perfil de desarrollo DERIVADO de los atributos del amigo (determinista),
 //   no aleatorio: cada amigo tiene el mismo "destino atlético".
-// - OVR inicial derivado de player.rating (con tope para que el chiste de
-//   Tigre 99 no rompa el balance).
+// - OVR inicial derivado de player.rating (con tope, por si algún amigo
+//   queda muy por encima del resto).
 //
 // Este archivo NO decide nada en runtime: expone datos + funciones puras.
 // ============================================================================
@@ -30,7 +30,7 @@ export const AGE = {
 export const OVR = {
   MIN: 35,        // piso absoluto (lesiones acumuladas pueden degradar)
   MAX: 95,        // techo absoluto de crecimiento
-  INITIAL_CAP: 92, // tope del OVR inicial ( Tigre tiene rating 99 "de chiste")
+  INITIAL_CAP: 92, // tope del OVR inicial (nadie debuta por encima)
   INITIAL_FLOOR: 45, // nadie debuta con menos de 45
 };
 

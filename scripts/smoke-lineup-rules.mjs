@@ -42,7 +42,7 @@ console.log('== Z) Formación y lesionados por defecto ==');
 {
   // La base tiene que ser ESTA lista, no "los primeros N de la lista".
   assert(STARTERS.length === 10, 'arrancan 10 jugadores');
-  const expected = ['Lucas', 'Rui', 'Chino', 'Gonzi', 'Nahue', 'JJ', 'Alan', 'Kike', 'Sailor', 'Cru'];
+  const expected = ['Lk', 'Rui', 'Chino', 'Gonzi', 'Nahue', 'JJ', 'Alan', 'Kike', 'Sailor', 'Cru'];
   assert(
     JSON.stringify(STARTERS) === JSON.stringify(expected),
     `la lista de arranque es la pedida (fue: ${STARTERS.join(', ')})`,
@@ -234,8 +234,8 @@ console.log('\n== C-bis) Pasar de un lado al otro respeta el tope ==');
 console.log('\n== C) Desde la lista SÓLO se agrega ==');
 {
   const benchNow = benchOf(freshLineup());
-  // OJO: 'Alan' y 'Nahue' son de la lista (fuera de la cancha). 'Lucas' NO:
-  // es el 6º titular, así queServes para probar la rama del intercambio.
+  // OJO: 'Alan' y 'Nahue' son de la lista (fuera de la cancha). 'Lk' NO:
+  // es titular, así que sirve para probar la rama del intercambio.
   const spare = benchNow.find((name) => !name.startsWith('Random')) || benchNow[0];
 
   // El suplente sale del banquillo REAL, no hardcodeado: antes era 'Alan', pero
@@ -342,6 +342,9 @@ console.log('\n== G) normalizeLineup repara los saves viejos ==');
   assert(freshLineup().slots.length === 10, 'sin save arranca con 10 en la cancha');
   assert(normalizeLineup(null).slots.length === 10, 'un save null también');
   assert(normalizeLineup({ mode: 5, slots: [{ name: 'Zombie' }, { name: null }] }).slots.length === 0, 'descarta nombres desconocidos');
+  const fromLucas = normalizeLineup({ mode: 5, slots: [{ name: 'Lucas', x: 50, y: 20 }] });
+  assert(fromLucas.slots[0]?.name === 'Lk', 'una formación guardada como Lucas pasa a llamarse Lk');
+  assert(onPitch(migrated).includes('Lk'), 'el save viejo con Lucas también se reescribe a Lk');
 
   const wild = normalizeLineup({ mode: 5, slots: [{ name: names[0], x: 999, y: -999 }, { name: names[1] }] });
   assert(wild.slots[0].x === 93 && wild.slots[0].y === 5, 'acota las posiciones a la cancha');
