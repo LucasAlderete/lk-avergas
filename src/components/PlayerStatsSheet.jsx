@@ -93,7 +93,6 @@ export default function PlayerStatsSheet({ player, onClose }) {
               {player.name}
               {!photoOf(player.name) && <PlayerAudioButton name={player.name} />}
             </h3>
-            <p>{player.lore?.perfil || player.phrase}</p>
           </div>
         </header>
 

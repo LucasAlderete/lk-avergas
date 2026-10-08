@@ -376,7 +376,17 @@ export default function LineupEditor({ onPlayerSelect }) {
       const pending = pendingRef.current;
       if (pending && !dragRef.current) {
         if (pending.openedMenu) return;
-        if (Math.hypot(event.clientX - pending.startX, event.clientY - pending.startY) < 6) return;
+        const dx = event.clientX - pending.startX;
+        const dy = event.clientY - pending.startY;
+        if (Math.hypot(dx, dy) < 6) return;
+        // En la lista, con el dedo, un gesto vertical es scroll y no arrastre:
+        // se suelta el jugador y el navegador scrollea (touch-action: pan-y).
+        // Para llevarlo a la cancha se desliza hacia el costado.
+        if (pending.payload.source === 'bench' && event.pointerType === 'touch' && Math.abs(dy) > Math.abs(dx)) {
+          clearPendingTimer();
+          pendingRef.current = null;
+          return;
+        }
         startDragRef.current(event, pending);
       }
       const drag = dragRef.current;
@@ -488,7 +498,6 @@ export default function LineupEditor({ onPlayerSelect }) {
         }}
         onPointerDown={(event) => armPointer(event, { source: 'pitch', name })}
         onContextMenu={(event) => event.preventDefault()}
-        whileTap={{ scale: .9 }}
         aria-label={`${name}, ${rated(name).rating}`}
       >
         {tone === 'ultra' && <Star className="five-player-star" size={13} fill="currentColor" aria-hidden="true" />}
