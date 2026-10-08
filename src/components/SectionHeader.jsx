@@ -12,7 +12,6 @@ export function SectionHeader({ title, subtitle, current, onHome, onNavigate }) 
   return (
     <header className="section-header">
       <div>
-        <p className="eyebrow">Averga&apos;s Club</p>
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </div>

@@ -4,6 +4,7 @@
 // La cancha con el drag and drop vive en la pantalla Alineación.
 // ============================================================================
 import { useState } from 'react';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { Vote } from 'lucide-react';
 
 import AccountBar from '../auth/AccountBar.jsx';
@@ -32,16 +33,36 @@ export function SquadHeader({ onBack, onNavigate }) {
 // `playing` y `dimmed` llegan desde SquadScreen: marcan los jugadores que
 // jugaron el partido actual. Ojo: si se usan en el className hay que declararlos
 // en la firma, si no el render explota con "playing is not defined".
-function PlayerCard({ player, active, playing, dimmed, onClick }) {
+// Aparición al scrollear: cada tarjeta entra cuando llega a la pantalla, con un
+// pequeño escalonado por columna para que la grilla se lea de izquierda a derecha.
+const cardReveal = {
+  hidden: { opacity: 0, y: 24, scale: .98 },
+  shown: (index) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring', stiffness: 120, damping: 20, delay: (index % 3) * 0.06 },
+  }),
+};
+
+function PlayerCard({ player, index, active, playing, dimmed, onClick }) {
   // Si tiene foto va la foto; si no, las iniciales (como antes).
   const photo = photoOf(player.name);
+  const reduceMotion = useReducedMotion();
 
   return (
-    <button
+    <motion.button
       type="button"
       className={`player-card${active ? ' is-active' : ''}${playing ? ' is-in-match' : ''}${dimmed ? ' is-out' : ''}`}
       data-player={player.name}
       onClick={onClick}
+      custom={index}
+      variants={reduceMotion ? undefined : cardReveal}
+      initial="hidden"
+      whileInView="shown"
+      viewport={{ once: true, margin: '0px 0px -40px 0px' }}
+      whileHover={reduceMotion ? undefined : { y: -4, transition: { type: 'spring', stiffness: 300, damping: 22 } }}
+      whileTap={reduceMotion ? undefined : { scale: .98 }}
     >
       <span className="player-card-avatar" aria-hidden="true">
         {photo
@@ -54,7 +75,7 @@ function PlayerCard({ player, active, playing, dimmed, onClick }) {
       </span>
       <PlayerAudioButton name={player.name} />
       <b>{player.rating}</b>
-    </button>
+    </motion.button>
   );
 }
 
@@ -79,6 +100,12 @@ export default function SquadScreen({ onBack, onNavigate }) {
         ? 'Tocá a quien jugó y repartí tus 5 puntos de este partido.'
         : `Partido abierto. ${matchVoters} ${matchVoters === 1 ? 'persona votó' : 'personas votaron'} acá · OVR con ${voters} ${voters === 1 ? 'persona' : 'personas'} en total.`;
 
+  // Parallax: el "PLANTEL" gigante del fondo baja más lento que el scroll.
+  const reduceMotion = useReducedMotion();
+  const { scrollY } = useScroll();
+  const backdropY = useTransform(scrollY, [0, 1200], [0, reduceMotion ? 0 : 360]);
+  const backdropOpacity = useTransform(scrollY, [0, 700], [1, reduceMotion ? 1 : 0.25]);
+
   const openStats = (name) => {
     selectPlayer(name);
     setOpenName(name);
@@ -86,6 +113,9 @@ export default function SquadScreen({ onBack, onNavigate }) {
 
   return (
     <main className="page squad-page">
+      <motion.div className="squad-backdrop" style={{ y: backdropY, opacity: backdropOpacity }} aria-hidden="true">
+        Plantel
+      </motion.div>
       <SquadHeader onBack={onBack} onNavigate={onNavigate} />
 
       <section className="squad-roster" aria-labelledby="squad-roster-title">
@@ -123,10 +153,11 @@ export default function SquadScreen({ onBack, onNavigate }) {
         )}
 
         <div className="squad-grid">
-          {roster.map((player) => (
+          {roster.map((player, index) => (
             <PlayerCard
               key={player.name}
               player={player}
+              index={index}
               active={selected === player.name}
               playing={playing(player.name)}
               dimmed={Boolean(match) && !playing(player.name)}

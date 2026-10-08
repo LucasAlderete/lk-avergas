@@ -20,10 +20,10 @@ import PlayerBanner from './PlayerBanner.jsx';
 // Color por rango, como los medidores de FIFA.
 const toneOf = (value) => (value >= 80 ? 'high' : value >= 65 ? 'mid' : value >= 50 ? 'low' : 'bad');
 
-function StatRow({ stat, player }) {
+function StatRow({ stat, player, index }) {
   const value = displayStatOf(player, stat.key);
   return (
-    <li className="stat-row">
+    <li className="stat-row" style={{ '--i': index }}>
       <span className="stat-label">{stat.label}</span>
       <span className="stat-bar">
         <span className={`stat-fill tone-${toneOf(value)}`} style={{ width: `${value}%` }} />
@@ -98,7 +98,7 @@ export default function PlayerStatsSheet({ player, onClose }) {
         </header>
 
         <ul className="stat-list">
-          {RATING_STATS.map((stat) => <StatRow key={stat.key} stat={stat} player={player} />)}
+          {RATING_STATS.map((stat, index) => <StatRow key={stat.key} stat={stat} player={player} index={index} />)}
         </ul>
 
         <PlayerMedals name={player.name} />
