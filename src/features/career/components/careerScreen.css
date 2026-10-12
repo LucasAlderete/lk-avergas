@@ -2510,7 +2510,7 @@ body:has(.career-screen)::after {
   .career-screen .career-dashboard--single { display: flex; flex-direction: column; flex: 1 1 auto; gap: 8px; }
   .career-screen .career-dashboard--single .career-primary { display: flex; flex-direction: column; flex: 1 1 auto; gap: 8px; }
   .career-screen .career-col--history > .career-pcard { order: 0; flex: none; }
-  .career-screen .career-col--history > .career-table-card { order: 1; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 140px; contain: size; }
+  .career-screen .career-col--history > .career-table-card { order: 1; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 96px; contain: size; }
   .career-screen .career-table-card .career-table--scroll { flex: 1 1 auto; min-height: 0; max-height: none; }
   .career-screen .career-col--history > .career-skip { order: 1; flex: none; min-height: 32px; }
   .career-screen .career-col--action { order: 2; flex: none; }
@@ -2528,7 +2528,7 @@ body:has(.career-screen)::after {
   /* Decisión compacta: textos más cortos y chicos. */
   .career-screen .career-decision-panel { gap: 6px; padding: 8px 10px; }
   .career-screen .career-decision-head { padding-bottom: 4px; }
-  .career-screen .career-event-copy { font-size: .8rem; line-height: 1.3; -webkit-line-clamp: 2; }
+  .career-screen .career-event-copy { font-size: .8rem; line-height: 1.3; }
   .career-screen .career-choices--grid { gap: 6px; }
   .career-screen .career-choice--compact { min-height: 0; padding: 6px 8px; }
   .career-screen .career-choice--compact .career-choice-label { font-size: .85rem; }
@@ -2536,9 +2536,14 @@ body:has(.career-screen)::after {
   .career-screen .career-odd { padding: 3px 6px; font-size: .74rem; }
   .career-screen .career-odd-icon { width: 18px; height: 18px; }
   .career-screen .career-choice-result { padding: 6px 8px; }
-  .career-screen .career-choice-result-copy { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .78rem; }
+  .career-screen .career-choice-result-copy { font-size: .78rem; line-height: 1.3; }
   .career-screen .career-dest { gap: 4px; padding: 8px 6px; }
   .career-screen .career-dest-club { font-size: .95rem; }
   /* Titular/suplente no entra en el celular. */
   .career-screen .career-dest-role { display: none; }
 }
+
+/* El relato del evento y de lo que pasó se lee completo, sin puntos
+   suspensivos: si no entra, se achica la tabla (que muestra lo último). */
+.career-screen .career-event-copy,
+.career-screen .career-choice-result-copy { display: block; -webkit-line-clamp: unset; overflow: visible; }
