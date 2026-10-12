@@ -99,8 +99,9 @@ track('decision1', state);
 assert(state.phase === flow.FLOW_PHASES.DECISION, `se llega al checkpoint de decisión (${firstRun.seasons} temporada(s))`);
 assert(state.seasonReport && state.career.lastSeasonReport, 'advanceSeason: reporte de temporada presente');
 assert(Array.isArray(state.youthOffers) === false || state.youthOffers === null, 'decision: ofertas de debut cerradas');
-assert(JSON.stringify(flow.getCareerDecisionOptions(state)) === JSON.stringify(['stay', 'transfer', 'retire']),
-  'getCareerDecisionOptions: ["stay", "transfer", "retire"]');
+const expectedOpts = state.career.age >= 33 ? ['stay', 'transfer', 'retire'] : ['stay', 'transfer'];
+assert(JSON.stringify(flow.getCareerDecisionOptions(state)) === JSON.stringify(expectedOpts),
+  `getCareerDecisionOptions: ${JSON.stringify(expectedOpts)} (edad ${state.career.age}; retiro voluntario desde 33)`);
 
 // ============================================================================
 // 4a) STAY

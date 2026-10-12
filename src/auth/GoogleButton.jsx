@@ -51,7 +51,7 @@ export default function GoogleButton({ onSignedIn }) {
   }, [googleClientId, loginWithGoogle, onSignedIn]);
 
   if (!apiUp) {
-    return <p className="auth-missing">La API no está levantada.</p>;
+    return <p className="auth-missing">No pudimos conectar con el servidor. Probá de nuevo en un rato.</p>;
   }
   if (!googleClientId) {
     return <p className="auth-missing">Falta configurar Google en el servidor.</p>;

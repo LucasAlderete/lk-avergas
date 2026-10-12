@@ -17,6 +17,7 @@ import { photoOf } from '../playerPhotos.js';
 import ResetVoteButton from '../voting/ResetVoteButton.jsx';
 import VoteSheet from '../voting/VoteSheet.jsx';
 import useVotes from '../voting/useVotes.js';
+import { devRoster } from '../dev/worstCase.jsx';
 
 export function SquadHeader({ onBack, onNavigate }) {
   return (
@@ -35,13 +36,13 @@ export function SquadHeader({ onBack, onNavigate }) {
 // en la firma, si no el render explota con "playing is not defined".
 // Aparición al scrollear: cada tarjeta entra cuando llega a la pantalla, con un
 // pequeño escalonado por columna para que la grilla se lea de izquierda a derecha.
+// Corto (250ms) porque Plantel se abre seguido.
 const cardReveal = {
-  hidden: { opacity: 0, y: 24, scale: .98 },
+  hidden: { opacity: 0, y: 8 },
   shown: (index) => ({
     opacity: 1,
     y: 0,
-    scale: 1,
-    transition: { type: 'spring', stiffness: 120, damping: 20, delay: (index % 3) * 0.06 },
+    transition: { duration: 0.25, ease: [0.23, 1, 0.32, 1], delay: (index % 3) * 0.04 },
   }),
 };
 
@@ -61,7 +62,6 @@ function PlayerCard({ player, index, active, playing, dimmed, onClick }) {
       initial="hidden"
       whileInView="shown"
       viewport={{ once: true, margin: '0px 0px -40px 0px' }}
-      whileHover={reduceMotion ? undefined : { y: -4, transition: { type: 'spring', stiffness: 300, damping: 22 } }}
       whileTap={reduceMotion ? undefined : { scale: .98 }}
     >
       <span className="player-card-avatar" aria-hidden="true">
@@ -83,9 +83,11 @@ export default function SquadScreen({ onBack, onNavigate }) {
   const [selected, selectPlayer] = useSelectedPlayer();
   // El roster trae el OVR ya recalculado con los votos de todos.
   const { user } = useAuth();
-  const { roster, deltas, myBallot, cast, remaining, resetMyBallot, voters, matchVoters, canVote, match, eligible } = useVotes();
+  const { roster: realRoster, deltas, myBallot, cast, remaining, resetMyBallot, voters, matchVoters, canVote, match, eligible } = useVotes();
   // La hoja se abre con un toque explícito: `selected` viene guardado del
   // storage, así que siguiéramos su valor se abriría sola al entrar.
+  // Solo desarrollo: ?data=worst|empty|one cambia el roster (ver dev/worstCase).
+  const roster = devRoster(realRoster);
   const [openName, setOpenName] = useState(null);
   const [voting, setVoting] = useState(false);
   const [voterLabel, setVoterLabel] = useState('');
@@ -152,6 +154,7 @@ export default function SquadScreen({ onBack, onNavigate }) {
           </div>
         )}
 
+        {!roster.length ? <p className="admin-empty">No hay jugadores para mostrar.</p> : null}
         <div className="squad-grid">
           {roster.map((player, index) => (
             <PlayerCard

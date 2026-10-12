@@ -9,16 +9,18 @@
 // ============================================================================
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 import {
   clubCountryLabel,
   clubVisual,
   divisionName,
+  leagueName,
 } from './careerFormat.js';
 import ClubBadge from './ClubBadge.jsx';
+import CountryFlag from './CountryFlag.jsx';
 
-export default function YouthOffers({ offers, onChoose, busy, bare = false }) {
+export default function YouthOffers({ offers, onChoose, busy, bare = false, selectedKey = null }) {
   const list = Array.isArray(offers) ? offers : [];
   if (list.length === 0) return null;
   const inner = (
@@ -29,13 +31,19 @@ export default function YouthOffers({ offers, onChoose, busy, bare = false }) {
           const club = clubVisual(offer && offer.club);
           const country = clubCountryLabel(offer && offer.club);
           return (
-            <motion.article
-              className="career-offer career-offer--youth"
+            // La tarjeta entera es el botón (como Copero): sin botón "Elegir".
+            <motion.button
+              type="button"
+              className={`career-offer career-offer--youth${selectedKey === null ? '' : (selectedKey === ((offer && offer.id) || `oferta-${index}`) ? ' is-picked' : ' is-dimmed')}`}
               key={(offer && offer.id) || `oferta-${index}`}
+              onClick={() => onChoose(offer)}
+              disabled={Boolean(busy) || selectedKey !== null}
+              aria-label={`Fichar por ${club.name}`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.18, delay: Math.min(index * 0.04, 0.12), ease: 'easeOut' }}
             >
+              <span className="career-dest-tag">Fichar por</span>
               <ClubBadge
                 club={club}
                 size="sm"
@@ -43,18 +51,9 @@ export default function YouthOffers({ offers, onChoose, busy, bare = false }) {
               />
               <strong className="career-offer-youth-club">{club.name}</strong>
               <span className="career-offer-youth-meta">
-                {country ? `${country.replace(/^[^\p{L}\p{N}\s]+/u, '')} · ` : ''}{divisionName(offer && offer.division)}
+                {country ? <><CountryFlag code={club.countryCode} size={12} /> {country} · </> : null}{leagueName(offer && offer.club, offer && offer.division)}
               </span>
-
-              <button
-                type="button"
-                className="career-button career-button--primary career-button--block career-button--compact"
-                onClick={() => onChoose(offer)}
-                disabled={Boolean(busy)}
-              >
-                {busy ? 'Eligiendo…' : 'ELEGIR'} <ArrowRight size={14} />
-              </button>
-            </motion.article>
+            </motion.button>
           );
         })}
       </div>

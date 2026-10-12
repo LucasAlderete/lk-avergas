@@ -47,9 +47,8 @@ export const renderSetup = (props = {}) => render('CareerSetup', (
     onDraftName={noop}
     difficulty={props.difficulty || 'normal'}
     onDifficulty={noop}
-    seedInput="2026"
-    onSeedInput={noop}
     busy={Boolean(props.busy)}
+    initialStep={props.initialStep || 1}
   />
 ));
 

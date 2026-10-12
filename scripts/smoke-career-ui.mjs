@@ -110,10 +110,9 @@ const retiredState = (() => {
       const opened = flow.chooseCareerAction(s, 'transfer', null, { seed: 9000 + i });
       if (opened.phase === FLOW_PHASES.TRANSFER && opened.transferOffers.length > 0) {
         s = flow.chooseCareerAction(opened, 'transfer', opened.transferOffers[0], { seed: 9000 + i });
-      } else {
-        s = opened;
+        continue;
       }
-      continue;
+      // Sin ofertas (mercado vacío): sigue con quedarse/retirarse.
     }
     if (options.includes('stay')) { s = flow.chooseCareerAction(s, 'stay', null, { seed: 9000 + i }); continue; }
     if (options.includes('retire')) { s = flow.chooseCareerAction(s, 'retire', null, { seed: 9000 + i }); continue; }
@@ -138,28 +137,32 @@ const check = (result, markers = []) => {
   if (!result.html || result.html.length < 20) { fail(`${result.name}: HTML vacío`); return result.html; }
   if (BROKEN.test(result.html)) fail(`${result.name}: texto roto en el HTML`);
   for (const marker of markers) {
-    if (!result.html.includes(marker)) fail(`${result.name}: falta "${marker}"`);
+    // El SSR escapa comillas y ampersands: se acepta el marcador crudo o escapado.
+    const escaped = String(marker).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+    if (!result.html.includes(marker) && !result.html.includes(escaped)) fail(`${result.name}: falta "${marker}"`);
   }
   return result.html;
 };
 
 // --- Setup (sin carrera) ---
-const setupHtml = check(ui.renderSetup({ draftName: player.name, difficulty: 'normal' }), ['Mi carrera', 'Iniciar carrera', player.name]);
-assert(setupHtml.includes('296 clubes'), 'CareerSetup muestra el tamaño del mundo (296 clubes)');
-check(ui.renderSetup({ draftName: player.name, stoppedReason: 'invalid_player' }), ['Iniciar carrera']);
+// Setup en 3 pasos: el 1 elige jugador; el 3 tiene el ritmo y "Iniciar carrera".
+check(ui.renderSetup({ draftName: player.name, difficulty: 'normal' }), ['Paso 1 de 3', 'Continuar', player.name]);
+const setupHtml = check(ui.renderSetup({ draftName: player.name, difficulty: 'normal', initialStep: 3 }), ['Paso 3 de 3', 'Iniciar carrera']);
+assert(!setupHtml.includes('332 clubes'), 'CareerSetup ya no muestra el tamaño del mundo');
+check(ui.renderSetup({ draftName: player.name, stoppedReason: 'invalid_player', initialStep: 3 }), ['Iniciar carrera']);
 
 // --- Debut ---
 // La barra del header muestra identidad (nombre/edad/temporada) + navegación:
 // no repite el club (la identidad del club vive en las tarjetas). En debut la
 // carrera todavía NO tiene club (club = null).
 const debutHeaderHtml = check(ui.renderHeader(debutState.career, debutState.phase),
-  ['Mi carrera', 'Inicio', 'Plantel', player.name, `Temporada ${debutState.career.season}`, 'Volver a inicio']);
+  ['Mi carrera', 'Inicio', 'Plantel', player.name, `Temporada ${debutState.career.season}`]); // volver = link Inicio del menú compartido
 assert(!debutHeaderHtml.includes('Sin club'), 'el header no inventa club cuando la carrera nace sin club');
 assert(!/\b(Juegos|Ficha|Copero)\b/.test(debutHeaderHtml), 'el header no expone secciones retiradas');
 check(ui.renderOverview(debutState.career));
 // OVR visible: el del JUGADOR sí; el del club NUNCA en la selección inicial.
 const debutCardHtml = check(ui.renderPlayerCard(debutState.career), ['OVR']);
-assert(debutCardHtml.includes('Sin club'), 'la ficha del jugador muestra "Sin club" en el debut');
+assert(debutCardHtml.includes('Libre'), 'la ficha del jugador muestra "Libre" en el debut (sin club, como Copero)');
 check(ui.renderTimeline(debutState.career, debutState.phase));
 // Sin trayectoria todavía (debut: 0 temporadas, 0 clubes) no se renderiza nada.
 const debutHistory = ui.renderHistory(debutState.career);
@@ -167,7 +170,7 @@ assert(debutHistory.ok === true && debutHistory.html === '',
   'CareerHistory sin trayectoria (debut) no renderiza nada');
 const youthHtml = check(ui.renderYouthOffers(debutState.youthOffers), ['Elegí tu primer club']);
 assert(!/OVR/i.test(youthHtml), 'las tarjetas de selección NO muestran ningún OVR/rating del club');
-assert(youthHtml.split('ELEGIR').length - 1 === 3, 'exactamente 3 tarjetas de club para elegir');
+assert(youthHtml.split('career-offer--youth"').length - 1 === 3, 'exactamente 3 tarjetas de club para elegir (la tarjeta entera es el botón)');
 const youthSrc = fs.readFileSync('src/features/career/components/YouthOffers.jsx', 'utf8');
 assert(!/clubOvr/.test(youthSrc), 'YouthOffers.jsx ya no referencia el OVR del club');
 assert(!/Jugar temporada|Simular temporada|Continuar/i.test(youthSrc),
@@ -180,7 +183,7 @@ for (const offer of debutState.youthOffers) {
 
 // --- Temporada ---
 const seasonHeaderHtml = check(ui.renderHeader(seasonState.career, seasonState.phase),
-  ['Mi carrera', 'Inicio', 'Plantel', seasonState.career.name, `Temporada ${seasonState.career.season}`, 'Volver a inicio']);
+  ['Mi carrera', 'Inicio', 'Plantel', seasonState.career.name, `Temporada ${seasonState.career.season}`]); // volver = link Inicio del menú compartido
 assert(!/\b(Juegos|Ficha|Copero)\b/.test(seasonHeaderHtml), 'el header de temporada no expone secciones retiradas');
 assert(!seasonHeaderHtml.includes(seasonState.career.club.name),
   'el header (barra) no repite el club: el club vive en las tarjetas');
@@ -250,12 +253,12 @@ const trophyLeague = { season: 2027, type: 'league', label: 'Liga', icon: '🏆'
 const trophyCup = { season: 2027, type: 'cup', label: 'Copa Avergas', icon: '🥈', clubKey: 'river-plate', clubName: 'River Plate' };
 const emptyToast = ui.renderTrophyToast([]);
 assert(emptyToast.ok === true && emptyToast.html === '', 'CareerTrophyToast sin títulos no renderiza nada');
-const oneToast = check(ui.renderTrophyToast([trophyLeague]), ['¡CAMPEÓN!', 'Ganaste la Liga', 'River Plate']);
+const oneToast = check(ui.renderTrophyToast([trophyLeague]), ['Liga', 'River Plate']);
 assert(!/<button/i.test(oneToast), 'el aviso no expone ningún botón (no requiere click)');
 // El SSR pinta SOLO el título actual (index 0): el encadenado al siguiente
 // título corre en cliente con los timers del componente (cubierto por
 // scripts/smoke-trophy-toasts.mjs a nivel de cola/detección).
-check(ui.renderTrophyToast([trophyLeague, trophyCup]), ['¡CAMPEÓN!', 'Ganaste la Liga']);
+check(ui.renderTrophyToast([trophyLeague, trophyCup]), ['Liga']);
 
 // --- ClubBadge: logo real, fallback procedural y todos los clubes ---
 const logoClub = allClubs().find((club) => CREST_FILES[club.slug]);
@@ -274,7 +277,7 @@ const plainVisual = clubVisual(plainClub);
 const badgeFallback = check(ui.renderBadge(plainVisual), [plainVisual.symbol]);
 assert(!badgeFallback.includes('<img'), `ClubBadge no inventa un logo para ${plainClub.slug} (fallback procedural)`);
 
-// Los 296 clubes renderizan su badge (ni un solo error por campos faltantes).
+// Los 332 clubes renderizan su badge (ni un solo error por campos faltantes).
 let badgeFailures = 0;
 for (const club of allClubs()) {
   const badge = ui.renderBadge(clubVisual(club));
@@ -283,7 +286,7 @@ for (const club of allClubs()) {
     if (badgeFailures <= 5) console.error(`      · ClubBadge falló con ${club.slug} (${badge.error || 'texto roto'})`);
   }
 }
-assert(badgeFailures === 0, `ClubBadge renderiza los 296 clubes sin errores (${badgeFailures} fallos)`);
+assert(badgeFailures === 0, `ClubBadge renderiza los 332 clubes sin errores (${badgeFailures} fallos)`);
 
 // --- Resumen ---
 console.log(`\n   renders verificados · logo real: ${logoClub.slug} · fallback: ${plainClub.slug}`);

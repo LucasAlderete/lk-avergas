@@ -7,32 +7,104 @@
 // - La categoría NO se duplica acá cuando el panel ya la muestra como kicker
 //   (`hideCategory`): solo se conserva el rival como contexto.
 // - La intro se recorta por CSS a ~3 líneas (no se tocan los textos del motor).
-// - Cada opción es compacta ANTES de elegir: nombre + línea meta con los
-//   labels de sus pills ("Enfoque · +0 a +2 OVR"). La narración larga
+// - Cada opción es compacta ANTES de elegir: nombre + una fila por resultado
+//   posible (verde/gris/rojo, qué pasa y su %). La narración larga
 //   (`choice.description`) NO se muestra acá: aparece DESPUÉS de elegir, en
 //   la caja de resultado que monta la pantalla.
 // Cada opción dispara `chooseAction('choose_event_choice', choice.id)`:
 // el efecto real lo aplica events.js/engine.js, nunca este componente.
 //
-// Los textos del catálogo de eventos llegan con mojibake desde events.js (bytes
-// UTF-8 leídos como Windows-1252): se reparan con cleanText SOLO para mostrar.
+// Cada opción muestra sus probabilidades de OVR (choiceOdds), como Copero:
+// el jugador apuesta sabiendo el riesgo. Con `spin` la opción elegida gira la
+// ruleta sobre sus resultados y las demás quedan apagadas.
 // ============================================================================
 
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
-import { EVENT_CATEGORIES } from '../events.js';
+import { EVENT_CATEGORIES, choiceOdds } from '../events.js';
 import { cleanText } from './careerFormat.js';
 
-/** Línea meta compacta pre-elección: "Enfoque · +0 a +2 OVR" (o null). */
-function choiceMeta(choice) {
-  const pills = Array.isArray(choice && choice.pills) ? choice.pills : [];
-  const labels = pills
-    .map((pill) => cleanText(pill && pill.label))
-    .filter((label) => typeof label === 'string' && label.trim() !== '');
-  return labels.length > 0 ? labels.join(' · ') : null;
+const signed = (n) => (n > 0 ? `+${n}` : `${n}`);
+
+/** "+1 a +2 OVR", "-1 OVR" o "Sin cambios" para una fila de choiceOdds. */
+function oddsLabel(row) {
+  if (row.tone === 'same') return 'Sin cambios';
+  const [a, b] = row.tone === 'up' ? [row.from, row.to] : [row.to, row.from];
+  return a === b ? `${signed(a)} OVR` : `${signed(a)} a ${signed(b)} OVR`;
 }
 
-export default function CareerEvent({ currentEvent, onChoose, busy, bare = false, hideCategory = false }) {
+// Texto corto de qué pasa en cada resultado (estilo Copero). El evento puede
+// traerlo en `choice.outcomes = { up, same, down }`; si no, va uno genérico.
+const DEFAULT_OUTCOMES = { up: 'Te sale bien', same: 'No pasa nada', down: 'Te sale mal' };
+const ODD_ICONS = { up: '↗', same: '→', down: '↘' };
+
+function outcomeText(choice, row) {
+  // Traspaso: no mueve el OVR, la fila dice a dónde te vas ("Traspaso a X").
+  const pill = choice && choice.isTransfer && Array.isArray(choice.pills) && choice.pills[0];
+  if (pill && row.tone === 'same') return cleanText(pill.label);
+  const custom = choice && choice.outcomes && cleanText(choice.outcomes[row.tone]);
+  const reason = custom || DEFAULT_OUTCOMES[row.tone];
+  return row.tone === 'same' ? reason : `${oddsLabel(row)} · ${reason}`;
+}
+
+// Ruleta (como Copero): al elegir, el resaltado recorre los resultados de la
+// opción, frena de a poco y se clava en el que de verdad salió (`tone`, que
+// llega del motor). Al terminar avisa con onDone para que arranque la temporada.
+function useRoulette(rows, spin) {
+  const [lit, setLit] = useState(null);
+  const [won, setWon] = useState(false);
+  const doneRef = useRef(spin && spin.onDone);
+  doneRef.current = spin && spin.onDone;
+  const tone = spin ? spin.tone : null;
+  const active = Boolean(spin);
+  useEffect(() => {
+    if (!active || !tone) return undefined;
+    const tones = rows.map((r) => r.tone);
+    const target = Math.max(0, tones.indexOf(tone));
+    const steps = tones.length > 1 ? tones.length * 3 + target : 0;
+    let i = 0;
+    let timer = 0;
+    const finish = () => {
+      setLit(tones[target]);
+      setWon(true);
+      timer = window.setTimeout(() => doneRef.current && doneRef.current(), 900);
+    };
+    const step = () => {
+      if (i >= steps) { finish(); return; }
+      setLit(tones[i % tones.length]);
+      i += 1;
+      timer = window.setTimeout(step, 70 + (i / Math.max(1, steps)) ** 2 * 260);
+    };
+    setWon(false);
+    step();
+    return () => window.clearTimeout(timer);
+    // rows es estable mientras dura el giro (evento congelado).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, tone]);
+  return { lit, won };
+}
+
+function ChoiceOdds({ choice, spin }) {
+  const rows = choiceOdds(choice);
+  const { lit, won } = useRoulette(rows, spin);
+  return (
+    <span className="career-choice-odds">
+      {rows.map((row) => {
+        const state = lit === row.tone ? (won ? ' is-win' : ' is-lit') : (won ? ' is-lose' : '');
+        return (
+          <span key={row.tone} className={`career-odd is-${row.tone}${state}`}>
+            <span className="career-odd-icon" aria-hidden="true">{ODD_ICONS[row.tone]}</span>
+            <span className="career-odd-text">{outcomeText(choice, row)}</span>
+            <span className="career-odd-pct">{row.pct}%</span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+export default function CareerEvent({ currentEvent, onChoose, busy, bare = false, hideCategory = false, spin = null }) {
   const event = currentEvent && currentEvent.event;
   if (!event) return null;
 
@@ -55,20 +127,21 @@ export default function CareerEvent({ currentEvent, onChoose, busy, bare = false
 
       <div className="career-choices career-choices--grid">
         {choices.map((choice, index) => {
-          const meta = choiceMeta(choice);
+          const picked = spin && spin.choiceId === choice.id;
+          const pickClass = spin ? (picked ? ' is-picked' : ' is-dimmed') : '';
           return (
             <motion.button
               type="button"
-              className="career-choice career-choice--compact"
+              className={`career-choice career-choice--compact${pickClass}`}
               key={choice.id || `opcion-${index}`}
               onClick={() => onChoose(choice.id)}
-              disabled={Boolean(busy)}
+              disabled={Boolean(busy) || Boolean(spin)}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15, delay: Math.min(index * 0.03, 0.09) }}
             >
               <span className="career-choice-label">{cleanText(choice.label)}</span>
-              {meta ? <span className="career-choice-hint">{meta}</span> : null}
+              <ChoiceOdds choice={choice} spin={picked ? spin : null} />
             </motion.button>
           );
         })}

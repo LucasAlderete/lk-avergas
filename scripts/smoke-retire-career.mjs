@@ -1,7 +1,7 @@
 // Smoke tests de retireCareer (bloque 9 del engine).
 // Uso: node scripts/smoke-retire-career.mjs
 // Cubre los checks del PASO 5: sintaxis (A), export (B), pureza (C), estado
-// de retiro (D), estadísticas (E), peak (F), logros (G), idempotencia (H),
+// de retiro (D), estadísticas (E), peak (F), idempotencia (H),
 // edad (I), temporada (J), ofertas pendientes (K), sin NaN (L), careers
 // reales (M) y compatibilidad con el resto del engine (N).
 import { spawnSync } from 'node:child_process';
@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { players } from '../src/data.js';
 import { clubsByDivision, startingDivisionsForOvr } from '../src/data/careerWorld.js';
-import { ACHIEVEMENTS, initialOvr } from '../src/features/career/config.js';
+import { initialOvr } from '../src/features/career/config.js';
 
 let failures = 0;
 const assert = (cond, label) => {
@@ -99,7 +99,6 @@ career.clubHistory.push({
   fromSeason: career.season - (career.age - 16),
   via: 'youth',
 });
-career.achievements.push({ id: 'centurion', label: 'Centurión del Barrio' });
 career.pendingOffers = [{ id: 'offer-pendiente' }];
 career.offers = [{ id: 'offer-pendiente' }];
 career.pendingTransfer = { targetClub: { name: 'Club Pendiente' } };
@@ -191,75 +190,14 @@ console.log('\n== L) Sin NaN ==');
 assert(deepScan(retired), 'career retirada sin NaN/Infinity (deep scan)');
 
 // ============================================================================
-// G) Logros: el catálogo ACHIEVEMENTS de config.js, evaluado al retirar.
+// Helper: carrera armada a mano para los casos de borde.
 // ============================================================================
-console.log('\n== G) Logros (catálogo ACHIEVEMENTS de config.js) ==');
 const craftCareer = (overrides = {}) => {
   const base = careerWithClub(player, { difficulty: 'normal' });
   const merged = { ...base, ...overrides };
   merged.careerStats = { pj: 0, gls: 0, ast: 0, cleanSheets: 0, matches: [], ...(overrides.careerStats || {}) };
   return merged;
 };
-const idsOf = (c) => (c.achievements || []).map((a) => a.id).sort();
-const histClubs = (count) => Array.from({ length: count }, (_, i) => ({
-  club: { key: `2/hist-${i + 1}`, slug: `hist-${i + 1}`, name: `Histórico ${i + 1}` },
-  division: 2,
-  fromAge: 16 + i,
-  fromSeason: 2026 + i,
-  via: 'transfer',
-}));
-
-// Carrera virgen: sin stats ni títulos → ningún logro del catálogo.
-assert(idsOf(retireCareer(craftCareer())).length === 0, 'carrera virgen: ningún logro');
-
-// Umbrales del catálogo, regla por regla (borde justo: cumple / no cumple).
-// (injuries: 1 aísla las reglas de PJ de 'indestructible', que exige 0 lesiones.)
-assert(idsOf(retireCareer(craftCareer({ injuries: 1, careerStats: { pj: 100 } }))).join(',') === 'centurion', 'PJ 100 → centurion');
-assert(!idsOf(retireCareer(craftCareer({ careerStats: { pj: 99 } }))).includes('centurion'), 'PJ 99 → sin centurion');
-assert(idsOf(retireCareer(craftCareer({ careerStats: { gls: 80 } }))).join(',') === 'goleador', 'goles 80 → goleador');
-assert(!idsOf(retireCareer(craftCareer({ careerStats: { gls: 79 } }))).includes('goleador'), 'goles 79 → sin goleador');
-assert(idsOf(retireCareer(craftCareer({ careerStats: { ast: 60 } }))).join(',') === 'asistidor', 'asistencias 60 → asistidor');
-assert(!idsOf(retireCareer(craftCareer({ careerStats: { ast: 59 } }))).includes('asistidor'), 'asistencias 59 → sin asistidor');
-assert(idsOf(retireCareer(craftCareer({ overallPeak: 88 }))).join(',') === 'leyenda', 'peak OVR 88 → leyenda');
-assert(!idsOf(retireCareer(craftCareer({ overallPeak: 87 }))).includes('leyenda'), 'peak OVR 87 → sin leyenda');
-assert(idsOf(retireCareer(craftCareer({ trophies: [{}, {}, {}] }))).join(',') === 'campeon', '3 títulos → campeon');
-assert(!idsOf(retireCareer(craftCareer({ trophies: [{}, {}] }))).includes('campeon'), '2 títulos → sin campeon');
-assert(idsOf(retireCareer(craftCareer({ clubHistory: histClubs(3) }))).join(',') === 'trotamundos', '4 clubes (historial + actual) → trotamundos');
-assert(!idsOf(retireCareer(craftCareer({ clubHistory: histClubs(2) }))).includes('trotamundos'), '3 clubes → sin trotamundos');
-assert(idsOf(retireCareer(craftCareer({ injuries: 0, careerStats: { pj: 50 } }))).join(',') === 'indestructible', '0 lesiones + PJ 50 → indestructible');
-assert(!idsOf(retireCareer(craftCareer({ injuries: 1, careerStats: { pj: 50 } }))).includes('indestructible'), '1 lesión → sin indestructible');
-assert(!idsOf(retireCareer(craftCareer({ injuries: 0, careerStats: { pj: 49 } }))).includes('indestructible'), 'PJ 49 → sin indestructible');
-
-// Combinación completa: las reglas del catálogo todas juntas.
-const allIds = retireCareer(craftCareer({
-  careerStats: { pj: 120, gls: 90, ast: 70 },
-  overallPeak: 90,
-  trophies: [{}, {}, {}, {}],
-  clubHistory: histClubs(3),
-  injuries: 0,
-}));
-assert(
-  JSON.stringify(idsOf(allIds)) === JSON.stringify(ACHIEVEMENTS.map((a) => a.id).sort()),
-  `combinación completa: los ${ACHIEVEMENTS.length} logros del catálogo`,
-);
-
-// Acumulativo: los logros previos se conservan y no se duplican.
-const seeded = craftCareer({ careerStats: { pj: 150, gls: 90 }, injuries: 1 });
-seeded.achievements = [{ id: 'centurion', label: 'Centurión del Barrio' }];
-const seededRetired = retireCareer(seeded);
-assert(idsOf(seededRetired).join(',') === 'centurion,goleador', 'logros previos + nuevos (acumulativo)');
-assert(seededRetired.achievements.filter((a) => a.id === 'centurion').length === 1, 'sin duplicar el logro previo');
-assert(
-  seededRetired.achievements.every((a) => ACHIEVEMENTS.some((cat) => cat.id === a.id && cat.label === a.label)),
-  'id + label salen del catálogo (nada inventado)',
-);
-assert(
-  seededRetired.achievements.every((a) => (a.id === 'centurion'
-    ? a.season === undefined
-    : a.season === seeded.season)),
-  'logro nuevo con la season del cierre (el previo sembrado queda intacto)',
-);
-assert(deepScan(seededRetired), 'logros evaluados sin NaN');
 
 // ============================================================================
 // H) No duplicación: retireCareer(retireCareer(c)) === retireCareer(c).
@@ -270,7 +208,6 @@ const twice = retireCareer(once);
 assert(JSON.stringify(twice) === JSON.stringify(once), 'retireCareer(retireCareer(c)) === retireCareer(c)');
 assert(twice.events.length === once.events.length, 'no duplica eventos');
 assert(twice.events.filter((e) => e.type === 'retirement').length === 1, 'un solo evento de retiro');
-assert(JSON.stringify(twice.achievements) === JSON.stringify(once.achievements), 'no duplica logros');
 assert(JSON.stringify(twice.careerStats) === JSON.stringify(once.careerStats), 'no toca estadísticas');
 assert(JSON.stringify(twice.seasonHistory) === JSON.stringify(once.seasonHistory), 'no toca el historial de temporadas');
 assert(twice.retired === true && twice.age === once.age && twice.season === once.season, 'estado de cierre estable');
@@ -280,7 +217,6 @@ const alreadyRetired = {
   retired: true,
   name: 'X',
   events: [{ season: 2030, type: 'retirement', message: 'Ya retirado' }],
-  achievements: [{ id: 'leyenda', label: 'Leyenda del Universo' }],
 };
 assert(JSON.stringify(retireCareer(alreadyRetired)) === JSON.stringify(alreadyRetired), 'career ya retirada: copia intacta sin cambios');
 
@@ -324,9 +260,8 @@ for (const name of ['Nahue', 'Mati', 'Alan', 'JJ', 'Gonzi']) {
     && rc.events.length === c.events.length + 1
     && rc.events[rc.events.length - 1].type === 'retirement'
     && deepScan(rc)
-    && (rc.achievements || []).every((a) => ACHIEVEMENTS.some((cat) => cat.id === a.id))
   );
-  assert(okName, `${name}: retiro puro, cierre completo, logros del catálogo y sin NaN`);
+  assert(okName, `${name}: retiro puro, cierre completo y sin NaN`);
   assert(JSON.stringify(retireCareer(rc)) === JSON.stringify(rc), `${name}: idempotente`);
 }
 

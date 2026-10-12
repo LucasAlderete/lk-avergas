@@ -302,9 +302,19 @@ export default function LineupEditor({ onPlayerSelect }) {
     const node = nodeRefs.current.get(drag.name);
     const spot = findSlot(lineupRef.current, drag.name);
     if (node && spot) {
+      // Vuelve deslizándose a su lugar (no de golpe) para que se entienda que
+      // el drop no se aceptó. La transición vive solo durante la vuelta: si
+      // quedara puesta, el arrastre siguiente seguiría al dedo con retraso.
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const ease = 'cubic-bezier(0.23, 1, 0.32, 1)';
+      node.style.transition = reduce
+        ? 'opacity 150ms ease-out'
+        : `left 350ms ${ease}, top 350ms ${ease}, opacity 150ms ease-out`;
       node.style.left = `${spot.x}%`;
       node.style.top = `${spot.y}%`;
       node.style.opacity = '';
+      window.clearTimeout(node.restoreTimer);
+      node.restoreTimer = window.setTimeout(() => { node.style.transition = ''; }, 360);
     }
   };
 
@@ -320,6 +330,11 @@ export default function LineupEditor({ onPlayerSelect }) {
 
   const startDragFromPending = (event, pending) => {
     clearPendingTimer();
+    const draggedNode = nodeRefs.current.get(pending.payload.name);
+    if (draggedNode) {
+      window.clearTimeout(draggedNode.restoreTimer);
+      draggedNode.style.transition = '';
+    }
     const { payload, rect, startX, startY, pointerId } = pending;
     dragRef.current = {
       ...beginDragRecord(lineupRef.current, payload, rect, startX, startY),
@@ -568,11 +583,11 @@ export default function LineupEditor({ onPlayerSelect }) {
         <div className="shared-pitch" ref={pitchRef}>
           <div className="pitch-count pitch-count-a" aria-label={`Equipo azul: ${counts.teamA} de ${teamSize}, promedio ${averages.teamA ?? 'sin jugadores'}`}>
             <span className="pitch-count-n">{counts.teamA}/{teamSize}</span>
-            <span className="pitch-count-ovr">{averages.teamA ?? '–'}</span>
+            <span className="pitch-count-ovr">{averages.teamA ?? '-'}</span>
           </div>
           <div className="pitch-count pitch-count-b" aria-label={`Equipo rojo: ${counts.teamB} de ${teamSize}, promedio ${averages.teamB ?? 'sin jugadores'}`}>
             <span className="pitch-count-n">{counts.teamB}/{teamSize}</span>
-            <span className="pitch-count-ovr">{averages.teamB ?? '–'}</span>
+            <span className="pitch-count-ovr">{averages.teamB ?? '-'}</span>
           </div>
           <div className="five-goal top-goal" /><div className="five-goal bottom-goal" />
           <div className="five-midline" /><div className="five-circle" />
@@ -620,7 +635,7 @@ export default function LineupEditor({ onPlayerSelect }) {
       <section className="injured-players">
         <div className="five-team-heading">
           <span>LESIONADOS <b>{injuredPlayers.length}</b></span>
-          <small>Tildá a quien no puede jugar · siguen habilitados para la cancha</small>
+          <small>Tildá a quien no puede jugar. Siguen habilitados para la cancha.</small>
         </div>
         <div className="injured-options">
           {players.map((item) => (

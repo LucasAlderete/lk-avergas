@@ -3,7 +3,7 @@
 // ============================================================================
 
 import {
-  AGE, OVR, clampOvr, initialOvr,
+  AGE, OVR, DEFAULT_NATIONALITY, clampOvr, initialOvr, rollPotential, scaleGrowthToPotential,
   DIFFICULTIES,
   POSITIONS, positionById, suggestedPosition,
   GROWTH_CURVES, GK_GROWTH_CURVE, GROWTH_META, growthRangeForAge, developmentProfileFromBias, LOW_ROTATION_STREAK,
@@ -14,12 +14,14 @@ import {
   goalMult, assistMult, staminaMult, injuryRisk, roleMargin, growthBias, ATTR_FORMULA_RANGES,
   INJURY_CHANCE_PER_SEASON, INJURY_TYPES,
   TROPHY_TYPES, TROPHY_PROBS, MAX_TROPHIES_PER_SEASON, starMultiplier, effectiveReputationForTrophies,
-  OFFER_RULES, playerTier, walkTier, HOME_BIAS_WEIGHT, homeBiasWeight,
+  OFFER_RULES, ABROAD_RULES, canReceiveAbroadOffers, playerTier, walkTier, HOME_BIAS_WEIGHT, homeBiasWeight,
   firstDivisionOfferChance,
   marketValue,
-  EVENT_CHANCE_PER_CHECKPOINT, ACHIEVEMENTS,
+  EVENT_CHANCE_PER_CHECKPOINT,
 } from './config.js';
 
+import { hashString, makeRng, playNationalSeason } from './nationalTeam.js';
+import { TROPHIES, trophyIdFor } from './trophies.js';
 import {
   divisions, clubs, clubKey, allClubs, clubsByDivision, findClub, findClubByKey,
   domesticReputation, clubBaseline, startingDivisionsForOvr, worldMeta,
@@ -98,7 +100,9 @@ export function createCareer(player, options = {}) {
   };
 
   const rating = player.rating;
-  const ovr = initialOvr(rating);
+  const ovr = initialOvr();
+  // El techo se sortea por carrera (no sale del rating real del amigo).
+  const potential = Number.isFinite(options.potential) ? options.potential : rollPotential(resolveRng(options));
   const profile = developmentProfileFromBias(growthBias(attrs));
   const isGK = chosenPosition === 'ARQ';
 
@@ -131,10 +135,15 @@ export function createCareer(player, options = {}) {
     difficulty,
     difficultyInfo: DIFFICULTIES[difficulty],
     position: chosenPosition,
+    nationality: (typeof options.nationality === 'string' && options.nationality) || DEFAULT_NATIONALITY,
+    // Número de camiseta (1-99) elegido en el setup; 10 por defecto.
+    shirtNumber: Number.isInteger(options.shirtNumber) && options.shirtNumber >= 1 && options.shirtNumber <= 99
+      ? options.shirtNumber : 10,
     naturalPosition: suggestedPosition(attrs),
     attrs: { ...attrs },
     ovr,
     overallPeak: ovr,
+    potential,
     profile,
     club,
     domesticRep,
@@ -158,13 +167,13 @@ export function createCareer(player, options = {}) {
     injuries: 0,
     injuryHistory: [],
     trophies: [],
-    achievements: [],
     clubHistory: [],
     seasonHistory: [],
     retired: false,
     marketValue: marketValue({ ovr, age: AGE.START, reputation: domesticRep }),
     events: [],
     lastDecision: null,
+    suspendedSeasons: 0,
   };
 
   return career;
@@ -184,13 +193,16 @@ function recalcCareerState(career) {
 
 export function recomputeCareer(career) {
   const state = recalcCareerState(career);
+  const value = marketValue({ ovr: career.ovr, age: career.age, reputation: state.domesticRep, potential: career.overallPeak });
   return {
     ...career,
     domesticRep: state.domesticRep,
     clubBaseline: state.clubBaseline,
     overallVsBaseline: state.overallVsBaseline,
     role: state.role,
-    marketValue: marketValue({ ovr: career.ovr, age: career.age, reputation: state.domesticRep, potential: career.overallPeak }),
+    marketValue: value,
+    // Valor más alto de la carrera (para la tarjeta final).
+    marketValuePeak: Math.max(Number(career.marketValuePeak) || 0, value),
   };
 }
 
@@ -231,7 +243,7 @@ function bucketOf(career) {
 //   disparan una penalización extra de OVR esa temporada.
 // - MAX_TROPHIES_PER_SEASON: la temporada corta al alcanzar el máximo (1).
 // - Los eventos de checkpoint (EVENT_CHANCE_PER_CHECKPOINT), el mercado de
-//   pases y los logros de retiro NO viven acá: son pasos posteriores del flujo.
+//   pases NO viven acá: son pasos posteriores del flujo.
 // -----------------------------------------------------------------------------
 
 // Ajustes internos del motor (detalle de implementación, no balance de mundo).
@@ -332,35 +344,117 @@ function rollSeasonInjury(career, rng) {
  * y el multiplicador estrella. La copa continental solo se tira en divisiones
  * con hasContinental (Primera Avergas); la copa doméstica, en hasDomesticCup.
  */
+/** Puesto del club en su liga real según el OVR del catálogo (0 = el mejor). */
+function leagueRank(club) {
+  const world = club && (findClubByKey(clubKey(club)) || findClub(club.slug));
+  if (!world || !world.leagueId) return null;
+  const peers = allClubs()
+    .filter((c) => c.leagueId === world.leagueId)
+    .sort((a, b) => (b.ovr - a.ovr) || a.name.localeCompare(b.name));
+  const index = peers.findIndex((c) => c.slug === world.slug);
+  return index >= 0 ? index : null;
+}
+
+
+// Descenso (como Copero): los 3 últimos de la liga del catálogo pueden bajar.
+// Chance por puesto desde el fondo (último, anteúltimo, antepenúltimo); si el
+// jugador es figura del equipo la chance baja a la mitad. Es una marca de la
+// temporada (flecha roja en la trayectoria): el club sigue en el catálogo.
+const RELEGATION_BY_BOTTOM = [0.3, 0.2, 0.12];
+
+function rollRelegation(career, season, wonLeague) {
+  if (wonLeague) return false;
+  const world = career.club && (findClubByKey(clubKey(career.club)) || findClub(career.club.slug));
+  if (!world || !world.leagueId) return false;
+  const peers = allClubs().filter((c) => c.leagueId === world.leagueId);
+  const rank = leagueRank(career.club);
+  if (rank === null || peers.length < 6) return false;
+  const fromBottom = peers.length - 1 - rank;
+  if (fromBottom >= RELEGATION_BY_BOTTOM.length) return false;
+  const chance = RELEGATION_BY_BOTTOM[fromBottom] * (career.overallVsBaseline >= 3 ? 0.5 : 1);
+  // RNG propio (carrera + temporada): no altera el resto de la simulación.
+  const rng = makeRng(hashString(`${career.playerId || career.name || 'carrera'}|descenso|${season}|${world.slug}`));
+  return rng.next() < chance;
+}
+
+/** Penalización de OVR por cada temporada suspendido (sin jugar). */
+const SUSPENSION_OVR_PENALTY = -3;
+
+// -----------------------------------------------------------------------------
+// Títulos: cada competición se sortea por separado (puede salir doblete o
+// triplete). La chance de cada club sale de su fuerza (OVR del catálogo)
+// frente a los rivales REALES de esa competición, con un softmax:
+//   chance = e^((ovr - mejor) / T) / Σ e^((ovr_i - mejor) / T)
+// Así los clubes parejos se reparten la chance (Benfica/Porto/Sporting) y el
+// más fuerte es favorito sin ser imbatible. T más alto = más sorpresas.
+//   - Liga: rivales de la misma liga real.
+//   - Copa nacional: todos los clubes del país (primera y segunda).
+//   - Internacional (solo primera división): todos los clubes de primera de la
+//     confederación (Champions = Europa; Libertadores = Argentina y Brasil;
+//     Concacaf = México y EEUU). Ser el mejor de Portugal no es ser el Madrid.
+// -----------------------------------------------------------------------------
+const TITLE_TEMPERATURE = { league: 2.6, cup: 4.5, continental: 2.6 };
+// Las copas por eliminación tienen más sorpresas (y rivales fuera del
+// catálogo): se recorta la chance del softmax.
+const TITLE_SCALE = { league: 1, cup: 0.45, continental: 0.6 };
+// Europa ya tiene a casi todos sus candidatos en el catálogo: sin recorte.
+const CONTINENTAL_SCALE_EUROPE = 1;
+const CONFEDERATIONS = [['ES', 'EN', 'IT', 'FR', 'DE', 'PT'], ['AR', 'BR'], ['MX', 'US']];
+
+function titleChance(pool, world, temperature) {
+  if (!pool.length || !pool.includes(world)) return 0;
+  const best = Math.max(...pool.map((c) => c.ovr));
+  const weight = (c) => Math.exp((c.ovr - best) / temperature);
+  const total = pool.reduce((sum, c) => sum + weight(c), 0);
+  return weight(world) / total;
+}
+
+function seasonTitleOdds(world) {
+  const clubsList = allClubs();
+  const odds = [];
+  const league = clubsList.filter((c) => c.leagueId === world.leagueId);
+  odds.push({ type: 'league', prob: titleChance(league, world, TITLE_TEMPERATURE.league) });
+  const country = clubsList.filter((c) => c.countryCode === world.countryCode);
+  odds.push({ type: 'cup', prob: titleChance(country, world, TITLE_TEMPERATURE.cup) });
+  if (world.leagueLevel === 1) {
+    const conf = CONFEDERATIONS.find((list) => list.includes(world.countryCode)) || [world.countryCode];
+    const top = clubsList.filter((c) => c.leagueLevel === 1 && conf.includes(c.countryCode));
+    const scale = conf === CONFEDERATIONS[0] ? CONTINENTAL_SCALE_EUROPE / TITLE_SCALE.continental : 1;
+    odds.push({ type: 'continental', prob: titleChance(top, world, TITLE_TEMPERATURE.continental) * scale });
+  }
+  return odds;
+}
+
 function rollSeasonTrophies(career, rng) {
   const division = divisions.find((d) => d.nivel === career.club.division);
   if (!division) return [];
 
-  const domesticRep = career.domesticRep;
-  const continentalRep = division.hasContinental ? domesticRep : 0;
-  const eff = effectiveReputationForTrophies(career.ovr, domesticRep, continentalRep);
   const starMult = starMultiplier(career.overallVsBaseline);
-
-  const candidates = [
-    { type: 'league', prob: TROPHY_PROBS.league[eff.domestic] * starMult },
-  ];
-  if (division.hasDomesticCup) {
-    candidates.push({ type: 'cup', prob: TROPHY_PROBS.cup[eff.domestic] * starMult });
-  }
-  if (division.hasContinental) {
-    candidates.push({ type: 'continental', prob: TROPHY_PROBS.continental[eff.continental] * starMult });
+  const world = findClubByKey(clubKey(career.club)) || findClub(career.club.slug);
+  let candidates;
+  if (world && world.leagueId) {
+    candidates = seasonTitleOdds(world).map((c) => ({ ...c, prob: c.prob * TITLE_SCALE[c.type] * starMult }));
+  } else {
+    // Club fuera del catálogo: tabla por reputación (solo liga, como antes).
+    const eff = effectiveReputationForTrophies(career.ovr, career.domesticRep, 0);
+    candidates = [{ type: 'league', prob: TROPHY_PROBS.league[eff.domestic] * starMult }];
   }
 
   const won = [];
   for (const candidate of candidates) {
     if (won.length >= MAX_TROPHIES_PER_SEASON) break;
-    if (rng.next() < Math.min(1, candidate.prob)) {
+    if (rng.next() < Math.min(0.9, candidate.prob)) {
       const meta = TROPHY_TYPES[candidate.type];
+      // Copa real según el país/liga del club (Champions, Libertadores...).
+      const world = findClubByKey(clubKey(career.club)) || findClub(career.club.slug);
+      const trophyId = trophyIdFor(candidate.type, world);
+      const real = trophyId ? TROPHIES[trophyId] : null;
       won.push({
         season: career.season,
         type: candidate.type,
-        label: meta.label,
-        icon: meta.icon,
+        trophyId,
+        label: real ? real.label : meta.label,
+        icon: real ? real.icon : meta.icon,
         clubKey: clubKey(career.club),
         clubName: career.club.name,
       });
@@ -382,7 +476,10 @@ function rollSeasonGrowth(career, rng) {
   const isGK = career.position === 'ARQ';
   const seasonsPerDecision = (career.difficultyInfo && career.difficultyInfo.seasonsPerDecision) || 1;
   const range = growthRangeForAge(career.age, career.profile, isGK);
-  const blockDelta = range[0] + rng.next() * (range[1] - range[0]);
+  const rawBlock = range[0] + rng.next() * (range[1] - range[0]);
+  // Crecer hacia el techo personal (potencial). Partidas viejas sin potencial
+  // guardado siguen con el comportamiento anterior.
+  const blockDelta = scaleGrowthToPotential(rawBlock, career.ovr, career.potential);
 
   const share = (blockDelta + (career.growthCarry || 0)) / seasonsPerDecision;
   const rounded = Math.round(share);
@@ -419,7 +516,7 @@ function rollSeasonGrowth(career, rng) {
  * El resumen de la temporada queda en `career.lastSeasonReport` (para la UI).
  * El retiro NO se aplica acá: si al cerrar la temporada el jugador alcanzó la
  * edad de retiro, el reporte lo marca (`mandatoryRetirement`) y el flujo debe
- * llamar a retireCareer. Mercado de pases, checkpoint y logros: pasos previstos
+ * llamar a retireCareer. Mercado de pases y checkpoint: pasos previstos
  * para los siguientes bloques del engine.
  */
 export function simulateSeason(career, options = {}) {
@@ -435,12 +532,22 @@ export function simulateSeason(career, options = {}) {
   const roleAtSeason = next.role;
   const events = [];
 
+  // 0) Suspensión (doping, apuestas...): la temporada no juega. Se siguen
+  //    tirando los mismos dados para no desordenar el resto del RNG.
+  const suspended = (next.suspendedSeasons || 0) > 0;
+  if (suspended) {
+    next.suspendedSeasons -= 1;
+    events.push({ season: seasonStart, type: 'suspension', message: 'Temporada suspendido: no jugaste.' });
+  }
+
   // 1) Partidos de la temporada.
   let matches = Math.round(estimateMatches(next, rng) * staminaMult(next.attrs));
   matches = Math.max(0, Math.min(MATCHES_PER_SEASON.max, matches));
+  if (suspended) matches = 0;
 
   // 2) Lesión: baja disponibilidad de partidos esa temporada.
-  const injury = rollSeasonInjury(next, rng);
+  const rolledInjury = rollSeasonInjury(next, rng);
+  const injury = suspended ? null : rolledInjury;
   if (injury) {
     matches = Math.round(matches * SEASON_TUNING.injuryAvailabilityFactor);
     next.injuries += 1;
@@ -456,7 +563,8 @@ export function simulateSeason(career, options = {}) {
   const stats = simulateSeasonScoring(next, matches, rng);
 
   // 4) Títulos (0..MAX_TROPHIES_PER_SEASON).
-  const trophies = rollSeasonTrophies(next, rng);
+  const rolledTrophies = rollSeasonTrophies(next, rng);
+  const trophies = suspended ? [] : rolledTrophies;
   for (const trophy of trophies) {
     events.push({
       season: seasonStart,
@@ -483,8 +591,28 @@ export function simulateSeason(career, options = {}) {
       message: 'Varias temporadas de poca rotación: el físico se resiente.',
     });
   }
-  next.ovr = clampOvr(next.ovr + growthDelta + injuryDelta);
+  const suspensionDelta = suspended ? SUSPENSION_OVR_PENALTY : 0;
+  // Suspendido no crece: se pierde el ritmo (SUSPENSION_OVR_PENALTY).
+  next.ovr = clampOvr(next.ovr + (suspended ? 0 : growthDelta) + injuryDelta + suspensionDelta);
   next.overallPeak = Math.max(next.overallPeak, next.ovr);
+
+  // 6b) Selección: convocatoria, eliminatorias y Mundial (rng propio, ver
+  //     nationalTeam.js). Juega con el OVR con el que afrontó la temporada.
+  const national = suspended ? { nationalTeam: next.nationalTeam, report: null, events: [], trophies: [] } : playNationalSeason({
+    career: next,
+    ovr: ovrStart,
+    clubStats: stats,
+    season: seasonStart,
+  });
+  next.nationalTeam = national.nationalTeam;
+  events.push(...national.events);
+  if (national.trophies.length) next.trophies.push(...national.trophies);
+
+  // 6c) Descenso del club (independiente de si el jugador jugó).
+  const relegated = rollRelegation(next, seasonStart, rolledTrophies.some((t) => t.type === 'league'));
+  if (relegated) {
+    events.push({ season: seasonStart, type: 'relegation', message: `${next.club.name} descendió.` });
+  }
 
   // 7) Estadísticas: acumular a la carrera y archivar la temporada.
   next.careerStats.pj += stats.pj;
@@ -520,7 +648,10 @@ export function simulateSeason(career, options = {}) {
     growthDelta,
     injuryDelta,
     injury,
-    trophies,
+    trophies: [...trophies, ...national.trophies],
+    nationalTeam: national.report,
+    suspended,
+    relegated,
     lowRotationStreak: next.lowRotationStreak,
     lowRotationPenalty: growth.lowRotationTriggered,
     mandatoryRetirement: ageStart + 1 >= AGE.RETIRE,
@@ -702,39 +833,11 @@ export function generateTransferOffers(career, options = {}) {
   const offers = [];
   const usedSlugs = new Set([career.club.slug]);
 
-  for (let i = 0; i < OFFER_RULES.transferOfferCount; i += 1) {
-    // 2) Nivel de la oferta: random walk del tier del jugador + chance de
-    //    ascenso a Primera por OVR/rendimiento (ver offerTargetDivision).
-    const tier = walkTierWithRng(baseTier, rng);
-    const targetDivision = offerTargetDivision(career, ovr, tier, rng);
-
-    // 3) Candidatas de esa división (club actual excluido, sin repetidos).
-    const candidates = clubsByDivision(targetDivision).filter(
-      (club) => !usedSlugs.has(club.slug),
-    );
-    if (candidates.length === 0) {
-      // División agotada: reintenta con la división actual como máximo seguro.
-      const fallback = clubsByDivision(currentDivision).filter(
-        (club) => !usedSlugs.has(club.slug),
-      );
-      if (fallback.length === 0) continue;
-      candidates.push(...fallback);
-    }
-
-    // 4) Selección ponderada: fit con el baseline + homeBiasWeight.
-    const weighted = candidates.map((club) => ({
-      club,
-      weight: candidateWeight(club, career, homeWeight),
-    }));
-    const chosen = pickWeighted(weighted, rng).club;
-    usedSlugs.add(chosen.slug);
-
+  const buildOffer = (chosen, id, reason) => {
     const targetBase = clubBaseline(chosen);
-    const reason = offerReason(career, chosen, targetBase);
     const expectedRole = roleBucket(ovr - targetBase, isGK);
-
-    offers.push({
-      id: `offer-${career.season}-${i + 1}`,
+    return {
+      id,
       // Destino.
       club: {
         key: clubKey(chosen),
@@ -766,7 +869,84 @@ export function generateTransferOffers(career, options = {}) {
       age: career.age,
       position: career.position,
       ovrVsBaseline: ovr - targetBase + roleMargin(career.attrs),
-    });
+    };
+  };
+
+  // Traspaso prometido por un evento (career.pendingTransfer): el club que te
+  // buscó entra como PRIMERA oferta, sin pasar por el filtro de alcance (el
+  // evento ya lo prometió). Firmar o no sigue siendo decisión del jugador.
+  const promised = career.pendingTransfer && career.pendingTransfer.targetClub
+    ? findClub(career.pendingTransfer.targetClub.slug)
+    : null;
+  if (promised && promised.slug !== career.club.slug) {
+    usedSlugs.add(promised.slug);
+    offers.push(buildOffer(promised, `offer-${career.season}-event`, {
+      type: 'event_transfer',
+      message: 'Te vinieron a buscar después de lo que pasó.',
+    }));
+  }
+  const marketCount = OFFER_RULES.transferOfferCount - offers.length;
+
+  // Exterior: cada país pide un OVR según su nivel (club.countryTier), o una
+  // temporada descollante (ABROAD_RULES).
+  const homeCountry = findClub(career.club.slug).countryCode;
+  const isAbroad = (club) => club.countryCode !== homeCountry;
+  const openByCountry = new Map();
+  const abroadOpen = (club) => {
+    if (!openByCountry.has(club.countryCode)) {
+      openByCountry.set(club.countryCode, canReceiveAbroadOffers({
+        ovr,
+        lastSeason: career.lastSeasonReport,
+        tier: club.countryTier,
+      }));
+    }
+    return openByCountry.get(club.countryCode);
+  };
+
+  for (let i = 0; i < marketCount; i += 1) {
+    // 2) Nivel de la oferta: random walk del tier del jugador + chance de
+    //    ascenso a Primera por OVR/rendimiento (ver offerTargetDivision).
+    const tier = walkTierWithRng(baseTier, rng);
+    const targetDivision = offerTargetDivision(career, ovr, tier, rng);
+
+    // 3) Candidatas de esa división (club actual excluido, sin repetidos).
+    // Solo clubes a tu altura: su OVR no puede superar el tuyo por más de
+    // OFFER_RULES.maxClubOvrGap (un juvenil de 63 no recibe al Real Madrid).
+    const withinReach = (club, allowAbroad = false) =>
+      club.ovr <= ovr + OFFER_RULES.maxClubOvrGap
+      && (allowAbroad || !isAbroad(club) || abroadOpen(club));
+    const available = (division, allowAbroad) => clubsByDivision(division).filter(
+      (club) => !usedSlugs.has(club.slug) && withinReach(club, allowAbroad),
+    );
+    // División agotada: reintenta con la división actual como máximo seguro, y
+    // si el país no tiene nada a tu altura, el exterior queda como último recurso.
+    let candidates = available(targetDivision);
+    if (candidates.length === 0) candidates = available(currentDivision);
+    if (candidates.length === 0) candidates = available(currentDivision, true);
+    if (candidates.length === 0) continue;
+
+    // 4) Selección ponderada: fit con el baseline + homeBiasWeight.
+    const weighted = candidates.map((club) => ({
+      club,
+      weight: candidateWeight(club, career, homeWeight) * (isAbroad(club) ? ABROAD_RULES.weight : 1),
+    }));
+    const chosen = pickWeighted(weighted, rng).club;
+    usedSlugs.add(chosen.slug);
+    offers.push(buildOffer(
+      chosen,
+      `offer-${career.season}-${i + 1}`,
+      offerReason(career, chosen, clubBaseline(chosen)),
+    ));
+  }
+
+  // El evento prometió un traspaso sin club fijo ("el motor decide"): la
+  // primera oferta del mercado es la que te vino a buscar.
+  if (career.pendingTransfer && !promised && offers.length > 0) {
+    offers[0] = {
+      ...offers[0],
+      reason: 'event_transfer',
+      message: 'Te vinieron a buscar después de lo que pasó.',
+    };
   }
 
   return offers;
@@ -844,7 +1024,7 @@ function clubHistoryEntry(club, fromAge, fromSeason, via) {
  *      ({ season, type, message }) más los datos del movimiento.
  *   7) Recalcula el estado derivado (reputación, baseline, rol, valor de
  *      mercado) vía recomputeCareer. OVR, atributos, estadísticas, trofeos,
- *      logros y eventos previos quedan intactos.
+ *      eventos previos quedan intactos.
  *
  * @param {object} career Estado actual de la carrera (no se muta).
  * @param {object} offer  Oferta generada por generateTransferOffers (no se muta).
@@ -1088,8 +1268,9 @@ export function resolveStay(career, options = {}) {
 /** Atributos neutros para carreras mínimas sin attrs (no NaN en roleMargin). */
 const NEUTRAL_ATTRS = { pace: 5, shooting: 5, passing: 5, dribbling: 5, defense: 5, physical: 5 };
 
-/** País del pool inicial de debut (dato real del catálogo: countryCode). */
-const YOUTH_POOL_COUNTRY = 'AR';
+/** País del pool inicial de debut: la nacionalidad elegida (countryCode). */
+const youthCountryOf = (input) => (input && typeof input.nationality === 'string' && input.nationality)
+  || DEFAULT_NATIONALITY;
 
 /**
  * División del debut: sorteo UNIFORME entre las elegibles del OVR del jugador
@@ -1103,8 +1284,8 @@ function pickYouthDivision(eligible, rng) {
 }
 
 /** Pool de cantera de UNA división: clubes argentinos de ese nivel interno. */
-function youthDivisionPool(nivel, excludeSlug) {
-  return clubs.filter((club) => club.countryCode === YOUTH_POOL_COUNTRY
+function youthDivisionPool(nivel, excludeSlug, country) {
+  return clubs.filter((club) => club.countryCode === country
     && club.division === nivel
     && Number.isFinite(club.ovr)
     && club.slug !== excludeSlug);
@@ -1115,10 +1296,10 @@ function youthDivisionPool(nivel, excludeSlug) {
  * clubes de ese nivel), el de la siguiente elegible como fallback. Jamás una
  * división fuera de las elegibles del jugador.
  */
-function youthInitialPool(eligible, preferred, excludeSlug) {
+function youthInitialPool(eligible, preferred, excludeSlug, country) {
   const order = [preferred, ...eligible.filter((nivel) => nivel !== preferred)];
   for (const nivel of order) {
-    const pool = youthDivisionPool(nivel, excludeSlug);
+    const pool = youthDivisionPool(nivel, excludeSlug, country);
     if (pool.length > 0) return pool;
   }
   return [];
@@ -1191,7 +1372,10 @@ export function generateYouthOffers(input, options = {}) {
   const eligible = startingDivisionsForOvr(ovr);
   if (eligible.length === 0) return [];
   const preferred = pickYouthDivision(eligible, rng);
-  const pool = youthInitialPool(eligible, preferred, excludeSlug);
+  // País de la cantera = nacionalidad; si ese país no tiene clubes del nivel
+  // de debut, se cae a Argentina (siempre tiene).
+  let pool = youthInitialPool(eligible, preferred, excludeSlug, youthCountryOf(input));
+  if (pool.length === 0) pool = youthInitialPool(eligible, preferred, excludeSlug, DEFAULT_NATIONALITY);
   if (pool.length === 0) return [];
   const poolMaxOvr = Math.max(...pool.map((club) => club.ovr));
 
@@ -1356,10 +1540,6 @@ export function simulateSegment(career, seasons, options = {}) {
 // - events: UN evento de retiro con la convención del motor
 //   ({ season, type, message } + datos del cierre). No se duplica: si la
 //   carrera ya está retirada, se devuelve una copia intacta.
-// - achievements: se evalúa el catálogo ACHIEVEMENTS de config.js (las reglas
-//   de logros de retiro que YA existen: partidos, goles, asistencias, peak de
-//   OVR, títulos, clubes y lesiones). Acumulativo: se conservan los logros
-//   previos y solo se agregan los nuevos, sin duplicados (por id).
 //
 // Idempotencia: retireCareer(retireCareer(c)) produce lo mismo que
 // retireCareer(c) — la guarda de `retired` corta en la segunda llamada.
@@ -1372,70 +1552,13 @@ export function simulateSegment(career, seasons, options = {}) {
 // consistente con createCareer/simulateSeason; sin wrapper { career, action }
 // porque no hace falta: no hay decisiones que reportar).
 
-/** Stats de carrera con fallbacks seguros (sin NaN) para checks y evento. */
+/** Stats de carrera con fallbacks seguros (sin NaN) para el evento de cierre. */
 function retirementStats(career) {
   const stats = (career.careerStats && typeof career.careerStats === 'object')
     ? career.careerStats
     : {};
   const num = (value) => (Number.isFinite(value) ? value : 0);
   return { pj: num(stats.pj), gls: num(stats.gls), ast: num(stats.ast) };
-}
-
-/** Clubes distintos de la carrera: etapas de clubHistory + club actual. */
-function careerClubCount(career) {
-  const slugs = new Set();
-  const history = Array.isArray(career.clubHistory) ? career.clubHistory : [];
-  for (const entry of history) {
-    if (entry && entry.club && entry.club.slug) slugs.add(entry.club.slug);
-  }
-  if (career.club && career.club.slug) slugs.add(career.club.slug);
-  return slugs.size;
-}
-
-/**
- * Evalúa el catálogo ACHIEVEMENTS (config.js) sobre la carrera completa y
- * devuelve los logros acumulados: los previos intactos + los nuevos, sin
- * duplicar por id. Solo produce entradas del catálogo ({ id, label, season }),
- * con la misma forma de entrada que ya usa el save ({ id, label }).
- */
-function evaluateRetirementAchievements(career) {
-  const existing = Array.isArray(career.achievements) ? career.achievements : [];
-  // Ids ya conseguidos (tolera entradas string de saves hipotéticos).
-  const earnedIds = new Set(
-    existing
-      .map((entry) => (entry && typeof entry === 'object' ? entry.id : entry))
-      .filter((id) => typeof id === 'string'),
-  );
-
-  // Argumentos de las reglas del catálogo:
-  //   check(t, ovrPeak, trophies, clubCount, injuries) con t = { pj, gls, ast }.
-  const stats = retirementStats(career);
-  // overallPeak es el que el engine ya mantiene durante la carrera (se respeta
-  // tal cual); si el save no lo trae, el OVR actual es el fallback prudente.
-  const ovrPeak = Number.isFinite(career.overallPeak)
-    ? career.overallPeak
-    : (Number.isFinite(career.ovr) ? career.ovr : 0);
-  const trophies = Array.isArray(career.trophies) ? career.trophies : [];
-  const clubCount = careerClubCount(career);
-  const injuries = Number.isFinite(career.injuries) ? career.injuries : 0;
-  const season = Number.isFinite(career.season) ? career.season : null;
-
-  const earned = [];
-  for (const achievement of ACHIEVEMENTS) {
-    if (!achievement || typeof achievement.id !== 'string') continue;
-    if (earnedIds.has(achievement.id)) continue;
-    let achieved = false;
-    try {
-      achieved = Boolean(achievement.check(stats, ovrPeak, trophies, clubCount, injuries));
-    } catch {
-      achieved = false; // una regla rota del catálogo jamás tumba el retiro
-    }
-    if (achieved) {
-      earned.push({ id: achievement.id, label: achievement.label, season });
-      earnedIds.add(achievement.id);
-    }
-  }
-  return [...existing, ...earned];
 }
 
 /** Evento de retiro con la convención { season, type, message } del motor. */
@@ -1479,8 +1602,7 @@ function retirementEvent(career) {
 /**
  * Cierra formalmente la carrera cuando el jugador se retira y devuelve una
  * NUEVA carrera (la original queda intacta). Ver el bloque 9 para el detalle
- * del contrato: pura, idempotente, sin simular nada, con los logros del
- * catálogo ACHIEVEMENTS evaluados sobre toda la carrera.
+ * del contrato: pura, idempotente, sin simular nada.
  *
  * @param {object} career Estado actual de la carrera (no se muta).
  * @returns {object} Nueva carrera con el retiro aplicado (o copia segura si
@@ -1492,7 +1614,7 @@ export function retireCareer(career) {
   const next = cloneCareer(base);
 
   // 1) Idempotencia: carrera ya retirada → copia intacta. Sin duplicar
-  //    eventos/logros, sin tocar stats, sin volver a cerrar la carrera.
+  //    eventos, sin tocar stats, sin volver a cerrar la carrera.
   if (next.retired === true) return next;
 
   // 2) Cierre del estado: retired es el flag que las guardas del motor ya
@@ -1505,12 +1627,7 @@ export function retireCareer(career) {
   if (Array.isArray(next.offers)) next.offers = [];
   if (next.pendingTransfer != null) next.pendingTransfer = null;
 
-  // 4) Logros de retiro: catálogo ACHIEVEMENTS de config.js, acumulativo y
-  //    sin duplicados. Todo lo demás (stats, trophies, peak, valor, eventos
-  //    previos) queda exactamente como estaba.
-  next.achievements = evaluateRetirementAchievements(next);
-
-  // 5) Evento de retiro, una sola vez (la guarda de (1) evita duplicados).
+  // 4) Evento de retiro, una sola vez (la guarda de (1) evita duplicados).
   next.events = [...(next.events || []), retirementEvent(next)];
 
   return next;

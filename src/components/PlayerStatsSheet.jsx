@@ -100,6 +100,14 @@ export default function PlayerStatsSheet({ player, onClose }) {
           {RATING_STATS.map((stat, index) => <StatRow key={stat.key} stat={stat} player={player} index={index} />)}
         </ul>
 
+        {/* La frase va acá y no sobre la foto (ahí la tapaba). En Plantel se
+            corta con "…", así que este es el lugar para leerla completa. */}
+        {player.phrase ? (
+          <div className="stats-sheet-phrase">
+            <p>{player.phrase}</p>
+          </div>
+        ) : null}
+
         <PlayerMedals name={player.name} />
 
         <p className="stats-sheet-foot">El OVR es el promedio de los seis atributos.</p>

@@ -25,7 +25,11 @@
 export const AGE = {
   START: 16,   // edad de debut en cantera
   RETIRE: 40,  // retiro obligatorio
+  VOLUNTARY_RETIRE: 33, // desde acá se puede retirar por decisión propia (como Copero)
 };
+
+// Nacionalidad por defecto (país de las ofertas de cantera).
+export const DEFAULT_NATIONALITY = 'AR';
 
 export const OVR = {
   MIN: 35,        // piso absoluto (lesiones acumuladas pueden degradar)
@@ -38,9 +42,37 @@ export const OVR = {
 export const clampOvr = (value) =>
   Math.max(OVR.MIN, Math.min(OVR.MAX, Math.round(value)));
 
-/** OVR inicial del amigo a partir de su rating de data.js. */
-export const initialOvr = (rating) =>
-  Math.max(OVR.INITIAL_FLOOR, Math.min(OVR.INITIAL_CAP, Math.round(rating)));
+// Como en Copero, todos debutan "desde abajo" con el mismo OVR, y el OVR de
+// la carrera es INDEPENDIENTE del rating real del grupo: cualquiera puede
+// terminar siendo el mejor o el peor. Cada carrera sortea su propio techo
+// (potencial); las decisiones y la suerte deciden cuánto se acerca a él.
+export const POTENTIAL = {
+  START: 50,             // OVR de debut, igual para todos
+  MIN: 66,               // techo más bajo posible de una carrera
+  MAX: 95,               // techo más alto posible (= OVR.MAX)
+  GROWTH_SCALE: 1.45,    // multiplicador del crecimiento positivo base
+  SOFT_ZONE: 10,         // a menos de esto del techo el crecimiento se frena
+};
+
+/** OVR de debut: el mismo para todos (no depende del rating real). */
+export const initialOvr = () => POTENTIAL.START;
+
+/** Sortea el techo de una carrera nueva con el RNG del motor. */
+export const rollPotential = (rng) => rng.int(POTENTIAL.MIN, POTENTIAL.MAX);
+
+/**
+ * Escala un delta POSITIVO de crecimiento según cuánto falta para el techo:
+ * lejos del techo crece más rápido (GROWTH_SCALE); en la zona blanda se frena
+ * en proporción; en el techo ya no crece por edad. Los deltas negativos
+ * (declive, lesiones) no se tocan.
+ */
+export function scaleGrowthToPotential(delta, ovr, potential) {
+  if (delta <= 0 || !Number.isFinite(potential)) return delta;
+  const room = potential - ovr;
+  if (room <= 0) return 0;
+  const brake = Math.min(1, room / POTENTIAL.SOFT_ZONE);
+  return Math.min(room, delta * POTENTIAL.GROWTH_SCALE * brake);
+}
 
 // ---------------------------------------------------------------------------
 // 2) DIFICULTADES
@@ -53,8 +85,8 @@ export const DIFFICULTIES = {
   rapida: {
     id: 'rapida',
     label: 'Rápida',
-    description: 'Carrera exprés: decisiones cada 4 temporadas, saltos grandes.',
-    seasonsPerDecision: 4,
+    description: 'Carrera exprés: decisiones cada 3 temporadas, saltos grandes.',
+    seasonsPerDecision: 3, // como el modo Exprés de Copero
   },
   normal: {
     id: 'normal',
@@ -354,6 +386,7 @@ export const TROPHY_TYPES = {
   league:       { label: 'Liga',                  icon: '🏆' },
   cup:          { label: 'Copa Avergas',          icon: '🥈' },
   continental:  { label: 'Copa Continental',      icon: '🌟' },
+  worldcup:     { label: 'Copa del Mundo',        icon: '🌎' }, // con la Selección (nationalTeam.js)
 };
 
 export const TROPHY_PROBS = {
@@ -362,8 +395,20 @@ export const TROPHY_PROBS = {
   continental: [0.00, 0.00, 0.03, 0.15, 0.20, 0.30], // solo D1
 };
 
-// Máximo un trofeo por temporada (el motor corta al primero que sale).
-export const MAX_TROPHIES_PER_SEASON = 1;
+// Títulos según el PUESTO del club en su liga (ranking por OVR del club).
+// Índice 0 = el más fuerte de la liga. Del puesto 7 en adelante usa el último.
+// Así ganar la liga con el Athletic (5º en España) es raro, y con el Real
+// Madrid o el Barcelona es lo esperable. starMultiplier sigue sumando si el
+// jugador es la figura del equipo.
+export const TROPHY_BY_RANK = {
+  league: [0.34, 0.22, 0.13, 0.07, 0.04, 0.025, 0.012],
+  cup:    [0.22, 0.17, 0.13, 0.09, 0.07, 0.05, 0.03],
+  continental: [0.14, 0.09, 0.05, 0.03, 0.015, 0, 0], // solo D1
+};
+
+// Hasta 3 títulos por temporada (liga, copa e internacional): cada uno se
+// sortea por separado, así salen dobletes y algún triplete.
+export const MAX_TROPHIES_PER_SEASON = 3;
 
 /** Multiplicador estrella: dominar a tu equipo aumenta chances de título. */
 export function starMultiplier(overallVsBaseline) {
@@ -412,6 +457,11 @@ export const OFFER_RULES = {
   // el club actual puede dar un pequeño plus de OVR [min, max].
   loyaltyOvrBonus: [0, 1],
 
+  // Un club no ofrece contrato a un jugador mucho peor que su plantel: su OVR
+  // puede superar al del jugador como máximo por esto. Los grandes llegan
+  // cuando el OVR lo justifica (como en Copero).
+  maxClubOvrGap: 6,
+
   // Requisitos de OVR: debajo de este umbral no llegan ofertas de Primera.
   firstDivisionMinOvr: 74,
 
@@ -426,6 +476,40 @@ export const OFFER_RULES = {
   // 80% mismo nivel, 10% sube, 10% baja (con bordes forzados hacia adentro).
   walkTier: { stay: 0.8, down: 0.1, up: 0.1 },
 };
+
+// ---------------------------------------------------------------------------
+// 10a) EMIGRAR (ofertas de otro país)
+// ---------------------------------------------------------------------------
+// Un pibe de 65 que recién debuta en el ascenso no recibe ofertas de Europa.
+// El extranjero se abre por OVR alto, o por OVR razonable + una temporada
+// descollante (goles+asistencias por partido con rodaje real).
+
+// Cada país tiene un nivel (COUNTRIES[c].tier): 1 = Inglaterra/España/
+// Italia/Alemania, 2 = Francia/Portugal, 3 = Brasil/México/EEUU, 4 = Argentina.
+// Umbrales indexados por ese nivel.
+export const ABROAD_RULES = {
+  minOvr:        { 1: 78, 2: 74, 3: 71, 4: 66 }, // abre ese país sin condiciones
+  standoutMinOvr: { 1: 74, 2: 70, 3: 67, 4: 62 }, // piso con temporada descollante
+  standoutMinMatches: 18,   // rodaje mínimo de esa temporada
+  standoutContribPerMatch: 0.75, // (goles + asistencias) / PJ
+  weight: 0.5,              // aun habilitado, el mercado local pesa más
+};
+
+/**
+ * ¿Pueden llegar ofertas de un país de nivel `tier`? Depende del OVR y de la
+ * última temporada ({ pj, gls, ast } de lastSeasonReport).
+ */
+export function canReceiveAbroadOffers({ ovr, lastSeason = null, tier = 1 }) {
+  const cfg = ABROAD_RULES;
+  const level = cfg.minOvr[tier] ? tier : 1;
+  if (!Number.isFinite(ovr)) return false;
+  if (ovr >= cfg.minOvr[level]) return true;
+  if (ovr < cfg.standoutMinOvr[level] || !lastSeason) return false;
+  const pj = Number(lastSeason.pj) || 0;
+  if (pj < cfg.standoutMinMatches) return false;
+  const contrib = (Number(lastSeason.gls) || 0) + (Number(lastSeason.ast) || 0);
+  return contrib / pj >= cfg.standoutContribPerMatch;
+}
 
 // ---------------------------------------------------------------------------
 // 10b) PROGRESIÓN SEGUNDA → PRIMERA (ascenso de categoría temprano)
@@ -553,23 +637,11 @@ export function marketValue({ ovr, age, reputation = 0, potential = ovr }) {
 }
 
 // ---------------------------------------------------------------------------
-// 12) EVENTOS Y LOGROS
+// 12) EVENTOS
 // ---------------------------------------------------------------------------
 
 // Probabilidad de que un checkpoint incluya un evento interactivo.
 export const EVENT_CHANCE_PER_CHECKPOINT = 0.55;
-
-// Logros de retiro (check puros; el motor los evalúa al final).
-// Adaptados a las magnitudes de fútbol 5/6 (menos partidos que el pro).
-export const ACHIEVEMENTS = [
-  { id: 'centurion',      label: 'Centurión del Barrio', check: (t) => t.pj >= 100 },
-  { id: 'goleador',       label: 'Máximo Goleador',      check: (t) => t.gls >= 80 },
-  { id: 'asistidor',      label: 'Cerebro del Equipo',   check: (t) => t.ast >= 60 },
-  { id: 'leyenda',        label: 'Leyenda del Universo', check: (t, ovrPeak) => ovrPeak >= 88 },
-  { id: 'campeon',        label: 'Campeón Serial',       check: (t, ovrPeak, trophies) => trophies.length >= 3 },
-  { id: 'trotamundos',    label: 'Trotamundos',          check: (t, ovrPeak, trophies, clubCount) => clubCount >= 4 },
-  { id: 'indestructible', label: 'Indestructible',       check: (t, ovrPeak, trophies, clubCount, injuries) => injuries === 0 && t.pj >= 50 },
-];
 
 // ---------------------------------------------------------------------------
 // 13) RESUMEN DE EXPORTS PARA engine.js
@@ -584,4 +656,4 @@ export const ACHIEVEMENTS = [
 // TROPHY_TYPES/TROPHY_PROBS/starMultiplier/effectiveReputationForTrophies ·
 // OFFER_RULES/playerTier/walkTier/homeBiasWeight · FIRST_DIVISION_PUSH/
 // firstDivisionOfferChance (progresión Segunda → Primera) · marketValue ·
-// EVENT_CHANCE_PER_CHECKPOINT · ACHIEVEMENTS.
+// EVENT_CHANCE_PER_CHECKPOINT.

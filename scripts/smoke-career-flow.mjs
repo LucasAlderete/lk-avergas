@@ -345,8 +345,10 @@ console.log('\n== G) Opciones de decisión por fase ==');
     assert(JSON.stringify(flow.getCareerDecisionOptions(st2)) === '["choose_event_choice"]',
       "event → ['choose_event_choice']");
   } else {
-    assert(JSON.stringify(flow.getCareerDecisionOptions(st2)) === '["stay","transfer","retire"]',
-      "decision → ['stay','transfer','retire']");
+    // Retiro voluntario solo desde los 33: antes, solo quedarse o transferirse.
+    const expected = st2.career.age >= 33 ? '["stay","transfer","retire"]' : '["stay","transfer"]';
+    assert(JSON.stringify(flow.getCareerDecisionOptions(st2)) === expected,
+      `decision → ${expected} (edad ${st2.career.age})`);
   }
   assert(flow.getCareerDecisionOptions(null).length === 0, 'estado null → [] (sin lanzar)');
   assert(flow.getCareerDecisionOptions(undefined).length === 0, 'estado undefined → []');
@@ -412,8 +414,9 @@ console.log('\n== I) Transfer ==');
   assert(opened.transferOffers.every((o) => o.club.slug !== clubBefore),
     'ninguna oferta ofrece el club actual');
   assert(JSON.stringify(dec) === decSnapshot, 'el estado de decisión queda intacto al abrir el mercado');
-  assert(JSON.stringify(flow.getCareerDecisionOptions(opened)) === '["transfer","stay","retire"]',
-    "transfer → ['transfer','stay','retire']");
+  const expectedT = opened.career.age >= 33 ? '["transfer","stay","retire"]' : '["transfer","stay"]';
+  assert(JSON.stringify(flow.getCareerDecisionOptions(opened)) === expectedT,
+    `transfer → ${expectedT} (edad ${opened.career.age})`);
 
   // Paso 2: aceptar UNA oferta del estado (acceptTransfer).
   const chosen = opened.transferOffers[0];
@@ -499,7 +502,6 @@ console.log('\n== J) Retiro ==');
   assert(retired.career.retired === true, 'retired === true (hecho por retireCareer del engine)');
   assert(retired.phase === 'retired', "phase 'retired'");
   assert(retired.career.events.some((e) => e.type === 'retirement'), 'evento de retiro del engine presente');
-  assert(Array.isArray(retired.career.achievements), 'logros de retiro evaluados por el engine');
   assert(JSON.stringify(st.career) === careerBefore, 'career original intacta');
   assert(deepScan(retired), 'sin NaN/Infinity tras el retiro');
 

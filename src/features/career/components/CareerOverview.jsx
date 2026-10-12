@@ -3,20 +3,22 @@
 // ============================================================================
 // Dos bloques de presentación:
 //   - CareerSeasonStrip: números de la última temporada jugada + valor actual.
-//   - CareerOverview:    estado de carrera, atributos, totales, trofeos y logros.
+//   - CareerOverview:    estado de carrera, atributos, totales y trofeos.
 //
 // Reglas: no se calcula nada de la carrera (todo viene del engine); los datos
-// opcionales (attrs, trophies, achievements, seasonHistory) tienen fallback
+// opcionales (attrs, trophies, seasonHistory) tienen fallback
 // visual y nunca rompen el render.
 // ============================================================================
 
-import { Activity, Award, Calendar, Coins, Shield, Star, Target, Trophy, Zap } from 'lucide-react';
+import { Activity, Calendar, Coins, Shield, Target, Trophy, Zap } from 'lucide-react';
 
 import {
   DASH,
   attrEntries,
   clubCountryLabel,
+  clubVisual,
   divisionName,
+  leagueName,
   formatMoney,
   profileLabel,
   repStars,
@@ -24,6 +26,8 @@ import {
   safeNumber,
   statText,
 } from './careerFormat.js';
+import CountryFlag from './CountryFlag.jsx';
+import { NATIONAL_TEAMS, readNationalTeam, stageLabel } from '../nationalTeam.js';
 
 /** Última temporada archivada por el motor (o null si todavía no jugó). */
 function lastSeasonOf(career) {
@@ -78,17 +82,17 @@ function Stat({ label, value, note, big }) {
   );
 }
 
-/** Estado de carrera, atributos, totales, trofeos y logros. */
+/** Estado de carrera, atributos, totales y trofeos. */
 export default function CareerOverview({ career }) {
   const club = (career && career.club) || null;
   const clubName = (club && club.name) || DASH;
   const attrs = attrEntries(career && career.attrs);
   const stats = (career && career.careerStats) || {};
   const trophies = career && Array.isArray(career.trophies) ? career.trophies : [];
-  const achievements = career && Array.isArray(career.achievements) ? career.achievements : [];
   const reputation = repStars(career && career.domesticRep);
   const profile = profileLabel(career && career.profile);
   const isGK = career && career.position === 'ARQ';
+  const national = readNationalTeam(career);
 
   return (
     <section className="career-section">
@@ -100,7 +104,7 @@ export default function CareerOverview({ career }) {
       <div className="career-grid">
         <Stat label="Temporada" value={statText(career && career.season)} />
         <Stat label="Club" value={clubName} note={(club && club.barrio) || undefined} />
-        <Stat label="División" value={divisionName(club && club.division)} />
+        <Stat label="Liga" value={leagueName(club, club && club.division)} />
         <Stat label="Edad" value={statText(career && career.age)} />
         <Stat label="OVR" value={statText(career && career.ovr)} big />
         <Stat label="Pico OVR" value={statText(career && career.overallPeak)} big />
@@ -111,7 +115,11 @@ export default function CareerOverview({ career }) {
       <div className="career-tags" style={{ marginTop: '12px' }}>
         <span className="career-chip">{`Reputación ${'★'.repeat(reputation)}${'☆'.repeat(5 - reputation)}`}</span>
         {profile ? <span className="career-chip">{profile}</span> : null}
-        {clubCountryLabel(club) ? <span className="career-chip">{clubCountryLabel(club)}</span> : null}
+        {clubCountryLabel(club) ? (
+          <span className="career-chip">
+            <CountryFlag code={clubVisual(club).countryCode} size={14} /> {clubCountryLabel(club)}
+          </span>
+        ) : null}
         {club && club.league ? <span className="career-chip">{club.league}</span> : null}
         {club && club.stadium ? <span className="career-chip">{club.stadium}</span> : null}
       </div>
@@ -145,6 +153,28 @@ export default function CareerOverview({ career }) {
         <span className="career-chip">{safeNumber(career && career.injuries)} lesiones</span>
       </div>
 
+      {(national.called || national.caps > 0) && (
+        <>
+          <h3 className="career-subtitle">Selección</h3>
+          <div className="career-tags">
+            <span className="career-chip">
+              <CountryFlag code={national.team} size={14} />
+              {` ${(NATIONAL_TEAMS[national.team] || {}).name || national.team}`}
+            </span>
+            <span className="career-chip"><Activity size={13} /> {national.caps} PJ</span>
+            {isGK ? null : <span className="career-chip"><Target size={13} /> {national.goals} goles</span>}
+            {national.worldCups.map((cup) => (
+              <span
+                className={`career-chip${cup.champion ? ' career-chip--gold' : ''}`}
+                key={`mundial-${cup.season}`}
+              >
+                <Trophy size={13} /> {`Mundial ${cup.season}: ${stageLabel(cup.stage)}`}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+
       {trophies.length > 0 && (
         <>
           <h3 className="career-subtitle">Trofeos</h3>
@@ -154,21 +184,6 @@ export default function CareerOverview({ career }) {
                 <span aria-hidden="true">{(trophy && trophy.icon) || ''}</span>
                 {(trophy && trophy.label) || 'Título'}
                 <small>{`T${(trophy && trophy.season) || DASH}${trophy && trophy.clubName ? ` · ${trophy.clubName}` : ''}`}</small>
-              </span>
-            ))}
-          </div>
-        </>
-      )}
-
-      {achievements.length > 0 && (
-        <>
-          <h3 className="career-subtitle">Logros</h3>
-          <div className="career-tags">
-            {achievements.map((achievement, index) => (
-              <span className="career-tag" key={`${(achievement && achievement.id) || 'logro'}-${index}`}>
-                {achievement && achievement.id === 'leyenda' ? <Star size={14} /> : <Award size={14} />}
-                {(achievement && achievement.label) || (typeof achievement === 'string' ? achievement : 'Logro')}
-                {achievement && Number.isFinite(achievement.season) ? <small>{`T${achievement.season}`}</small> : null}
               </span>
             ))}
           </div>

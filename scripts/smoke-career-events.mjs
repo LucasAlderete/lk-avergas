@@ -11,6 +11,8 @@ import {
   eligibleCareerEvents,
   rollCareerEvent,
   applyEventChoice,
+  choiceOdds,
+  EVENT_STAKES,
 } from '../src/features/career/events.js';
 import { allClubs, findClub, clubsByDivision, startingDivisionsForOvr } from '../src/data/careerWorld.js';
 import { initialOvr } from '../src/features/career/config.js';
@@ -193,8 +195,8 @@ for (const c of [careersByAge[16], careersByAge[21], careersByAge[31]]) {
     assert(outcome.applied === true && outcome.choiceId === choice.id, `${ctag}: outcome aplicado`);
     assert(deepScan(next) && deepScan(outcome), `${ctag}: sin NaN/Infinity`);
 
-    // Rangos de OVR: el delta aplicado está dentro del rango declarado y los límites.
-    const [lo, hi] = choice.ovrDelta || [0, 0];
+    // Rangos de OVR: el delta aplicado está dentro del rango declarado (× EVENT_STAKES) y los límites.
+    const [lo, hi] = (choice.ovrDelta || [0, 0]).map((v) => v * EVENT_STAKES);
     assert(outcome.ovrDelta >= lo && outcome.ovrDelta <= hi, `${ctag}: ovrDelta ${outcome.ovrDelta} en [${lo}, ${hi}]`);
     assert(next.ovr >= 35 && next.ovr <= 95, `${ctag}: OVR dentro de límites absolutos (${next.ovr})`);
 
@@ -280,6 +282,31 @@ console.log('\n== Recorrido largo: 200 checkpoints con seed fija ==');
   assert(transfers > 0, `recorrido: al menos un traspaso metadata (${transfers})`);
   assert(Number.isFinite(c.marketValue) && c.marketValue >= 30000, `recorrido: valor final válido (${c.marketValue})`);
   console.log(`   -> rolled=${rolled} applied=${applied} transfers=${transfers} ovr=${c.ovr} edad=${c.age} valor=${c.marketValue}`);
+}
+
+// Probabilidades mostradas (choiceOdds) = lo que realmente sortea el motor.
+console.log('== Probabilidades de las opciones (choiceOdds) ==');
+{
+  const base = createCareer(players[0], { seed: 1 });
+  let checked = 0;
+  let worst = 0;
+  for (const event of CAREER_EVENTS) {
+    for (const choice of event.choices || []) {
+      const odds = choiceOdds(choice);
+      assert(odds.reduce((s, r) => s + r.pct, 0) === 100, `${event.id}/${choice.id}: las probabilidades suman 100`);
+      const rng = createSeededRng(9000 + checked);
+      const N = 1500;
+      const seen = { up: 0, same: 0, down: 0 };
+      for (let i = 0; i < N; i += 1) {
+        const { outcome } = applyEventChoice(base, event, choice, { rng });
+        const d = outcome.ovrDelta;
+        seen[d > 0 ? 'up' : d < 0 ? 'down' : 'same'] += 1;
+      }
+      for (const row of odds) worst = Math.max(worst, Math.abs((seen[row.tone] / N) * 100 - row.pct));
+      checked += 1;
+    }
+  }
+  assert(worst <= 5, `lo mostrado coincide con lo sorteado (desvío máx ${worst.toFixed(1)} pts en ${checked} opciones)`);
 }
 
 console.log(failures === 0 ? '\nTODO OK' : `\n${failures} FALLAS`);

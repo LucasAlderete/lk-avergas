@@ -1,3 +1,5 @@
+import { Volume2 } from 'lucide-react';
+
 import { hasAudio, playPlayerAudio } from '../playerAudio.js';
 
 export default function PlayerAudioButton({ name, className = '' }) {
@@ -26,7 +28,7 @@ export default function PlayerAudioButton({ name, className = '' }) {
         play(event);
       }}
     >
-      🔈
+      <Volume2 size="1em" strokeWidth={1.8} aria-hidden="true" />
     </span>
   );
 }

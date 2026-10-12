@@ -203,11 +203,13 @@ for (const name of ['JJ', 'Gonzi', 'Tigre', 'Nahue', 'Mati']) {
   console.log(`   -> ${name}: ${seenClubs.size} clubes distintos vistos en 12 seeds, D${[...seenDivisions].join('/D')}`);
 }
 
-// Con elegibilidad doble, el seed decide realmente entre Primera y Segunda.
+// Debut desde abajo: aun con el OVR real más alto del grupo, sin Primera.
 {
   const career = createCareer(players.find((p) => p.name === 'Gonzi'));
-  assert(startingDivisionsForOvr(career.ovr).length === 2,
-    'OVR alto → Primera y Segunda elegibles');
+  // Como en Copero, todos debutan "desde abajo": ni el más crack (Gonzi)
+  // arranca en Primera; su OVR real define el techo, no el club de debut.
+  assert(!startingDivisionsForOvr(career.ovr).includes(1),
+    'el debut no ofrece Primera aunque el OVR real sea alto');
   const divisionsBySeed = new Set();
   let oneDivisionPerBatch = true;
   for (let seed = 1; seed <= 40; seed += 1) {
@@ -217,8 +219,8 @@ for (const name of ['JJ', 'Gonzi', 'Tigre', 'Nahue', 'Mati']) {
     for (const division of batchDivisions) divisionsBySeed.add(division);
   }
   assert(oneDivisionPerBatch, 'las 3 ofertas iniciales salen de una sola división');
-  assert(divisionsBySeed.has(1) && divisionsBySeed.has(2),
-    'distintos seeds cambian la división inicial entre Primera y Segunda');
+  assert(!divisionsBySeed.has(1) && divisionsBySeed.size >= 1,
+    'en ningún seed el debut sale de Primera');
   const sameSeedA = generateYouthOffers(career, { seed: 777 });
   const sameSeedB = generateYouthOffers(career, { seed: 777 });
   assert(JSON.stringify(sameSeedA) === JSON.stringify(sameSeedB),

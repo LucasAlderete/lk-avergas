@@ -1,14 +1,14 @@
 ﻿// ============================================================================
-// EVENTOS INTERACTIVOS DE CARRERA â€” catÃ¡logo + helpers puros (Paso 1)
+// EVENTOS INTERACTIVOS DE CARRERA — catálogo + helpers puros (Paso 1)
 // ============================================================================
-// CatÃ¡logo de eventos del universo Avergas para los checkpoints del modo
+// Catálogo de eventos del universo Avergas para los checkpoints del modo
 // carrera. JavaScript puro: sin React, sin localStorage, sin DOM y sin efectos
-// secundarios. RNG inyectable con la misma filosofÃ­a que engine.js:
+// secundarios. RNG inyectable con la misma filosofía que engine.js:
 //   options.rng -> options.seed (createSeededRng determinista) -> RNG default.
 //
-// MecÃ¡nicas inspiradas en el anÃ¡lisis del copero-clone (eventos con
+// Mecánicas inspiradas en el análisis del copero-clone (eventos con
 // decisiones en checkpoints, efectos de OVR/valor y oportunidades de
-// traspaso), pero con catÃ¡logo, textos y decisiones 100% propios: humor y
+// traspaso), pero con catálogo, textos y decisiones 100% propios: humor y
 // lore del grupo Avergas (data.js). Nada fue copiado del referente.
 //
 // Contratos con el resto del sistema:
@@ -17,16 +17,18 @@
 //   rodar el evento: la UI recibe textos finales listos para mostrar.
 // - Los eventos de traspaso NO ejecutan la transferencia: devuelven metadata
 //   (career.pendingTransfer + lastDecision.transfer) para que engine.js la
-//   procese despuÃ©s (p. ej. armando una oferta y llamando a acceptTransfer).
-//   AcÃ¡ no se duplica lÃ³gica de acceptTransfer ni se toca career.club.
-// - valueDelta es una FRACCIÃ“N del valor vigente (0.05 = +5%). Piso absoluto:
+//   procese después (p. ej. armando una oferta y llamando a acceptTransfer).
+//   Acá no se duplica lógica de acceptTransfer ni se toca career.club.
+// - valueDelta es una FRACCIÓN del valor vigente (0.05 = +5%). Piso absoluto:
 //   MARKET_VALUE.MIN; redondeo: MARKET_VALUE.ROUND_TO (ambos de config.js).
-//   El motor re-normaliza el valor vÃ­a recomputeCareer en la prÃ³xima temporada.
-// - Este archivo NO importa engine.js (el motor importarÃ¡ events.js en un
+//   El motor re-normaliza el valor vía recomputeCareer en la próxima temporada.
+// - Este archivo NO importa engine.js (el motor importará events.js en un
 //   paso futuro): por eso replica en local el RNG y el clon profundo con el
-//   mismo algoritmo y la misma filosofÃ­a, sin duplicar lÃ³gica de negocio.
+//   mismo algoritmo y la misma filosofía, sin duplicar lógica de negocio.
 // ============================================================================
 
+import { PLAYER_EVENTS } from './playerEvents.js';
+import { applyEventTweaks } from './eventTweaks.js';
 import {
   AGE,
   MARKET_VALUE,
@@ -74,14 +76,14 @@ function createSeededRng(seed) {
   };
 }
 
-/** options.rng -> options.seed -> default (misma cadena de decisiÃ³n del motor). */
+/** options.rng -> options.seed -> default (misma cadena de decisión del motor). */
 function resolveRng(options = {}) {
   if (options.rng && typeof options.rng.next === 'function') return options.rng;
   if (options.seed != null) return createSeededRng(options.seed);
   return defaultRng;
 }
 
-/** SelecciÃ³n ponderada sobre una lista no vacÃ­a de { weight, ... }. */
+/** Selección ponderada sobre una lista no vacía de { weight, ... }. */
 function weightedPick(list, rng) {
   const total = list.reduce((acc, item) => acc + item.weight, 0);
   const r = rng.next() * total;
@@ -93,92 +95,127 @@ function weightedPick(list, rng) {
   return list[list.length - 1];
 }
 
-/** Entero uniforme en [min, max] (inclusive) usando SOLO rng.next(). */
-function sampleIntIn(rng, range) {
+/** Rango de OVR de una opción ya escalado por EVENT_STAKES. */
+function stakedRange(choice) {
+  const range = Array.isArray(choice && choice.ovrDelta) ? choice.ovrDelta : [0, 0];
+  return [Number(range[0]) * EVENT_STAKES, Number(range[1]) * EVENT_STAKES];
+}
+
+/**
+ * Valores posibles de OVR de una opción (ya escalados y recortados a
+ * EVENT_LIMITS). Si el rango cruza el cero, el 0 no está: la opción arriesgada
+ * sale bien o mal, nunca "no pasa nada".
+ */
+function eventOvrValues(choice) {
+  const range = stakedRange(choice);
   const min = Math.ceil(Number(range[0]));
   const max = Math.floor(Number(range[1]));
-  if (!Number.isFinite(min) || !Number.isFinite(max) || max < min) return 0;
-  return min + Math.floor(rng.next() * (max - min + 1));
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max < min) return [0];
+  const [lo, hi] = EVENT_LIMITS.ovrDelta;
+  const values = [];
+  for (let v = min; v <= max; v += 1) {
+    if (v === 0 && min < 0 && max > 0) continue;
+    values.push(Math.max(lo, Math.min(hi, v)));
+  }
+  return values;
 }
 
 /** Clon profundo barato (misma estrategia que cloneCareer del motor). */
 const deepClone = (value) => JSON.parse(JSON.stringify(value));
 
 // -----------------------------------------------------------------------------
-// 0.1) Contrato de balance y categorÃ­as (lo verifica el smoke test)
+// 0.1) Contrato de balance y categorías (lo verifica el smoke test)
 // -----------------------------------------------------------------------------
 
 /**
- * LÃ­mites razonables de los efectos del catÃ¡logo. El catÃ¡logo completo debe
- * cumplirlos y el smoke test lo comprueba en cada ejecuciÃ³n.
+ * Límites razonables de los efectos del catálogo. El catálogo completo debe
+ * cumplirlos y el smoke test lo comprueba en cada ejecución.
  */
+// Tamaño de las apuestas: cada rango `ovrDelta` del catálogo se multiplica por
+// esto (como Copero, donde una decisión puede mover +4 / -3 OVR). Un solo
+// número para balancear todos los eventos; los rangos [0, 0] siguen seguros.
+export const EVENT_STAKES = 2;
+
 export const EVENT_LIMITS = {
   weight: [1, 50],
-  ovrDelta: [-3, 3],         // rango [min, max] por decisiÃ³n
-  valueDelta: [-0.08, 0.08], // fracciÃ³n del valor de mercado
+  ovrDelta: [-6, 6],         // rango [min, max] por decisión (ya multiplicado)
+  valueDelta: [-0.08, 0.08], // fracción del valor de mercado
   minAge: [AGE.START, AGE.RETIRE],
   maxPillsPerChoice: 4,
 };
 
 export const PILL_TONES = ['positive', 'negative', 'risky', 'special'];
 
-export const RIVAL_SCOPES = ['same', 'higher', 'same_or_higher', 'any'];
+export const RIVAL_SCOPES = ['same', 'higher', 'same_or_higher', 'any', 'history'];
 
-/** CategorÃ­as de eventos (labels para la UI). */
+// Cuántos eventos recientes no se repiten (si el pool queda vacío, se ignora).
+export const EVENT_COOLDOWN = 8;
+
+/** Categorías de eventos (labels para la UI). */
 export const EVENT_CATEGORIES = {
   mercado: 'Mercado de pases',
   vestuario: 'Vestuario',
-  preparacion: 'PreparaciÃ³n',
+  preparacion: 'Preparación',
   barrio: 'Barrio',
   mental: 'Mentalidad',
   retiro: 'Final del camino',
 };
 // -----------------------------------------------------------------------------
-// 1) CATÃLOGO â€” "Las vueltas de la vida avergas"
+// 1) CATÁLOGO — "Las vueltas de la vida avergas"
 // -----------------------------------------------------------------------------
 // Contrato de cada evento:
-//   id                 â€” estable (se persiste en saves, NUNCA renombrar).
-//   title / icon       â€” para la UI.
-//   category           â€” clave de EVENT_CATEGORIES.
-//   weight             â€” peso de apariciÃ³n (positivo; se elige ponderado).
-//   minAge / maxAge    â€” ventana de edad (opcional).
-//   requiresRole       â€” roles vÃ¡lidos del jugador (opcional).
-//   requiresPosition   â€” posiciones ARQ/DEF/MED/DEL (opcional).
-//   excludeGK          â€” excluye arqueros (opcional).
-//   requiresGK         â€” solo arqueros (opcional).
-//   minClubReputation  â€” reputaciÃ³n domÃ©stica mÃ­nima 1-5 (opcional).
-//   divisions          â€” divisiones vÃ¡lidas del club actual (opcional).
-//   requiresRivalClub  â€” exige resolver un club rival al rodar (opcional).
-//   rivalScope         â€” 'same' | 'higher' | 'same_or_higher' (default) | 'any'.
-//   intro              â€” texto de escenario (placeholders permitidos).
-//   choices[]          â€” decisiones:
+//   id                 — estable (se persiste en saves, NUNCA renombrar).
+//   title / icon       — para la UI.
+//   category           — clave de EVENT_CATEGORIES.
+//   weight             — peso de aparición (positivo; se elige ponderado).
+//   minAge / maxAge    — ventana de edad (opcional).
+//   requiresRole       — roles válidos del jugador (opcional).
+//   requiresPosition   — posiciones ARQ/DEF/MED/DEL (opcional).
+//   excludeGK          — excluye arqueros (opcional).
+//   requiresGK         — solo arqueros (opcional).
+//   minClubReputation  — reputación doméstica mínima 1-5 (opcional).
+//   divisions          — divisiones válidas del club actual (opcional).
+//   requiresRivalClub  — exige resolver un club rival al rodar (opcional).
+//   rivalScope         — 'same' | 'higher' | 'same_or_higher' (default) | 'any'.
+//   intro              — texto de escenario (placeholders permitidos).
+//   choices[]          — decisiones:
 //     id / label / description
-//     ovrDelta         â€” [min, max] de delta OVR (opcional; default [0, 0]).
-//     valueDelta       â€” fracciÃ³n del valor de mercado (opcional; default 0).
-//     isTransfer       â€” genera metadata de traspaso (opcional).
-//     transferReason   â€” motivo del traspaso (si isTransfer).
-//     pills[]          â€” { label, tone } para la UI (tone: PILL_TONES).
+//     ovrDelta         — [min, max] de delta OVR (opcional; default [0, 0]).
+//     valueDelta       — fracción del valor de mercado (opcional; default 0).
+//     isTransfer       — genera metadata de traspaso (opcional).
+//     transferReason   — motivo del traspaso (si isTransfer).
+//     pills[]          — { label, tone } para la UI (tone: PILL_TONES).
 //
 // Los pesos son "frecuencia narrativa", no balance de mundo: los efectos
-// quedan acotados por EVENT_LIMITS, asÃ­ ningÃºn evento domina la carrera.
+// quedan acotados por EVENT_LIMITS, así ningún evento domina la carrera.
 // ============================================================================
 
-export const CAREER_EVENTS = [
+// Nombres del grupo para el placeholder {friend} (se sortea uno distinto del
+// jugador, ver rollCareerEvent). Solo se usa en eventos con `friends`.
+const FRIENDS = [
+  'Chino', 'Emi', 'Mati', 'Rui', 'Gonzi', 'Lk', 'Tigre', 'Rulo',
+  'Sailor', 'Cru', 'Nahue', 'JJ', 'Luquitas', 'Kike', 'Alan', 'Wini',
+];
+
+// Convención de textos de cada decisión:
+//   description         — qué pasa si el OVR no cambia (o el único relato).
+//   narratives.up/down  — relato cuando el OVR sube / baja (rangos mixtos).
+const BASE_EVENTS = [
   // ---- MERCADO DE PASES ----------------------------------------------------
   {
-    id: 'la_llamada_del_rival',
-    title: 'El telÃ©fono del malviaje',
-    icon: 'ðŸ“ž',
+    id: 'oferta_de_madrugada',
+    title: 'Audio de las 4 AM',
+    icon: '📞',
     category: 'mercado',
-    weight: 9,
+    weight: 8,
     requiresRivalClub: true,
     rivalScope: 'higher',
-    intro: 'Un nÃºmero desconocido te dejÃ³ tres mensajes de voz. Es {rival}: dicen que sos el refuerzo que les falta... y tambiÃ©n el Ãºnico del plantel que contesta el telÃ©fono.',
+    intro: `Son las cuatro de la mañana y te llega un audio de seis minutos de un tipo que dice ser "manager". Se escucha música, hielo en un vaso y una mujer riéndose de fondo. Habla de {rival}: "Te quieren, hermano, te quieren. Pero no me creas a mí, preguntale a mi primo".`,
     choices: [
       {
         id: 'atender',
-        label: 'Atender el llamado',
-        description: 'FirmÃ¡s a la vista: en {rival} prometen rodaje, auto propio y viandas los jueves.',
+        label: 'Contestarle y creerle',
+        description: `Quedaron en un bar a las once. Firmaste en una servilleta. Resultó que el tipo sí tenía contactos en {rival}, aunque no hacía falta que te hiciera pagar el café.`,
         ovrDelta: [0, 0],
         isTransfer: true,
         transferReason: 'rival_offer',
@@ -186,64 +223,68 @@ export const CAREER_EVENTS = [
       },
       {
         id: 'colgar',
-        label: 'Colgar y quedarte',
-        description: 'CortÃ¡s con estilo: "acÃ¡ estoy bien". El cuerpo tÃ©cnico lo toma como actitud de capitÃ¡n.',
+        label: 'Bloquearlo y volver a dormir',
+        description: `Lo bloqueás, apagás el celular y soñás con tu mejor gol. Al otro día en el club nadie sabe de qué hablás, pero igual dormís mejor.`,
         ovrDelta: [0, 1],
         valueDelta: 0.02,
-        pills: [{ label: 'Lealtad', tone: 'positive' }, { label: '+0 a +1 OVR', tone: 'positive' }],
+        pills: [{ label: 'Cordura', tone: 'positive' }],
       },
     ],
   },
   {
-    id: 'el_rumor',
-    title: 'El rumor del grupo',
-    icon: 'ðŸ—žï¸',
+    id: 'representante_trucho',
+    title: 'Mi representante es mi primo',
+    icon: '📇',
     category: 'mercado',
-    weight: 8,
+    weight: 7,
     minAge: 19,
-    intro: 'Un foro del barrio asegura que {club} te vende. Nadie sabe quiÃ©n lo publicÃ³, pero en el asado ya lo comentan con seriedad.',
+    intro: `Tu representante es el primo del kiosquero, tiene un mail @hotmail y firma "Atentamente, Cacho". Dice que hay un club interesado, que es "un secreto a voces, no se lo digas a nadie, ya se lo conté a todos".`,
     choices: [
       {
-        id: 'desmentir',
-        label: 'Desmentirlo en el grupo',
-        description: 'Audio de dos minutos diciendo "acÃ¡ me quedo". El club lo agradece; el foro, no.',
-        ovrDelta: [0, 1],
-        valueDelta: 0.03,
-        pills: [{ label: 'Mismo club', tone: 'positive' }],
-      },
-      {
-        id: 'avivar',
-        label: 'Avivar el rumor',
-        description: 'No lo confirmÃ¡s ni lo negÃ¡s: el interÃ©s sube... y tu concentraciÃ³n baja un poco.',
-        ovrDelta: [-1, 1],
-        valueDelta: 0.08,
-        pills: [{ label: 'Valor al alza', tone: 'special' }, { label: 'Riesgo', tone: 'risky' }],
-      },
-      {
-        id: 'escuchar_ofertas',
-        label: 'Escuchar ofertas',
-        description: 'DejÃ¡s entrever que estarÃ­as "abierto a proyectos". El mercado hace el resto.',
+        id: 'dejarlo',
+        label: 'Dejar que cierre el pase',
+        description: `Cacho cierra todo por WhatsApp, con tres emojis de aplausos y un audio de "tranquilo, está todo hablado". Nadie lo desmiente.`,
         ovrDelta: [0, 0],
         isTransfer: true,
         transferReason: 'fresh_start',
         pills: [{ label: 'Oportunidad de traspaso', tone: 'special' }],
       },
+      {
+        id: 'despedirlo',
+        label: 'Echarlo y negociar vos',
+        description: `Llevás las cosas vos: algo menos de lío, algo más de dolor de cabeza.`,
+        ovrDelta: [-1, 1],
+        valueDelta: 0.03,
+        narratives: {
+          up: `Negociás vos mismo y sale mucho mejor de lo esperado. Cacho igual te sigue fiando en el kiosco.`,
+          down: `Negociar sale tan mal que terminás pidiendo perdón por mail. Cacho se hace el ofendido y encima te sube el precio de los puchos.`,
+        },
+        pills: [{ label: 'Independiente', tone: 'risky' }],
+      },
+      {
+        id: 'hacer_ruido',
+        label: 'Seguirle el juego sin firmar nada',
+        description: `Dejás que Cacho haga ruido: el valor sube y vos seguís en lo tuyo, con un ojo en el celular.`,
+        ovrDelta: [0, 1],
+        valueDelta: 0.04,
+        pills: [{ label: 'Valor al alza', tone: 'special' }],
+      },
     ],
   },
   {
-    id: 'la_vuelta_al_barrio',
-    title: 'Volver al barrio',
-    icon: 'ðŸ˜ï¸',
+    id: 'volve_a_casa',
+    title: 'Te extrañan en {rival}',
+    icon: '🏘️',
     category: 'mercado',
-    weight: 7,
+    weight: 6,
     requiresRivalClub: true,
-    rivalScope: 'any',
-    intro: 'Desde {rival} te llaman: "volvÃ©, acÃ¡ sos Ã­dolo y el asado de los jueves corre por nuestra cuenta".',
+    rivalScope: 'history',
+    intro: `Llamó el presidente de {rival}: "Volvé, tu foto sigue colgada en la cantina. Al lado de la de uno que ahora es político, pero la tuya es más linda".`,
     choices: [
       {
         id: 'volver',
-        label: 'Volver a casa',
-        description: 'DejÃ¡s todo por el barrio. El corazÃ³n te lo agradece; el plan de carrera, no tanto.',
+        label: 'Volver a {rival}',
+        description: `Volvés a la cantina de siempre y el mozo ya te trae el café sin preguntar. Es como no haberte ido nunca, pero con las rodillas más gastadas.`,
         ovrDelta: [0, 0],
         isTransfer: true,
         transferReason: 'return_home',
@@ -251,8 +292,8 @@ export const CAREER_EVENTS = [
       },
       {
         id: 'quedarte',
-        label: 'Quedarte donde estÃ¡s',
-        description: '"Ya pasÃ© esa etapa": el club lo celebra como actitud de capataz.',
+        label: 'Decirle que no con cariño',
+        description: `"Se me pasó el tren, viejo": el presidente se emociona, te cuelga una foto nueva y te manda un lechón. En tu club lo agradecen.`,
         ovrDelta: [0, 1],
         valueDelta: 0.02,
         pills: [{ label: 'Lealtad', tone: 'positive' }],
@@ -261,492 +302,787 @@ export const CAREER_EVENTS = [
   },
   // ---- VESTUARIO ------------------------------------------------------------
   {
-    id: 'el_banquillo',
-    title: 'Banquillo de proyectiles',
-    icon: 'ðŸ§±',
+    id: 'el_banco_te_conoce',
+    title: 'Cuatro fechas sentado',
+    icon: '🧱',
     category: 'vestuario',
     weight: 9,
     requiresRole: ['substitute', 'low_rotation', 'third_keeper'],
-    intro: 'Tres partidos seguidos sin entrar. El banco ya conoce tu colecciÃ³n completa de gestos y hasta te guarda lugar.',
+    intro: `Llevás cuatro fechas sin entrar. Ya sabés cuántos tornillos tiene el banco, el DT te saluda con "¿vos quién eras?" y el utilero te pidió que le cuides las camperas.`,
     choices: [
       {
         id: 'reclamar',
-        label: 'Reclamar fuerte',
-        description: 'Gritos con el DT incluidos: o te mandan a la cancha o te mandan a la tribuna.',
+        label: 'Ir a encarar al DT',
+        description: `Le dijiste de todo, el DT escuchó y no cambió nada. Seguís en el banco, pero con la conciencia limpia.`,
         ovrDelta: [-1, 1],
         valueDelta: -0.01,
+        narratives: {
+          up: `El DT se asusta de tu cara colorada y te pone de titular. Metés una asistencia y te sentís el Rey de Roma.`,
+          down: `El DT te manda a la tribuna dos fechas con la bolsa de pelotas en la mano. Aprendiste que reclamar sale caro.`,
+        },
         pills: [{ label: 'Todo o nada', tone: 'risky' }],
       },
       {
         id: 'entrenar',
-        label: 'Entrenar como crack',
-        description: 'Dobles turnos y silencio. El DT dice "sigue asÃ­" por dÃ©cima vez. A veces la dÃ©cima primera llega.',
+        label: 'Matarte en los entrenamientos',
+        description: `Doble turno, cero quejas y birra recién los domingos. El DT te dice "seguí así" por décima vez; a la undécima te mete.`,
         ovrDelta: [0, 2],
-        pills: [{ label: 'Esfuerzo', tone: 'positive' }, { label: '+0 a +2 OVR', tone: 'positive' }],
+        pills: [{ label: 'Esfuerzo', tone: 'positive' }],
+      },
+      {
+        id: 'utilero',
+        label: 'Hacerte amigo del utilero',
+        description: `Con el utilero de tu lado, te enterás de todo lo que piensa el DT de vos. Alguna vez vas a entrar, aunque sea por lesión de otro.`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Diplomacia', tone: 'special' }],
       },
     ],
   },
   {
-    id: 'el_malviaje_colectivo',
-    title: 'Malviaje colectivo',
-    icon: 'ðŸŒ€',
+    id: 'tercer_tiempo_infinito',
+    title: 'El tercer tiempo que no termina',
+    icon: '🍺',
     category: 'vestuario',
-    weight: 11,
-    intro: 'Media tabla abajo y el vestuario se dio por vencido: alguien pidiÃ³ silencio para escuchar "una idea buena de verdad".',
+    weight: 9,
+    minAge: 20,
+    intro: `Ganaron, el asado está en llamas y ya van por la cuarta ronda de fernet. Alguien puso cumbia y alguien más puso a Los Redondos. Son las tres de la mañana y mañana hay entrenamiento a las nueve.`,
     choices: [
       {
-        id: 'arenga',
-        label: 'Arenga Ã©pica',
-        description: 'Dos minutos de pelÃ­cula. El plantel sale espejado... hasta el primer cÃ³rner en contra.',
+        id: 'irse_temprano',
+        label: 'Irte a las doce con una excusa',
+        description: `Dijiste "me duele la rodilla". Todos te creyeron, porque a todos les duele alguna. Llegás al entrenamiento como un reloj.`,
         ovrDelta: [0, 1],
-        valueDelta: 0.02,
-        pills: [{ label: 'Liderazgo', tone: 'positive' }],
+        pills: [{ label: 'Cordura', tone: 'positive' }],
       },
       {
-        id: 'rendirse',
-        label: 'Rendirse al malviaje',
-        description: '"Total ya estamos Ãºltimos": el plantel te abraza. El tÃ©cnico no.',
-        ovrDelta: [-2, 0],
-        valueDelta: -0.02,
-        pills: [{ label: 'Baja de nivel', tone: 'negative' }, { label: '-2 a 0 OVR', tone: 'negative' }],
-      },
-    ],
-  },
-  {
-    id: 'la_gala',
-    title: 'La gala de la Avergas',
-    icon: 'ðŸŽ©',
-    category: 'vestuario',
-    weight: 5,
-    minClubReputation: 4,
-    divisions: [1, 2],
-    intro: 'El club te invita a la gala anual de la liga. Hay alfombra roja, trofeos y un buffet con panadera generosa.',
-    choices: [
-      {
-        id: 'ir_con_todo',
-        label: 'Ir con todo',
-        description: 'Traje, champÃ¡n y fotos hasta las cuatro de la maÃ±ana. La fama sube; el entrenamiento del sÃ¡bado, no.',
-        ovrDelta: [-1, 1],
-        valueDelta: 0.03,
-        pills: [{ label: 'Fama', tone: 'special' }, { label: 'Riesgo', tone: 'risky' }],
-      },
-      {
-        id: 'evitar',
-        label: 'Evitar la gala',
-        description: '"Prefiero la cancha": humildad de cartel. El entrenador te quiere un poco mÃ¡s.',
-        ovrDelta: [0, 1],
-        pills: [{ label: 'ConcentraciÃ³n', tone: 'positive' }],
-      },
-    ],
-  },
-  {
-    id: 'el_arbitro_de_verdad',
-    title: 'Ãrbitro federado',
-    icon: 'ðŸ§‘â€âš–ï¸',
-    category: 'vestuario',
-    weight: 10,
-    intro: 'Por una vez viene un Ã¡rbitro federado con silbato de verdad y todo. El vestuario entra en pÃ¡nico protocolar.',
-    choices: [
-      {
-        id: 'reglamento',
-        label: 'Estudiar el reglamento',
-        description: 'Sos el Ãºnico que sabe que la nueva regla del saque existe. Ventaja tÃ¡ctica y moral.',
-        ovrDelta: [0, 1],
-        pills: [{ label: 'Ventaja tÃ¡ctica', tone: 'positive' }],
-      },
-      {
-        id: 'tonto',
-        label: 'Hacerte el tonto',
-        description: '"Â¿Eso era falta?": la carita de inocente te salva una. Casi.',
-        ovrDelta: [-1, 1],
+        id: 'hasta_el_final',
+        label: 'Aguantar hasta que apaguen la luz',
+        description: `Te acostaste a las seis, entrenaste a las nueve y nadie te dijo nada. Todo bien, salvo el sabor a asado en la garganta.`,
+        ovrDelta: [-3, 2],
         valueDelta: 0.01,
-        pills: [{ label: 'Teatro', tone: 'risky' }],
+        narratives: {
+          up: `Dormiste tres horas, pero estabas tan alegre que metiste dos goles. Hay algo en el fernet que te hace jugar mejor, o te mintieron los de al lado.`,
+          down: `Entrenás con los ojos achinados y devolvés el asado atrás del arco. El DT te manda a casa con un "andá, pibe, cuidate". Cuidate vos.`,
+        },
+        pills: [{ label: 'Resaca', tone: 'risky' }],
       },
     ],
   },
-  // ---- PREPARACIÃ“N -----------------------------------------------------------
   {
-    id: 'la_dieta_milagrosa',
-    title: 'La dieta milagrosa',
-    icon: 'ðŸ¥—',
-    category: 'preparacion',
-    weight: 8,
-    minAge: 22,
-    intro: 'Un video viral te asegura que con solo jugos detox y caminatas vas a volver al OVR de tus 20. El grupo opina que no.',
+    id: 'la_noche_de_thelma',
+    title: 'La noche de Thelma',
+    icon: '🪩',
+    category: 'vestuario',
+    weight: 6,
+    minAge: 21,
+    intro: `Cena de fin de año del plantel que termina en un boliche. Se suma Thelma, una chica trans de cuarenta que se hizo amiga de todo el mundo con el primer fernet y sabe más de fútbol que tu DT. En la mesa, los más machos ya están callados, con la espalda dura.`,
     choices: [
       {
-        id: 'probar',
-        label: 'Probar la dieta',
-        description: 'Diez dÃ­as a lechuga. BajÃ¡s de peso, subÃ­s de humor... y perdÃ©s el fÃ­sico del futsal.',
-        ovrDelta: [-2, 0],
-        pills: [{ label: 'Riesgo fÃ­sico', tone: 'negative' }],
+        id: 'bailar',
+        label: 'Bailar toda la noche con ella',
+        description: `Bailás cuatro temas y el DJ pone cumbia. Salís del boliche con la camisa abierta y la dignidad intacta.`,
+        ovrDelta: [-2, 2],
+        narratives: {
+          up: `Thelma te enseña pasos que no conocías y te reís como no te reías desde el secundario. El lunes entrás a la cancha sin un solo nervio.`,
+          down: `Bailás tanto que al otro día no sentís los tobillos y te agarrás un esguince de ego. Igual lo volverías a hacer.`,
+        },
+        pills: [{ label: 'Soltura', tone: 'special' }],
       },
       {
-        id: 'desoÃ­r',
-        label: 'Seguir con la fÃºtbol-comida',
-        description: 'Asado, futsal y a otra cosa. El equilibrio de siempre gana otra vez.',
-        ovrDelta: [0, 1],
-        pills: [{ label: 'Estabilidad', tone: 'positive' }],
+        id: 'consejos',
+        label: 'Pedirle opinión sobre tu juego',
+        description: `Resulta que Thelma tiene observaciones sobre tu juego que nadie se había animado a decirte. Tiene razón en casi todas.`,
+        ovrDelta: [0, 2],
+        valueDelta: 0.01,
+        pills: [{ label: 'Humildad', tone: 'positive' }],
+      },
+      {
+        id: 'barra',
+        label: 'Quedarte en la barra con cara de nada',
+        description: `Mirás todo desde la barra con la misma cara que tenés en el banco. Thelma te pasa por al lado y te dice "bajá un cambio, campeón". Te quedás pensando.`,
+        ovrDelta: [-1, 0],
+        pills: [{ label: 'Duro', tone: 'negative' }],
       },
     ],
   },
   {
-    id: 'el_entrenador_nuevo',
-    title: 'El tÃ©cnico nuevo',
-    icon: 'ðŸ“‹',
+    id: 'el_pibe_de_19',
+    title: 'El pibe de 19',
+    icon: '👶',
+    category: 'vestuario',
+    weight: 8,
+    minAge: 29,
+    intro: `Subió un pibe de 19 de la reserva. Corre el doble que vos, no toma fernet, no sabe qué es el aguinaldo y te dijo "señor" en la primera práctica. Delante de todos.`,
+    choices: [
+      {
+        id: 'mostrar',
+        label: 'Mostrarle quién manda en la cancha',
+        description: `Le hacés un sombrero y te vuelve a ganar la espalda. Empate técnico, empate moral.`,
+        ovrDelta: [-2, 2],
+        narratives: {
+          up: `Le tirás un caño y se lo recordás en cada descanso. El pibe aprende, el plantel se ríe y vos volvés a sentirte jugador.`,
+          down: `Corrés tras él en una contra y te cargás el cuádriceps. El pibe te mira desde lejos y te grita "¡señor, cuídese!".`,
+        },
+        pills: [{ label: 'Orgullo', tone: 'risky' }],
+      },
+      {
+        id: 'padrino',
+        label: 'Hacerte su padrino y enseñarle todo',
+        description: `Le enseñás cuándo cortar y cuándo hacerse el boludo. En un mes ya te copia hasta el gesto de sacarte el pelo de la cara.`,
+        ovrDelta: [0, 2],
+        valueDelta: 0.02,
+        pills: [{ label: 'Legado', tone: 'positive' }],
+      },
+      {
+        id: 'hielo',
+        label: 'Mandarlo a buscar hielo a cuatro cuadras',
+        description: `Volvió con cara de nada y el hielo derretido. El plantel te aplaude; el DT, no.`,
+        ovrDelta: [-1, 0],
+        pills: [{ label: 'Novatada', tone: 'risky' }],
+      },
+    ],
+  },
+  {
+    id: 'el_malviajero_oficial',
+    title: 'El malviajero oficial',
+    icon: '🌀',
+    category: 'mental',
+    weight: 9,
+    friends: FRIENDS,
+    intro: `{friend} te manda un audio de seis minutos antes del partido: "Te lo digo como amigo: el DT te tiene entre ojos, el club está en quiebra, el árbitro es primo del rival y yo escuché que van a cambiar el sistema". Vos no habías pensado en nada de eso hasta este momento.`,
+    choices: [
+      {
+        id: 'escuchar',
+        label: 'Escuchar los seis minutos enteros',
+        description: `Terminás el audio con la cabeza como una lavadora. Salís a la cancha pensando en el árbitro, el DT y el primo del árbitro.`,
+        ovrDelta: [-2, 0],
+        pills: [{ label: 'Malviaje', tone: 'negative' }],
+      },
+      {
+        id: 'contraatacar',
+        label: 'Contraatacar con un malviaje peor',
+        description: `Le mandás un audio de ocho minutos. Quedan los dos tan hundidos que el partido empieza con retraso.`,
+        ovrDelta: [-2, 3],
+        narratives: {
+          up: `Le ganás el round con un malviaje tan elaborado que {friend} se queda callado. En la cancha jugás con la tranquilidad del que ganó la discusión.`,
+          down: `Terminás malviajándote vos mismo y entrás con el aire de un tipo que acaba de leer su propio testamento.`,
+        },
+        pills: [{ label: 'Todo o nada', tone: 'risky' }],
+      },
+      {
+        id: 'silenciar',
+        label: 'Silenciarlo y tomarte un mate',
+        description: `Silenciás el chat, te tomás un mate y salís a la cancha sin culpa. El malviajero queda hablando solo, como siempre.`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Paz', tone: 'positive' }],
+      },
+    ],
+  },
+  {
+    id: 'sala_de_espera_de_traumatologia',
+    title: 'Sala de espera de traumatología',
+    icon: '🩻',
+    category: 'vestuario',
+    weight: 8,
+    minAge: 28,
+    intro: `Hacés un conteo en el vestuario y hay más rodillas operadas que titulares. Cada uno tiene su cicatriz y su doctor de cabecera. Alguien propone armar un grupo de WhatsApp, "Los Crujidos", para compartir rodilleras, kinesiólogos y llantos.`,
+    choices: [
+      {
+        id: 'sumarse',
+        label: 'Sumarte y compartir kinesiólogo',
+        description: `Entrás al grupo y en dos semanas tenés tres rodilleras, cuatro contactos de traumatólogos y un meme por día. Las rodillas siguen igual, pero la moral está por las nubes.`,
+        ovrDelta: [0, 1],
+        valueDelta: 0.01,
+        pills: [{ label: 'Comunidad', tone: 'positive' }],
+      },
+      {
+        id: 'cicatriz',
+        label: 'Mostrar tu cicatriz y ganar el concurso',
+        description: `Mostrás la cicatriz y todos aplauden. Hay un ganador, aunque a nadie le importa el premio.`,
+        ovrDelta: [-1, 2],
+        narratives: {
+          up: `Tu cicatriz es la más larga y te ganás el respeto de todos. Jugás con el pecho inflado.`,
+          down: `Mostrás la cicatriz con tanto orgullo que en la próxima jugada la rodilla protesta. Se ríen, pero con compasión.`,
+        },
+        pills: [{ label: 'Orgullo', tone: 'risky' }],
+      },
+      {
+        id: 'negar',
+        label: 'Decir que vos no tenés nada',
+        description: `Decís que estás perfecto con tanta convicción que lo creés vos mismo. Por ahora.`,
+        ovrDelta: [-2, 1],
+        narratives: {
+          up: `La negación funciona como placebo: jugás liviano y con el cuerpo lleno de confianza.`,
+          down: `Al segundo cambio de frente la rodilla te llama por tu nombre completo. Te toca el kinesiólogo de siempre.`,
+        },
+        pills: [{ label: 'Negación', tone: 'risky' }],
+      },
+    ],
+  },
+  // ---- PREPARACIÓN -----------------------------------------------------------
+  {
+    id: 'lunes_9_de_la_manana',
+    title: 'Lunes, 9 de la mañana',
+    icon: '🥴',
     category: 'preparacion',
     weight: 9,
-    intro: 'Llega un tÃ©cnico nuevo con carpeta y pizarra. Dice que va a "revolucionar el sistema" y que "el futsal es geometrÃ­a".',
+    minAge: 21,
+    intro: `Domingo de asado, partido de truco y "una sola" que fueron siete. Hoy es lunes, el entrenamiento arranca a las nueve y vos todavía sentís el sabor del vacío en la garganta.`,
     choices: [
       {
-        id: 'apoyarlo',
-        label: 'Hacerte alumno modelo',
-        description: 'Te aprendÃ©s la geometrÃ­a y el plan entero. En dos semanas el sistema funciona casi por accidente.',
-        ovrDelta: [0, 2],
-        valueDelta: 0.02,
-        pills: [{ label: 'ProgresiÃ³n', tone: 'positive' }, { label: '+0 a +2 OVR', tone: 'positive' }],
-      },
-      {
-        id: 'boicotear',
-        label: 'Seguir jugando a lo que sale',
-        description: 'Ojos en blanco colectivo: el plantel te agradece. El tÃ©cnico te arma planilla.',
-        ovrDelta: [-2, 1],
-        valueDelta: -0.01,
-        pills: [{ label: 'Riesgo', tone: 'risky' }],
-      },
-    ],
-  },
-  {
-    id: 'la_lesion_puerta',
-    title: 'El crujido sospechoso',
-    icon: 'ðŸ¦µ',
-    category: 'preparacion',
-    weight: 7,
-    minAge: 28,
-    excludeGK: true,
-    intro: 'En el calentamiento sentÃ­s un crujido en el isquio. Los kinesiÃ³logos del barrio ya te conocen por tu nÃºmero de celular.',
-    choices: [
-      {
-        id: 'jugar',
-        label: 'Jugar igual',
-        description: '"Con hielo se pasa": pones tu historial mÃ©dico para una ruleta.',
+        id: 'hacerse_el_fuerte',
+        label: 'Entrenar y hacerte el tranquilo',
+        description: `Aguantás con cara de póker y sin tomar agua. El DT no sospecha, pero te mira raro cuando preguntás "¿ya terminamos?".`,
         ovrDelta: [-3, 1],
-        pills: [{ label: 'Riesgo alto', tone: 'risky' }, { label: '-3 a +1 OVR', tone: 'risky' }],
+        narratives: {
+          up: `Por alguna razón biológica jugás mejor con resaca: pensás menos y corrés más. El DT te lo agradece sin saber por qué.`,
+          down: `En el segundo ejercicio te escapás atrás del arco y devolvés el asado. Te gritan "¡vamos, campeón!" mientras te limpiás la boca.`,
+        },
+        pills: [{ label: 'Resaca', tone: 'risky' }],
       },
       {
-        id: 'cuidarse',
-        label: 'Cuidarse dos semanas',
-        description: 'Te perdÃ©s partidos, pero ganÃ¡s cuerpo: el isquio te da una segunda oportunidad.',
-        ovrDelta: [-1, 1],
-        pills: [{ label: 'PrevenciÃ³n', tone: 'positive' }],
-      },
-    ],
-  },
-  {
-    id: 'la_gimnasia_mental',
-    title: 'La gimnasia mental',
-    icon: 'ðŸ§˜',
-    category: 'preparacion',
-    weight: 6,
-    intro: 'El club contratÃ³ un coach mental. "VisualizÃ¡ la pelota entrando" te dice. El plantel, dividido entre creyentes y burlones.',
-    choices: [
-      {
-        id: 'visualizar',
-        label: 'Visualizar',
-        description: 'Tres semanas de respiraciÃ³n y planchas. Curiosamente, ya no te tiembla el piÃ© en el mano a mano.',
-        ovrDelta: [0, 2],
-        pills: [{ label: 'Enfoque', tone: 'positive' }, { label: '+0 a +2 OVR', tone: 'positive' }],
-      },
-      {
-        id: 'burlarse',
-        label: 'Burlarte del coach',
-        description: 'ImitaciÃ³n del "visualizÃ¡ la pelota" en cada descanso. Risas en el banco, rigidez en la cancha.',
+        id: 'faltar',
+        label: 'Inventar un aductor y faltar',
+        description: `Mandás un audio con voz de moribundo. El DT te cree, o finge creerte: lo importante es que dormiste. Tu aductor está perfecto; lo que tenés es hígado.`,
         ovrDelta: [-1, 0],
-        valueDelta: -0.01,
-        pills: [{ label: 'DistracciÃ³n', tone: 'negative' }],
+        pills: [{ label: 'Faltazo', tone: 'negative' }],
+      },
+      {
+        id: 'arroz',
+        label: 'Ir con agua con limón y arroz hervido',
+        description: `Cara de monje, mate lavado y la mitad del entrenamiento. Pero la hacés bien.`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Redención', tone: 'positive' }],
       },
     ],
   },
   {
-    id: 'el_torneo_de_verano',
-    title: 'El torneo de verano',
-    icon: 'ðŸ–ï¸',
+    id: 'el_pronostico_de_la_rodilla',
+    title: 'El pronóstico de la rodilla',
+    icon: '🌧️',
     category: 'preparacion',
     weight: 8,
-    intro: 'Torneo relÃ¡mpago en la arena: premios en efectivo, speaker improvisado y cero rehabilitaciÃ³n fÃ­sica.',
+    minAge: 26,
+    intro: `Tu rodilla operada predice la lluvia con más precisión que el Servicio Meteorológico. Hoy sentís el crujido desde la cama y afuera hay un cielo azul. Dentro de dos horas, un tormentón.`,
     choices: [
       {
-        id: 'participar',
-        label: 'Jugar el torneo',
-        description: 'Doble jornada en la arena: aflojÃ¡s el futsal y afinÃ¡s la jogada de la ruleta del verano.',
-        ovrDelta: [-1, 2],
-        valueDelta: 0.01,
-        pills: [{ label: 'Esfuerzo extra', tone: 'risky' }, { label: 'Rodaje', tone: 'positive' }],
+        id: 'entrenar',
+        label: 'Ir igual, con rodillera hasta el pecho',
+        description: `Hacés el entrenamiento con la rodilla envuelta como una momia. Llueve a baldazos y terminás empapado, pero entero.`,
+        ovrDelta: [-2, 1],
+        narratives: {
+          up: `La rodillera funciona y la lluvia te inspira: hacés tu mejor práctica del mes bajo el agua.`,
+          down: `El campo se encharca y en una frenada la rodilla se queja en idioma de quirófano. Te vas rengo con un "yo ya sabía".`,
+        },
+        pills: [{ label: 'Riesgo', tone: 'risky' }],
       },
       {
-        id: 'descansar',
-        label: 'Descansar',
-        description: 'Sombrilla y mate: llegÃ¡s fresco, aunque el speaker te mienta en la radio del barrio.',
+        id: 'quedarse',
+        label: 'Quedarte en casa con la manta y el mate',
+        description: `Te quedás en el sillón escuchando la tormenta. Perdés el entrenamiento, pero ganás una siesta de campeonato.`,
+        ovrDelta: [-1, 0],
+        pills: [{ label: 'Siesta', tone: 'special' }],
+      },
+      {
+        id: 'excusa',
+        label: 'Usarla de excusa para todo el mes',
+        description: `Desde hoy, cualquier "no puedo" viene con "la rodilla". Resulta increíblemente efectivo y todo el plantel te envidia.`,
         ovrDelta: [0, 1],
-        pills: [{ label: 'RecuperaciÃ³n', tone: 'positive' }],
+        pills: [{ label: 'Cara de piedra', tone: 'special' }],
+      },
+    ],
+  },
+  {
+    id: 'un_clack_que_conoces',
+    title: 'Un clack que conocés bien',
+    icon: '🦵',
+    category: 'preparacion',
+    weight: 7,
+    minAge: 25,
+    intro: `Se escucha un "clack" en medio del partido y, antes de que el árbitro pite, vos ya sabés cuál es. El traumatólogo te mira la resonancia y dice con tono de tango: "Es como la anterior, pero con más onda".`,
+    choices: [
+      {
+        id: 'rehabilitar',
+        label: 'Parar y rehabilitar en serio',
+        description: `Cinco meses de kinesiología y videollamadas con el kine. Volvés más flaco, más sabio y con otra cicatriz para la colección.`,
+        ovrDelta: [-2, 1],
+        narratives: {
+          up: `La rehabilitación sale de manual y volvés más fuerte que antes. El kinesiólogo pide un aplauso.`,
+          down: `Volvés demasiado pronto y demasiado confiado, y la rodilla te manda un recuerdo. Perdés ritmo y paciencia.`,
+        },
+        pills: [{ label: 'Paciencia', tone: 'positive' }],
+      },
+      {
+        id: 'apretar',
+        label: 'Apretar los dientes y jugar',
+        description: `Jugás con la rodilla vendada hasta el tobillo. Hay partidos buenos y partidos malos; en todos cojeás.`,
+        ovrDelta: [-3, 2],
+        valueDelta: -0.02,
+        narratives: {
+          up: `La adrenalina te anestesia y hacés dos goles. Después, en el vestuario, te desmayás con una sonrisa.`,
+          down: `A los quince minutos la rodilla dice basta y te vas en camilla, con la cara de quien sabía lo que iba a pasar.`,
+        },
+        pills: [{ label: 'Riesgo alto', tone: 'risky' }],
+      },
+    ],
+  },
+  {
+    id: 'los_analisis_de_sangre',
+    title: 'Los análisis de sangre',
+    icon: '🩸',
+    category: 'preparacion',
+    weight: 7,
+    minAge: 27,
+    intro: `El médico del club mira los resultados y deja la hoja arriba del escritorio con cuidado, como si fuera una prueba judicial. "Con este colesterol hacemos una morcilla. Y con el hígado, paté".`,
+    choices: [
+      {
+        id: 'prometer',
+        label: 'Prometerle verduras y cumplir una semana',
+        description: `Una semana de ensalada y agua mineral. Al octavo día volvés a la milanesa, pero al menos el médico anotó "intentó".`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Intento', tone: 'positive' }],
+      },
+      {
+        id: 'mentir',
+        label: 'Mentirle en la cara',
+        description: `Le jurás que tomás una copa de vino por semana. Te mira por encima de los anteojos y te manda a hacerte otro estudio.`,
+        ovrDelta: [-2, 1],
+        narratives: {
+          up: `El médico te cree y te deja ir tranquilo; el cuerpo, por pura costumbre, aguanta otro semestre.`,
+          down: `Te caen todos los resultados juntos y te dan una dieta que sólo permite agua y cosas que no existen.`,
+        },
+        pills: [{ label: 'Mentira piadosa', tone: 'risky' }],
+      },
+    ],
+  },
+  {
+    id: 'pretemporada_en_gesell',
+    title: 'Pretemporada en Gesell, en julio',
+    icon: '🥶',
+    category: 'preparacion',
+    weight: 8,
+    intro: `La comisión consiguió una pretemporada barata en Villa Gesell, en pleno invierno: catorce tipos en un departamento de dos ambientes, un solo baño y la heladera con una milanesa vieja como inventario.`,
+    choices: [
+      {
+        id: 'correr',
+        label: 'Correr en la playa de madrugada',
+        description: `Corrés con viento en contra y una gaviota que te mira mal. Volvés con las piernas de acero y el hígado agradecido.`,
+        ovrDelta: [0, 2],
+        pills: [{ label: 'Esfuerzo', tone: 'positive' }],
+      },
+      {
+        id: 'casino',
+        label: 'Pasarte la pretemporada en el casino',
+        description: `Entre el casino y la pizzería, el entrenamiento cayó en el olvido. Volvés sin cambios... ni ganas.`,
+        ovrDelta: [-3, 1],
+        narratives: {
+          up: `La ruleta te trata bien: ganás lo suficiente para pagar la cena de todos y volvés con la moral en alto.`,
+          down: `Perdés el viático de la semana en rojo y negro, y volvés sin ritmo, sin plata y con un "yo sabía" del DT.`,
+        },
+        pills: [{ label: 'Ruleta', tone: 'risky' }],
+      },
+    ],
+  },
+  {
+    id: 'control_antidoping',
+    title: 'Control antidoping sorpresa',
+    icon: '🧪',
+    category: 'preparacion',
+    weight: 6,
+    minAge: 22,
+    intro: `Llegan dos tipos de la federación con una carpeta y un frasquito. "Control antidoping aleatorio". Vos mirás el calendario, contás los días desde el fin de semana y empezás a rezar en idiomas que no hablás.`,
+    choices: [
+      {
+        id: 'agua',
+        label: 'Tomar tres litros de agua y rezar',
+        description: `Meás tres veces, tomás más agua y la federación se va con las manos vacías. Todo bien, o eso dice la carpeta.`,
+        ovrDelta: [-3, 2],
+        narratives: {
+          up: `Salís limpio, con la sonrisa y la sangre fría: el DT te mira como a un modelo de conducta. Te sentís intocable.`,
+          down: `Positivo. "Era un jarabe para la tos", juraste. La federación no te creyó: suspendido.`,
+        },
+        suspension: [1, 2],
+        outcomes: { up: 'salís limpio', down: 'positivo: suspendido 1-2 temporadas' },
+        pills: [{ label: 'A la suerte', tone: 'risky' }],
+      },
+      {
+        id: 'pastillas',
+        label: 'Mostrarles todos los frascos que tomás',
+        description: `Les mostrás un frasco de ibuprofeno, uno de relajante muscular y uno de "no sé qué es". Te anotan la lista y se van meneando la cabeza.`,
+        ovrDelta: [-1, 0],
+        pills: [{ label: 'Farmacia', tone: 'negative' }],
+      },
+    ],
+  },
+  {
+    id: 'apuestas_del_primo',
+    title: 'Las apuestas del primo',
+    icon: '🎰',
+    category: 'vestuario',
+    weight: 6,
+    minAge: 20,
+    intro: `Tu primo descubrió las apuestas deportivas y tiene "un sistema". Te pide que te hagas amonestar antes de los veinte minutos el domingo: "Paga 14 a 1, primo. Nadie se entera".`,
+    choices: [
+      {
+        id: 'apostar',
+        label: 'Hacerte amonestar',
+        description: `Te hiciste amonestar a los doce minutos.`,
+        ovrDelta: [-3, 2],
+        valueDelta: 0.02,
+        narratives: {
+          up: `Amarilla a los doce minutos, tu primo cobró y te regaló unos botines nuevos. Nadie sospechó nada y jugaste suelto el resto del torneo.`,
+          down: `La casa de apuestas detectó el movimiento raro y la AFA abrió un sumario. Tu primo borró el WhatsApp; vos no. Suspendido.`,
+        },
+        suspension: [1, 2],
+        outcomes: { up: 'tu primo cobra y nadie se entera', down: 'te descubren: suspendido 1-2 temporadas' },
+        pills: [{ label: 'Apuesta', tone: 'risky' }],
+      },
+      {
+        id: 'rechazar',
+        label: 'Decirle que no',
+        description: `Le dijiste que no. Tu primo te dejó de hablar hasta el asado de fin de año.`,
+        ovrDelta: [0, 0],
+        pills: [{ label: 'Limpio', tone: 'positive' }],
       },
     ],
   },
   // ---- BARRIO ---------------------------------------------------------------
   {
-    id: 'el_asado_del_club',
-    title: 'El asado oficial del club',
-    icon: 'ðŸ¥©',
-    category: 'barrio',
-    weight: 9,
-    minClubReputation: 2,
-    intro: 'El club organiza el asado de recaudaciÃ³n. Hay vacÃ­o, achuras y una rifa con premios que nadie quiere confesar.',
-    choices: [
-      {
-        id: 'parrillero',
-        label: 'Ofrecerte de parrillero',
-        description: 'Diez horas de fuego y charla con la comisiÃ³n: te ven como "uno de los nuestros".',
-        ovrDelta: [0, 1],
-        valueDelta: 0.02,
-        pills: [{ label: 'Carisma', tone: 'positive' }],
-      },
-      {
-        id: 'invitado',
-        label: 'Ir solo de invitado',
-        description: 'ComÃ©s, brindÃ¡s y te vas temprano. Los engranajes del club lo notan.',
-        ovrDelta: [0, 0],
-        pills: [{ label: 'Neutral', tone: 'special' }],
-      },
-    ],
-  },
-  {
-    id: 'el_partido_caritativo',
-    title: 'El partido a beneficio',
-    icon: 'â¤ï¸',
+    id: 'la_ronda_del_fondo',
+    title: 'La ronda del fondo',
+    icon: '🌿',
     category: 'barrio',
     weight: 7,
-    excludeGK: true,
-    intro: 'Un partido benÃ©fico con invitados: un ex crack de {division}, un influencer del barrio y el cajero del kiosco de la esquina.',
+    minAge: 21,
+    intro: `En el asado de fin de mes, un ex compañero del club te pasa un porro "del bueno, de un amigo que lo cultiva en el balcón". La ronda del fondo se hace sola, como todos los años.`,
     choices: [
       {
-        id: 'participar',
-        label: 'Jugar y hacer el show',
-        description: 'Sombrerero al influencer y gol de chilena al cajero: la platea se rinde al espectÃ¡culo.',
-        ovrDelta: [0, 1],
-        valueDelta: 0.02,
-        pills: [{ label: 'EspectÃ¡culo', tone: 'positive' }],
+        id: 'pitar',
+        label: 'Tirarte una pitada',
+        description: `Fumás, te reís de todo y volvés a casa a las tres con un hambre de caballo. Al otro día todo sigue igual.`,
+        ovrDelta: [-2, 2],
+        narratives: {
+          up: `Entrás en una calma total y esa noche te salen todos los pases en el picadito. Hay una cosa que se llama "flow", dicen.`,
+          down: `Entrás en un bucle donde no sabés si estás jugando o soñando que jugás. Al otro día la cancha te parece más grande.`,
+        },
+        pills: [{ label: 'Flow', tone: 'risky' }],
       },
       {
-        id: 'protagonista',
-        label: 'Jugar en serio',
-        description: 'PisÃ¡s el acelerador como si fuera una final: ganÃ¡s el partido y el respeto, no las risas.',
+        id: 'birra',
+        label: 'Pasarla y tomar una birra',
+        description: `Tomás una birra, mirás desde afuera y te reís igual. Nadie te lo recrimina: todos saben que el fútbol necesita un capitán sobrio.`,
         ovrDelta: [0, 1],
-        valueDelta: 0.01,
-        pills: [{ label: 'Respeto', tone: 'positive' }],
-      },
-      {
-        id: 'no_ir',
-        label: 'No ir',
-        description: '"Ese dÃ­a tenÃ­a cosas": el barrio te perdona... y lo anota.',
-        ovrDelta: [-1, 0],
-        pills: [{ label: 'AntipatÃ­a', tone: 'negative' }],
+        pills: [{ label: 'Capitán', tone: 'positive' }],
       },
     ],
   },
   {
-    id: 'el_negocio_del_cuÃ±ado',
-    title: 'El negocio del cuÃ±ado',
-    icon: 'ðŸ’¼',
+    id: 'el_picadito_de_padres',
+    title: 'El picadito de padres',
+    icon: '🎂',
     category: 'barrio',
-    weight: 6,
-    minAge: 24,
-    intro: 'El cuÃ±ado de un amigo propone invertir tus bonos de fichaje en un emprendimiento de protÃ©sicos de fÃºtbol 5. Promete retornos extraordinarios.',
+    weight: 7,
+    minAge: 26,
+    intro: `En el cumpleaños de tu sobrino armaron un picadito padres contra tíos, con arcos hechos con camperas y un árbitro de nueve años. Dos tipos de 45 ya se miran como si fuera la final de un Mundial.`,
     choices: [
       {
-        id: 'invertir',
-        label: 'Invertir todo',
-        description: 'Seis meses de silencio, luego una jubilaciÃ³n extraordinaria: el emprendimiento despega (milagro incluido).',
-        ovrDelta: [-1, 1],
-        valueDelta: 0.05,
-        pills: [{ label: 'Fortuna', tone: 'special' }, { label: 'Riesgo', tone: 'risky' }],
+        id: 'con_todo',
+        label: 'Ir con todo por el honor familiar',
+        description: `Ganás, perdés, ni te acordás. Tu cuñado se enojó y tu sobrino te pidió la camiseta.`,
+        ovrDelta: [-3, 2],
+        narratives: {
+          up: `Hacés tres goles y un caño al cuñado. Tu sobrino te mira como a un dios por primera vez en su vida.`,
+          down: `En una pelota dividida te cae encima tu cuñado de 110 kilos. Salís rengo del cumpleaños con un pedazo de torta en la mano.`,
+        },
+        pills: [{ label: 'Riesgo', tone: 'risky' }],
       },
       {
-        id: 'rechazar',
-        label: 'Rechazar con diplomacia',
-        description: '"Te consulto cuando cobre el prÃ³ximo bono": crisis diplomÃ¡tica evitada y amistad intacta.',
-        ovrDelta: [0, 0],
-        pills: [{ label: 'Neutral', tone: 'special' }],
+        id: 'arquero',
+        label: 'Atajar con la campera de guante',
+        description: `Te ponés de arquero con la campera de guante y la remera de capa. Atajás penales a pibes de seis años y volvés a la mesa con la gloria a cuestas.`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Seguro', tone: 'positive' }],
+      },
+    ],
+  },
+  {
+    id: 'velorio_con_camiseta',
+    title: 'Velorio con camiseta',
+    icon: '⚰️',
+    category: 'barrio',
+    weight: 5,
+    intro: `Murió Don Ramón, el hincha más viejo del club, el que traía el sándwich de milanesa al entretiempo. Pidió ser velado con la camiseta, con los botines puestos y "con un 2 a 0 de regalo". El velorio es el mismo día del partido.`,
+    choices: [
+      {
+        id: 'ir_al_velorio',
+        label: 'Ir al velorio con la camiseta puesta',
+        description: `Llorás con la camiseta del club en la mano, la familia te abraza y alguien te da un sándwich. Esa noche jugás por Don Ramón, con una fuerza que no sabías que tenías.`,
+        ovrDelta: [0, 2],
+        pills: [{ label: 'Corazón', tone: 'positive' }],
+      },
+      {
+        id: 'dedicar',
+        label: 'Dedicarle el partido y jugar',
+        description: `Le dedicás el partido, metés el 2 a 0 y mirás al cielo. Alguien juró haber visto el cajón moverse.`,
+        ovrDelta: [0, 2],
+        valueDelta: 0.01,
+        pills: [{ label: 'Homenaje', tone: 'positive' }],
+      },
+      {
+        id: 'corona',
+        label: 'Mandar una corona y entrenar',
+        description: `Mandás una corona que decía "Hasta siempre, Don Ramón" y el corrector la imprimió como "Don Ramen". Nadie dijo nada, por respeto y por risa contenida.`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Distancia', tone: 'special' }],
+      },
+    ],
+  },
+  {
+    id: 'o_el_futbol_o_yo',
+    title: 'O el fútbol o yo',
+    icon: '💍',
+    category: 'barrio',
+    weight: 7,
+    minAge: 24,
+    intro: `La patrona te dice a la mañana, con el mate en la mano y los ojos clavados: "O los domingos son míos o los domingos son del fútbol". Sabés lo que tenés que contestar, pero también sabés lo que te espera si contestás.`,
+    choices: [
+      {
+        id: 'futbol',
+        label: 'Elegir el fútbol sin dudar',
+        description: `Te vas con el bolso al hombro y una pizza de regalo para ablandar. Volvés a las diez y la cena está fría, igual que ella.`,
+        ovrDelta: [-2, 2],
+        narratives: {
+          up: `Te vas con la frente alta, jugás con una paz mental que nunca tuviste y volvés con flores. Te perdonan, aunque sea por cansancio.`,
+          down: `Jugás con la cabeza en casa y volvés a una cena fría y un sillón armado con almohadas. El cuerpo te pasa factura.`,
+        },
+        pills: [{ label: 'Fútbol', tone: 'risky' }],
+      },
+      {
+        id: 'guiso',
+        label: 'Quedarte y cocinar un guiso',
+        description: `Cocinás un guiso, mirás una peli subtitulada y a las diez ya estás roncando. Perdiste el partido, pero ganaste una semana de paz.`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Paz', tone: 'positive' }],
+      },
+    ],
+  },
+  {
+    id: 'la_cuenta_de_la_cantina',
+    title: 'La cuenta de la cantina',
+    icon: '🧾',
+    category: 'barrio',
+    weight: 6,
+    intro: `La cantina del club te pasó una cuenta: $187.000 en choripanes, birras, cafés y "una vuelta para todos". Tu cuenta es más larga que la lista de goleadores de los últimos diez años.`,
+    choices: [
+      {
+        id: 'pagar',
+        label: 'Pagar todo con el bono',
+        description: `Pagás con el bono y te quedás en cero. Sentís que te sacaron la camiseta, pero el cantinero te regala un café y un abrazo.`,
+        ovrDelta: [0, 1],
+        valueDelta: -0.03,
+        pills: [{ label: 'Honor', tone: 'positive' }],
+      },
+      {
+        id: 'cuotas',
+        label: 'Hacerte el boludo y pagar en cuotas',
+        description: `Decís que "en estos días lo arreglamos". La cuenta sigue creciendo y el cantinero te mira desde la barra, sin hablar.`,
+        ovrDelta: [-2, 1],
+        narratives: {
+          up: `El cantinero te la perdona a cambio de que juegues el torneo de la cantina. Ganás el torneo y la deuda se esfuma.`,
+          down: `El cantinero se lo cuenta a todo el plantel y en cada práctica alguien te mira con cara de acreedor. Se te nota en la cancha.`,
+        },
+        pills: [{ label: 'Deuda', tone: 'risky' }],
       },
     ],
   },
   // ---- MENTALIDAD -------------------------------------------------------------
   {
-    id: 'la_presion_social',
-    title: 'La presiÃ³n del grupo',
-    icon: 'ðŸ˜…',
+    id: 'domingo_a_la_noche',
+    title: 'Domingo a la noche',
+    icon: '🌑',
     category: 'mental',
     weight: 8,
-    intro: 'El grupo de WhatsApp del club te tagea en cada video de goles de la liga. "Este es el aÃ±o", dicen. Todos los aÃ±os dicen.',
+    minAge: 30,
+    intro: `Domingo, 22:30. Mañana arranca la semana, el aguinaldo ya se esfumó y el dólar subió otra vez. En la tele pasan un documental de leones. Te preguntás para qué seguís corriendo detrás de una pelota a los treinta y pico.`,
     choices: [
       {
-        id: 'abrazar',
-        label: 'Abrazar la presiÃ³n',
-        description: 'ContestÃ¡s todos los mensajes con "vamos que se puede": el grupo se inflama contigo.',
-        ovrDelta: [0, 1],
-        valueDelta: 0.01,
-        pills: [{ label: 'Carisma', tone: 'positive' }],
-      },
-      {
-        id: 'silenciar',
-        label: 'Silenciar el grupo',
-        description: 'Modo no molestar: sos libre, pero los "te vimos mirar el grupo" tampoco se perdonan.',
-        ovrDelta: [-1, 0],
-        pills: [{ label: 'Aislamiento', tone: 'negative' }],
-      },
-    ],
-  },
-  {
-    id: 'el_comparador',
-    title: 'El comparador de carreras',
-    icon: 'ðŸ“Š',
-    category: 'mental',
-    weight: 7,
-    minAge: 20,
-    intro: 'Un ex compaÃ±ero de cantera brillÃ³ en {club} y ahora es "la promesa del barrio". Todos lo comparan contigo. Todos los domingos.',
-    choices: [
-      {
-        id: 'inspirarse',
-        label: 'Usarlo como gasolina',
-        description: 'Dobles turnos con bronca productiva: la comparaciÃ³n se convierte en gasolina.',
+        id: 'juntarse',
+        label: 'Llamar a los pibes y juntarse',
+        description: `Llamás a tres amigos, pedís una pizza y a las dos de la mañana ya estaban discutiendo quién fue el mejor jugador de la historia. El bajón se fue sin avisar.`,
         ovrDelta: [0, 2],
-        pills: [{ label: 'MotivaciÃ³n', tone: 'positive' }, { label: '+0 a +2 OVR', tone: 'positive' }],
+        pills: [{ label: 'Amigos', tone: 'positive' }],
       },
       {
-        id: 'obsesionarse',
-        label: 'Obsesionarte',
-        description: 'MirÃ¡s los videos del otro hasta las 3 AM: el entreno del lunes se resiente.',
+        id: 'compu',
+        label: 'Quedarte con la compu y la birra',
+        description: `Pasás tres horas mirando videos de lo que pudiste ser. La birra se calentó, el sueño se perdió y el lunes parece más largo.`,
         ovrDelta: [-2, 0],
-        pills: [{ label: 'DistracciÃ³n', tone: 'negative' }],
+        pills: [{ label: 'Bajón', tone: 'negative' }],
       },
       {
-        id: 'ignorar',
-        label: 'Ignorar el tema',
-        description: '"Cada carrera es distinta": zen absoluto, cero drama, cero brillo extra.',
-        ovrDelta: [0, 0],
-        pills: [{ label: 'Neutral', tone: 'special' }],
+        id: 'goles',
+        label: 'Ver tus mejores goles en YouTube',
+        description: `Mirás tus tres goles buenos en bucle con la música del Rocky de fondo. El cuarto es de otro y lo salteás. Dormís como un campeón.`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Nostalgia', tone: 'special' }],
       },
     ],
   },
-  // ---- ARQUERO (especÃ­ficos) ---------------------------------------------------
   {
-    id: 'los_guantes_nuevos',
-    title: 'Guantes nuevos, suerte nueva',
-    icon: 'ðŸ§¤',
+    id: 'penal_en_el_noventa',
+    title: 'Penal en el 90',
+    icon: '⚽',
+    category: 'mental',
+    weight: 8,
+    excludeGK: true,
+    intro: `Penal en el último minuto, partido 2 a 2. La hinchada, el DT, el árbitro y hasta el que vende choripanes en la tribuna te miran fijo. Nadie quiere patear. Alguien dice "andá vos, que tenés cara de que la metés".`,
+    choices: [
+      {
+        id: 'patear',
+        label: 'Pedirla y patear vos',
+        description: `Corrés, pateás y todo se vuelve silencio. Pasa un segundo, o dos, o seis años. Después, alguien grita.`,
+        ovrDelta: [-3, 3],
+        narratives: {
+          up: `La clavás en el ángulo y salís corriendo con la camiseta en la mano. Hay una foto tuya con cara de tipo que acaba de descubrir que está vivo.`,
+          down: `La mandás a la tribuna. El que vende choripanes aplaude por piedad. Dormís mal por tres semanas.`,
+        },
+        pills: [{ label: 'Todo o nada', tone: 'risky' }],
+      },
+      {
+        id: 'dejarsela',
+        label: 'Dejársela al pibe',
+        description: `El pibe de 19 la agarra con la inocencia del que no sabe lo que pasa. La mete. En el vestuario te palmean por "formar a las nuevas generaciones".`,
+        ovrDelta: [0, 1],
+        pills: [{ label: 'Mentor', tone: 'positive' }],
+      },
+    ],
+  },
+  // ---- ARQUERO (específicos) ---------------------------------------------------
+  {
+    id: 'guantes_de_segunda',
+    title: 'Los guantes del anterior',
+    icon: '🧤',
     category: 'preparacion',
     weight: 8,
     requiresGK: true,
-    intro: 'Llegaron tus guantes nuevos al club. La etiqueta dice "agarre turbo" y el vendedor jurÃ³ que "son los que usa la Primera".',
+    intro: `El utilero te trajo unos guantes "casi nuevos" que eran del arquero anterior. Huelen a alcohol en gel, a derrota y a algo que preferís no identificar. Pero te quedan como un guante, y eso es lo único que importa.`,
     choices: [
       {
-        id: 'estrenar',
-        label: 'Estrenarlos de inmediato',
-        description: 'Primer entrenamiento: tres atajadas imposibles. Coincidencia o magia de guantes, el arco se siente tuyo.',
-        ovrDelta: [0, 2],
-        pills: [{ label: 'Confianza', tone: 'positive' }, { label: '+0 a +2 OVR', tone: 'positive' }],
+        id: 'usarlos',
+        label: 'Usarlos y confiar en la magia',
+        description: `Los usás y funcionan, sin magia ni nada raro. Por lo menos no se rompieron.`,
+        ovrDelta: [-1, 2],
+        narratives: {
+          up: `Con los guantes de otro, atajás como el otro: dos penales y una mano imposible. Empezás a creer en las reencarnaciones.`,
+          down: `Se despega un dedo en medio de un tiro libre y la pelota entra por el agujero. Es el gol más humillante de tu carrera.`,
+        },
+        pills: [{ label: 'Fe', tone: 'risky' }],
       },
       {
-        id: 'guardar',
-        label: 'Guardarlos para la final',
-        description: 'Los dejÃ¡s impecables en el ropero: cuando salen, el club ya estÃ¡ descendido. Misterios del futsal.',
-        ovrDelta: [-1, 0],
-        pills: [{ label: 'SupersticiÃ³n', tone: 'negative' }],
+        id: 'comprar',
+        label: 'Comprarte unos nuevos con el aguinaldo',
+        description: `Gastás medio aguinaldo en guantes nuevos que prometen "agarre turbo". Funcionan, aunque la patrona no se enteró del precio.`,
+        ovrDelta: [0, 1],
+        valueDelta: -0.01,
+        pills: [{ label: 'Inversión', tone: 'positive' }],
       },
     ],
   },
   {
-    id: 'el_arquero_goleador',
-    title: 'El arquero que quiere ser goleador',
-    icon: 'ðŸ¥…',
+    id: 'el_arquero_se_cree_nueve',
+    title: 'El arquero que se cree nueve',
+    icon: '🥅',
     category: 'vestuario',
     weight: 6,
     requiresGK: true,
     minAge: 20,
-    intro: 'En los entrenamientos te pides a puntero y pedÃ­s que te tiren pelotas para "probar algo nuevo". El tÃ©cnico duda entre la gracia y el furor.',
+    intro: `Te cansaste de atajar y querés jugar con los pies. En los entrenamientos pedís que te tiren centros para "probar algo". El DT duda entre la gracia y la locura; el preparador de arqueros se agarra la cabeza.`,
     choices: [
       {
-        id: 'subir_al_area',
-        label: 'Subir al Ã¡rea en los cÃ³rners',
-        description: 'Gol de cabeza en la fecha 5. Y en la 12. Y en la 27: sos el arquero mÃ¡s temido del aire del metro.',
-        ovrDelta: [-1, 2],
-        valueDelta: 0.02,
-        pills: [{ label: 'EspectÃ¡culo', tone: 'special' }, { label: 'Riesgo', tone: 'risky' }],
+        id: 'salir_jugando',
+        label: 'Salir jugando con los pies',
+        description: `Salís jugando y la pelota va a parar al lateral. El DT dice "bien", sin ganas.`,
+        ovrDelta: [-2, 2],
+        narratives: {
+          up: `Gambeteás a un delantero, la tocás al medio y la hinchada te aplaude como si fueras Messi. Estás mareado de felicidad.`,
+          down: `Querés lucirte, la pelota se te escapa y el rival la manda a guardar. La hinchada te hace un gesto con la mano que no es un saludo.`,
+        },
+        pills: [{ label: 'Show', tone: 'risky' }],
       },
       {
-        id: 'cuidar_el_arco',
-        label: 'Quedarte bajo los tres palos',
-        description: 'Vallas invictas y silencio: aburrido para la tribuna, ideal para la tabla.',
+        id: 'pelotazo',
+        label: 'Mandar pelotazo y rezar',
+        description: `Pelotazo al aire, rezás y esperás que alguien la agarre. El DT te agradece la sobriedad.`,
         ovrDelta: [0, 1],
-        pills: [{ label: 'Confiabilidad', tone: 'positive' }],
+        pills: [{ label: 'Sobriedad', tone: 'positive' }],
       },
     ],
   },
   {
-    id: 'el_tercer_arquero',
+    id: 'arquero_del_banco_de_atras',
     title: 'Tercer arquero, primera esperanza',
-    icon: 'ðŸª‘',
+    icon: '🪑',
     category: 'vestuario',
     weight: 8,
     requiresGK: true,
     requiresRole: ['third_keeper', 'substitute'],
-    intro: 'El entrenador te confirma lo que el mundo ya sabÃ­a: sos el tercer arquero. Pero promete que "hay proyecto" y que "todo se mueve".',
+    intro: `Sos tan suplente que el utilero te usa de percha en las prácticas. El DT te asegura que "hay proyecto" y que "todo se mueve". Es lo mismo que dijo el año pasado, y el anterior, y el otro.`,
     choices: [
       {
         id: 'pedir_prestamo',
-        label: 'Pedir prÃ©stamo',
-        description: 'Cedido a un club donde el arco es tuyo: rodaje real y cansancio real.',
+        label: 'Pedir un préstamo',
+        description: `Te vas a un club donde el arco es tuyo: rodaje real, viajes en combi y un asado de bienvenida con tu nombre mal escrito en la torta.`,
         ovrDelta: [0, 0],
         isTransfer: true,
         transferReason: 'loan_move',
-        pills: [{ label: 'PrÃ©stamo', tone: 'special' }],
+        pills: [{ label: 'Préstamo', tone: 'special' }],
       },
       {
-        id: 'quedarse_esperando',
-        label: 'Esperar tu chance',
-        description: 'Entrenamientos al lÃ­mite: cuando el titular se lastima, ya estÃ¡s a punto. La paciencia paga.',
+        id: 'esperar',
+        label: 'Quedarte esperando',
+        description: `Entrenás al palo y escribís en tu libreta "mi momento llegará". Cuando el titular se lesiona, estás listo. La libreta era una servilleta.`,
         ovrDelta: [0, 2],
-        pills: [{ label: 'Paciencia', tone: 'positive' }, { label: '+0 a +2 OVR', tone: 'positive' }],
+        pills: [{ label: 'Paciencia', tone: 'positive' }],
       },
     ],
   },
   // ---- FINAL DEL CAMINO --------------------------------------------------------
   {
-    id: 'el_ultimo_verano',
-    title: 'El Ãºltimo verano',
-    icon: 'ðŸŒ…',
+    id: 'el_ultimo_baile',
+    title: 'El último baile',
+    icon: '🌅',
     category: 'retiro',
     weight: 4,
     minAge: 34,
-    intro: 'Sos de los mÃ¡s veteranos del plantel. Los jÃ³venes te miran como a una enciclopedia andante y los mÃ©dicos te miran como a un seguro con cuotas.',
+    intro: `Sos el más veterano del plantel. Los pibes te miran como a una enciclopedia y los médicos como a una póliza de seguro con cuotas. La rodilla, el hombro y la espalda te mandan saludos todas las mañanas.`,
     choices: [
       {
+        id: 'una_mas',
+        label: 'Ir por una temporada más',
+        description: `Pretemporada doble, dieta de monje y asado solo los domingos: llegás justo, ni mejor ni peor.`,
+        ovrDelta: [-2, 2],
+        narratives: {
+          up: `Un último año de oro: el físico responde, el DT te adora y volvés a sentirte de veinte. Los pibes te piden consejos y fernet.`,
+          down: `El cuerpo cobra la factura de golpe: una rotura, dos kinesiólogos y una tarde en la guardia. Te preguntan "¿vale la pena?" y vos sonreís.`,
+        },
+        pills: [{ label: 'Último baile', tone: 'risky' }],
+      },
+      {
         id: 'mentor',
-        label: 'Volverte mentor',
-        description: 'PasÃ¡s lo que sabÃ©s a los pibes: la cancha te empieza a extraÃ±ar menos. O eso decÃ­s.',
+        label: 'Hacerte mentor de los pibes',
+        description: `Les pasás lo que sabés y la cancha te extraña un poco menos.`,
         ovrDelta: [-1, 1],
         valueDelta: 0.02,
+        narratives: {
+          up: `Enseñar te refresca: terminás jugando mejor que ellos.`,
+          down: `De tanto ocuparte de los demás te descuidás el cuerpo: bajás un cambio.`,
+        },
         pills: [{ label: 'Legado', tone: 'positive' }],
       },
       {
-        id: 'a_gasto',
-        label: 'Ir con todo una temporada mÃ¡s',
-        description: 'Pretemporada doble, dieta estricta: la Ãºltima gran pata de la carrera (o la primera lesiÃ³n seria).',
-        ovrDelta: [-2, 2],
-        pills: [{ label: 'Ãšltimo baile', tone: 'risky' }, { label: '-2 a +2 OVR', tone: 'risky' }],
-      },
-      {
-        id: 'colgar',
-        label: 'Pensar en colgar los botines',
-        description: 'Le das vueltas a la idea del retiro: el cuerpo te lo agradece, la cancha no se entera.',
+        id: 'retiro',
+        label: 'Ir pensando en el retiro',
+        description: `Empezás a mirar la rodilla con otros ojos, a imaginar una despedida con asado y un puesto de entrenador de infantiles.`,
         ovrDelta: [-1, 0],
         valueDelta: -0.02,
         pills: [{ label: 'Retiro en vista', tone: 'special' }],
@@ -754,36 +1090,45 @@ export const CAREER_EVENTS = [
     ],
   },
   {
-    id: 'la_leyenda_del_barrio',
-    title: 'La leyenda del barrio',
-    icon: 'ðŸ—¿',
+    id: 'la_camiseta_enmarcada',
+    title: 'La camiseta enmarcada',
+    icon: '🗿',
     category: 'retiro',
     weight: 3,
     minAge: 30,
     minClubReputation: 3,
-    intro: 'En el club ya hablan de vos en pasado por costumbre, pero en el barrio te siguen pidiendo fotos y consejos de tiro libre.',
+    intro: `En el club hablan de vos en pasado por costumbre, pero en el barrio te siguen pidiendo fotos y consejos de tiro libre en la panadería. El presidente quiere hacerte un homenaje con torta, discurso y una placa que pide ser colgada en el baño.`,
     choices: [
       {
-        id: 'academia',
-        label: 'Abrir una academia de fÃºtbol',
-        description: 'Tu nombre en la colchoneta y veinte pibes aprendiendo tu golpeo: la leyenda se vuelve instituciÃ³n.',
-        ovrDelta: [-1, 1],
-        valueDelta: 0.04,
-        pills: [{ label: 'Legado', tone: 'positive' }, { label: 'Valor al alza', tone: 'positive' }],
-      },
-      {
-        id: 'recibir_homenaje',
-        label: 'Recibir el homenaje del club',
-        description: 'Camiseta enmarcada, aplausos y un discurso del presidente que dura mÃ¡s que tu mejor temporada.',
+        id: 'homenaje',
+        label: 'Aceptar el homenaje y llorar en cámara',
+        description: `Camiseta enmarcada, aplausos y un discurso del presidente más largo que tu mejor temporada. Lloraste sin vergüenza y las fotos salieron en el diario del barrio.`,
         ovrDelta: [0, 1],
         pills: [{ label: 'Honor', tone: 'positive' }],
       },
+      {
+        id: 'escuelita',
+        label: 'Abrir una escuelita de fútbol',
+        description: `Tu nombre en la camiseta de veinte pibes que copian tu golpeo: la leyenda se vuelve institución.`,
+        ovrDelta: [-1, 1],
+        valueDelta: 0.04,
+        narratives: {
+          up: `Ver a los pibes te contagia: volvés al entrenamiento con pilas.`,
+          down: `Entre clases y entrenos no te alcanza el tiempo: las piernas lo sienten.`,
+        },
+        pills: [{ label: 'Legado', tone: 'positive' }, { label: 'Valor al alza', tone: 'positive' }],
+      },
     ],
   },
+  // Eventos personalizados por jugador (playerEvents.js): solo le tocan a
+  // quien figura en su campo `players`.
+  ...PLAYER_EVENTS,
 ];
 
+export const CAREER_EVENTS = applyEventTweaks(BASE_EVENTS);
+
 // -----------------------------------------------------------------------------
-// 2) HELPERS PUROS â€” elegibilidad, rivales, textos y aplicaciÃ³n de decisiones
+// 2) HELPERS PUROS — elegibilidad, rivales, textos y aplicación de decisiones
 // -----------------------------------------------------------------------------
 
 const PLACEHOLDER_RE = /\{(\w+)\}/g;
@@ -794,30 +1139,35 @@ function fillTemplate(text, values) {
     Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : match);
 }
 
-/** DivisiÃ³n del club actual de la carrera (fallback 3 si el dato falta). */
+/** División del club actual de la carrera (fallback 3 si el dato falta). */
 function currentDivisionOf(career) {
   const nivel = career?.club?.division;
   return divisions.find((d) => d.nivel === nivel) || divisions[divisions.length - 1];
 }
 
-/** Nombre legible de la divisiÃ³n ("Primera Avergas", etc.). */
+/** Nombre legible de la división ("Primera Avergas", etc.). */
 const divisionName = (division) => division?.name || 'Liga del Barrio';
 
 /**
- * Clubes rivales candidatos segÃºn el alcance pedido:
- *   'same'            â†’ misma divisiÃ³n (excluye el club actual).
- *   'higher'          â†’ divisiÃ³n superior estricta (el club actual excluido).
- *   'same_or_higher'  â†’ misma divisiÃ³n o superior (default).
- *   'any'             â†’ todo el mundo (excluye el club actual).
+ * Clubes rivales candidatos según el alcance pedido:
+ *   'same'            → misma división (excluye el club actual).
+ *   'higher'          → división superior estricta (el club actual excluido).
+ *   'same_or_higher'  → misma división o superior (default).
+ *   'any'             → todo el mundo (excluye el club actual).
+ *   'history'         → solo clubes donde el jugador ya jugó (excluye el actual).
  */
 function rivalCandidates(career, scope) {
   const current = career?.club;
   const division = currentDivisionOf(career);
   const sameDivision = (club) => club.division === division.nivel;
-  const higherDivision = (club) => club.division < division.nivel; // 1 es la mÃ¡s alta
+  const higherDivision = (club) => club.division < division.nivel; // 1 es la más alta
   const notCurrent = (club) => !current || club.slug !== current.slug;
 
+  const played = new Set((Array.isArray(career?.clubHistory) ? career.clubHistory : [])
+    .map((entry) => entry?.club?.slug).filter(Boolean));
+
   const level = {
+    history: (club) => played.has(club.slug),
     same: sameDivision,
     higher: higherDivision,
     same_or_higher: (club) => sameDivision(club) || higherDivision(club),
@@ -828,8 +1178,8 @@ function rivalCandidates(career, scope) {
 }
 
 /**
- * Elige un club rival con el RNG inyectado, ponderado por cercanÃ­a de
- * baseline al jugador (los rivales "creÃ­bles" son los de su nivel). Devuelve
+ * Elige un club rival con el RNG inyectado, ponderado por cercanía de
+ * baseline al jugador (los rivales "creíbles" son los de su nivel). Devuelve
  * { club, ref } o null si no hay candidatos (p. ej. D1 pidiendo 'higher').
  */
 function pickRivalClub(career, scope, rng) {
@@ -856,16 +1206,49 @@ function pickRivalClub(career, scope, rng) {
 }
 
 /**
- * Â¿El evento aplica a esta carrera? Puro: solo lee, nunca muta.
- * Efectivo: no retirado Â· edad dentro de la ventana Â· rol permitido Â·
- * posiciÃ³n (ARQ/DEF/MED/DEL, excludeGK/requiresGK) Â· reputaciÃ³n domÃ©stica
- * mÃ­nima Â· divisiÃ³n del club permitida. La disponibilidad de un club rival
- * se evalÃºa aparte en rollCareerEvent (usa RNG).
+ * ¿El evento aplica a esta carrera? Puro: solo lee, nunca muta.
+ * Efectivo: no retirado · edad dentro de la ventana · rol permitido ·
+ * posición (ARQ/DEF/MED/DEL, excludeGK/requiresGK) · reputación doméstica
+ * mínima · división del club permitida. La disponibilidad de un club rival
+ * se evalúa aparte en rollCareerEvent (usa RNG).
  */
+/**
+ * Probabilidades de OVR de una opción, para mostrarlas ANTES de elegir (como
+ * Copero: "+4 OVR 65% / -3 OVR 35%"). Son exactas: applyEventChoice sortea un
+ * entero uniforme en `ovrDelta` (acotado por EVENT_LIMITS), así que cada valor
+ * del rango tiene la misma chance. Devuelve filas { tone, from, to, pct } con
+ * tone 'up' | 'same' | 'down', ordenadas de mejor a peor y sumando 100.
+ */
+export function choiceOdds(choice) {
+  // Mismos valores que sortea applyEventChoice (eventOvrValues), así las
+  // proporciones son las reales.
+  const values = eventOvrValues(choice);
+  const groups = [
+    { tone: 'up', list: values.filter((v) => v > 0) },
+    { tone: 'same', list: values.filter((v) => v === 0) },
+    { tone: 'down', list: values.filter((v) => v < 0) },
+  ].filter((g) => g.list.length > 0);
+  const rows = groups.map((g) => ({
+    tone: g.tone,
+    from: Math.min(...g.list),
+    to: Math.max(...g.list),
+    pct: Math.round((g.list.length / values.length) * 100),
+  }));
+  // El redondeo puede dejar 99/101: se corrige en la fila más probable.
+  const diff = 100 - rows.reduce((sum, r) => sum + r.pct, 0);
+  if (diff !== 0) rows.reduce((a, b) => (b.pct > a.pct ? b : a)).pct += diff;
+  return rows;
+}
+
 export function eventEligible(event, career) {
   if (!event || !career || typeof event !== 'object' || typeof career !== 'object') return false;
   if (career.retired) return false;
   if (Array.isArray(event.choices) && event.choices.length === 0) return false;
+
+  // Evento personalizado: solo para los jugadores que nombra.
+  if (Array.isArray(event.players) && event.players.length > 0) {
+    if (!event.players.includes(career.name)) return false;
+  }
 
   const age = career.age;
   if (Number.isFinite(event.minAge) && age < event.minAge) return false;
@@ -891,11 +1274,21 @@ export function eventEligible(event, career) {
     if (!event.divisions.includes(career?.club?.division)) return false;
   }
 
+  // Contexto de carrera: la temporada anterior sin título / más de un club.
+  if (event.requiresNoTitle) {
+    const history = Array.isArray(career.seasonHistory) ? career.seasonHistory : [];
+    const last = history[history.length - 1];
+    if (last && Array.isArray(last.trophies) && last.trophies.length > 0) return false;
+  }
+  if (event.requiresMoved) {
+    if (!Array.isArray(career.clubHistory) || career.clubHistory.length < 2) return false;
+  }
+
   return true;
 }
 
 /**
- * Todos los eventos elegibles del catÃ¡logo (array nuevo, orden del catÃ¡logo).
+ * Todos los eventos elegibles del catálogo (array nuevo, orden del catálogo).
  */
 export function eligibleCareerEvents(career) {
   return CAREER_EVENTS.filter((event) => eventEligible(event, career));
@@ -910,6 +1303,7 @@ function contextValues(career, rival) {
     barrio: career?.club?.barrio || 'el barrio',
     division: divisionName(division),
     rival: rival?.club?.name || 'un club del interior',
+    friend: 'un amigo',
   };
 }
 
@@ -918,11 +1312,11 @@ function contextValues(career, rival) {
  * con pesos, resuelve el club rival (si hace falta) y rellena los textos.
  *
  * Devuelve { event, context, weightTotal } o null si no hay nada que rodar:
- *   event       â€” evento del catÃ¡logo con intro/choices/pills ya interpolados.
- *   context     â€” { rival } con la ref estable del club rival resuelto (si el
- *                 evento lo requerÃ­a). Guardar junto a la decisiÃ³n para que
+ *   event       — evento del catálogo con intro/choices/pills ya interpolados.
+ *   context     — { rival } con la ref estable del club rival resuelto (si el
+ *                 evento lo requería). Guardar junto a la decisión para que
  *                 applyEventChoice reconstruya exactamente el mismo traspaso.
- *   weightTotal â€” suma de pesos de los elegibles (info de telemetrÃ­a/UI).
+ *   weightTotal — suma de pesos de los elegibles (info de telemetría/UI).
  *
  * Puro: no muta career. rng/seed inyectables; sin seed usa el default.
  */
@@ -936,11 +1330,27 @@ export function rollCareerEvent(career, options = {}) {
       || rivalCandidates(career, event.rivalScope || 'same_or_higher').length > 0);
   if (pool.length === 0) return null;
 
-  const chosen = weightedPick(pool, rng);
+  // Sin repetir lo que acaba de pasar (salvo que no quede nada más).
+  const recent = new Set((Array.isArray(career.events) ? career.events : [])
+    .filter((entry) => entry && entry.type === 'career_event' && entry.eventId)
+    .slice(-EVENT_COOLDOWN)
+    .map((entry) => entry.eventId));
+  const fresh = pool.filter((event) => !recent.has(event.id));
+  const candidates = fresh.length > 0 ? fresh : pool;
+
+  const chosen = weightedPick(candidates, rng);
   const scope = chosen.rivalScope || 'same_or_higher';
   const rival = chosen.requiresRivalClub ? pickRivalClub(career, scope, rng) : null;
 
-  const values = contextValues(career, rival);
+  // Eventos con un amigo del grupo en el relato ({friend}): se sortea uno
+  // distinto del jugador. Sin `friends` el RNG no se consume.
+  const friendPool = Array.isArray(chosen.friends)
+    ? chosen.friends.filter((name) => name !== career.name) : [];
+  const friend = friendPool.length > 0
+    ? friendPool[Math.min(friendPool.length - 1, Math.floor(rng.next() * friendPool.length))]
+    : null;
+
+  const values = { ...contextValues(career, rival), ...(friend ? { friend } : {}) };
   const event = {
     ...chosen,
     intro: fillTemplate(chosen.intro, values),
@@ -948,6 +1358,10 @@ export function rollCareerEvent(career, options = {}) {
       ...choice,
       label: fillTemplate(choice.label, values),
       description: fillTemplate(choice.description, values),
+      narratives: choice.narratives ? {
+        up: choice.narratives.up ? fillTemplate(choice.narratives.up, values) : undefined,
+        down: choice.narratives.down ? fillTemplate(choice.narratives.down, values) : undefined,
+      } : undefined,
       pills: (choice.pills || []).map((pill) => ({
         ...pill,
         label: fillTemplate(pill.label, values),
@@ -958,21 +1372,21 @@ export function rollCareerEvent(career, options = {}) {
   return {
     event,
     context: rival ? { rival: rival.ref } : { rival: null },
-    weightTotal: pool.reduce((acc, item) => acc + item.weight, 0),
+    weightTotal: candidates.reduce((acc, item) => acc + item.weight, 0),
   };
 }
 
 /**
- * Aplica la decisiÃ³n elegida y devuelve una NUEVA carrera (no muta ninguna).
+ * Aplica la decisión elegida y devuelve una NUEVA carrera (no muta ninguna).
  *
  * @param {object} career Carrera vigente (no se muta).
- * @param {object} event  Evento devuelto por rollCareerEvent (o del catÃ¡logo).
- * @param {object|string} choice DecisiÃ³n elegida (objeto, id, o null/invÃ¡lido).
+ * @param {object} event  Evento devuelto por rollCareerEvent (o del catálogo).
+ * @param {object|string} choice Decisión elegida (objeto, id, o null/inválido).
  * @param {{ seed?: number, rng?: object, context?: { rival?: object } }} [options]
- *   context.rival â€” ref del club rival guardada junto al evento rodado; si no
+ *   context.rival — ref del club rival guardada junto al evento rodado; si no
  *   viene y el evento lo requiere, se re-resuelve con el RNG/seed dado.
  * @returns {{ career: object, outcome: object }} Carrera nueva + outcome
- *   (ovrDelta, valueDelta, transfer, logEvent, pills). Entrada invÃ¡lida â†’
+ *   (ovrDelta, valueDelta, transfer, logEvent, pills). Entrada inválida →
  *   { career: clon sin cambios, outcome.applied: false } (nunca lanza).
  */
 export function applyEventChoice(career, event, choice, options = {}) {
@@ -1020,17 +1434,16 @@ export function applyEventChoice(career, event, choice, options = {}) {
   outcome.choiceId = sourceChoice.id;
   outcome.applied = true;
 
-  // 1) Delta de OVR: entero muestreado del rango de la decisiÃ³n, acotado a
+  // 1) Delta de OVR: entero muestreado del rango de la decisión, acotado a
   //    EVENT_LIMITS.ovrDelta y al techo/piso absolutos del juego (clampOvr).
-  const range = Array.isArray(sourceChoice.ovrDelta) ? sourceChoice.ovrDelta : [0, 0];
-  let ovrDelta = sampleIntIn(rng, range);
-  ovrDelta = Math.max(EVENT_LIMITS.ovrDelta[0], Math.min(EVENT_LIMITS.ovrDelta[1], ovrDelta));
+  const outcomes = eventOvrValues(sourceChoice);
+  const ovrDelta = outcomes[Math.min(outcomes.length - 1, Math.floor(rng.next() * outcomes.length))];
   if (ovrDelta !== 0) {
     clean.ovr = clampOvr(clean.ovr + ovrDelta);
     clean.overallPeak = Math.max(clean.overallPeak ?? clean.ovr, clean.ovr);
-    // Estado derivado dependiente del OVR (misma fÃ³rmula que el motor usa en
-    // recalcCareerState): rol y comparaciÃ³n contra el baseline del club. La
-    // reputaciÃ³n, el club y el valor "canÃ³nico" los re-normaliza el motor.
+    // Estado derivado dependiente del OVR (misma fórmula que el motor usa en
+    // recalcCareerState): rol y comparación contra el baseline del club. La
+    // reputación, el club y el valor "canónico" los re-normaliza el motor.
     if (clean.club && Number.isFinite(clean.ovr)) {
       const base = clubBaseline(clean.club);
       clean.clubBaseline = base;
@@ -1041,9 +1454,20 @@ export function applyEventChoice(career, event, choice, options = {}) {
   outcome.ovrDelta = ovrDelta;
   outcome.newOvr = clean.ovr;
 
-  // 2) Delta de valor: fracciÃ³n del valor vigente, con piso absoluto
+  // 1b) Suspensión (doping, apuestas): si la opción sale mal y trae
+  //     `suspension: [min, max]`, el jugador no juega esas temporadas (el
+  //     motor las cuenta en simulateSeason con career.suspendedSeasons).
+  let suspension = 0;
+  if (ovrDelta < 0 && Array.isArray(sourceChoice.suspension)) {
+    const [lo, hi] = sourceChoice.suspension;
+    suspension = lo + Math.floor(rng.next() * (hi - lo + 1));
+    clean.suspendedSeasons = (clean.suspendedSeasons || 0) + suspension;
+  }
+  outcome.suspension = suspension;
+
+  // 2) Delta de valor: fracción del valor vigente, con piso absoluto
   //    MARKET_VALUE.MIN y redondeo MARKET_VALUE.ROUND_TO (config.js). El
-  //    motor re-normaliza el valor vÃ­a recomputeCareer en la prÃ³xima temporada.
+  //    motor re-normaliza el valor vía recomputeCareer en la próxima temporada.
   const valueFraction = Number.isFinite(sourceChoice.valueDelta)
     ? Math.max(EVENT_LIMITS.valueDelta[0], Math.min(EVENT_LIMITS.valueDelta[1], sourceChoice.valueDelta))
     : 0;
@@ -1061,7 +1485,7 @@ export function applyEventChoice(career, event, choice, options = {}) {
   outcome.newValue = clean.marketValue;
 
   // 3) Traspaso: SOLO metadata. No se toca career.club ni se duplica la
-  //    lÃ³gica de acceptTransfer: engine.js procesarÃ¡ esta seÃ±al despuÃ©s.
+  //    lógica de acceptTransfer: engine.js procesará esta señal después.
   let transfer = null;
   if (sourceChoice.isTransfer) {
     let rivalRef = options?.context?.rival || null;
@@ -1083,7 +1507,7 @@ export function applyEventChoice(career, event, choice, options = {}) {
     outcome.transfer = transfer;
   }
 
-  // 4) Log del evento con la convenciÃ³n del motor (season/type/message),
+  // 4) Log del evento con la convención del motor (season/type/message),
   //    lastDecision para la UI y pills interpoladas.
   const rivalForText = (options?.context?.rival || transfer?.targetClub)
     ? { club: { name: (options?.context?.rival || transfer?.targetClub).name } }
@@ -1096,7 +1520,7 @@ export function applyEventChoice(career, event, choice, options = {}) {
   const logEvent = {
     season: clean.season,
     type: 'career_event',
-    message: `${event?.icon || 'ðŸ“Œ'} ${event?.title || 'Evento'}: ${sourceChoice.label}`,
+    message: `${event?.icon || '📌'} ${event?.title || 'Evento'}: ${sourceChoice.label}`,
     eventId: event?.id || null,
     choiceId: sourceChoice.id,
     ovrDelta,
@@ -1104,8 +1528,16 @@ export function applyEventChoice(career, event, choice, options = {}) {
     isTransfer: Boolean(transfer),
   };
   clean.events = [...(clean.events || []), logEvent];
+  // Relato según lo que de verdad pasó (sube / baja / igual).
+  const narratives = sourceChoice.narratives || {};
+  const narrative = fillTemplate(
+    (ovrDelta > 0 ? narratives.up : ovrDelta < 0 ? narratives.down : null)
+      || sourceChoice.description || '',
+    values,
+  );
   clean.lastDecision = {
     eventId: event?.id || null,
+    narrative,
     eventTitle: event?.title || null,
     choiceId: sourceChoice.id,
     choiceLabel: sourceChoice.label,
@@ -1114,6 +1546,7 @@ export function applyEventChoice(career, event, choice, options = {}) {
     ovrDelta,
     valueDelta: valueFraction,
     transfer,
+    suspension,
     pills,
   };
   outcome.logEvent = logEvent;

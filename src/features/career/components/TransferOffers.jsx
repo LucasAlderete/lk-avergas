@@ -15,9 +15,11 @@ import {
   clubCountryLabel,
   clubVisual,
   divisionName,
+  leagueName,
   offerReasonLabel,
 } from './careerFormat.js';
 import ClubBadge from './ClubBadge.jsx';
+import CountryFlag from './CountryFlag.jsx';
 
 export default function TransferOffers({ offers, onAccept, busy, bare = false }) {
   const list = Array.isArray(offers) ? offers : [];
@@ -49,8 +51,8 @@ export default function TransferOffers({ offers, onAccept, busy, bare = false })
               <div className="career-offer-row-main">
                 <strong className="career-offer-row-club">{club.name}</strong>
                 <span className="career-offer-row-meta">
-                  {divisionName(offer && offer.division)}
-                  {country ? <span>{` · ${country}`}</span> : null}
+                  {leagueName(offer && offer.club, offer && offer.division)}
+                  {country ? <span>{' · '}<CountryFlag code={club.countryCode} size={12} /> {country}</span> : null}
                   <span aria-hidden="true"> · </span>
                   {(offer && offer.roleLabel) || DASH}
                   {reason ? <span className="career-offer-reason"> · {reason}</span> : null}

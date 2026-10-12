@@ -2,10 +2,10 @@
 // Smoke del CATÁLOGO COMPLETO dentro del Career Mode (estabilización)
 // Uso: node scripts/smoke-career-all-clubs.mjs
 //
-// Recorre LOS 296 clubes del universo cerrado contra el flujo REAL de carrera
+// Recorre LOS 332 clubes del universo cerrado contra el flujo REAL de carrera
 // (flow.js + engine.js) y contra la capa de presentación (careerFormat.js):
 //
-//  A) Los 296 clubes cumplen el contrato del engine (campos, OVR, división,
+//  A) Los 332 clubes cumplen el contrato del engine (campos, OVR, división,
 //     key, reputación, escudo) y todas las búsquedas resuelven.
 //  B) Cada club resuelve su parte visual (clubVisual / reportClubVisual) y sus
 //     logos declarados existen en public/.
@@ -13,7 +13,7 @@
 //     decisión → mercado (aceptar transferencia / quedarse) → retiro.
 //  D) Cada transición que toca un club deja un club del catálogo en la carrera
 //     (club + clubHistory) y sin NaN/Infinity en ningún estado.
-//  E) Persistencia: el estado se serializa y se relee con el club vigente del
+//  E) Carrera completa hasta el retiro con el club vigente del
 //     catálogo (misma regla que usa useCareer).
 //
 // NO corre npm build ni instala dependencias.
@@ -48,11 +48,6 @@ import {
   getCareerDecisionOptions,
   startCareer,
 } from '../src/features/career/flow.js';
-import {
-  CAREER_SAVE_SCHEMA_VERSION,
-  deserializeCareerState,
-  serializeCareerState,
-} from '../src/features/career/persistence.js';
 import { clubVisual, reportClubVisual } from '../src/features/career/components/careerFormat.js';
 
 const PUBLIC_DIR = path.resolve(process.cwd(), 'public');
@@ -74,14 +69,6 @@ const HEX = /^#[0-9a-f]{6}$/i;
 const catalog = allClubs();
 const player = players.find((p) => p.name === 'Alan') || players[0];
 
-/** Envelope de save tal como lo escribe saveCareerState (misma forma). */
-const envelopeOf = (state) => JSON.stringify({
-  schemaVersion: CAREER_SAVE_SCHEMA_VERSION,
-  worldVersion: CAREER_WORLD_VERSION,
-  savedAt: Date.now(),
-  state: JSON.parse(serializeCareerState(state).json),
-});
-
 /** La carrera solo guarda clubes del catálogo (slug + key vigentes). */
 const clubInCatalog = (clubRef) => Boolean(
   clubRef
@@ -97,7 +84,7 @@ console.log('\n== A) Catálogo completo ==');
 console.log(`   clubes: ${catalog.length} · divisiones internas: ${[1, 2].map((n) => `D${n}=${clubsByDivision(n).length}`).join(' ')}`);
 console.log(`   divisiones declaradas: ${divisions.map((d) => `${d.nivel}:${d.name}`).join(' · ')}`);
 
-assert(catalog.length === 296, `el catálogo tiene 296 clubes (${catalog.length})`);
+assert(catalog.length === 332, `el catálogo tiene 332 clubes (${catalog.length})`);
 
 const CONTRACT_FIELDS = ['slug', 'id', 'key', 'name', 'short', 'shortName', 'barrio', 'stadium',
   'city', 'country', 'countryCode', 'countryFlag', 'league', 'leagueId', 'leagueLevel',
@@ -125,11 +112,11 @@ for (const club of catalog) {
   if (!club.crest || club.crest.type !== 'procedural' || !club.crest.symbol) contractIssues.push(`${club.slug}: descriptor de escudo incompleto`);
   if (!startingDivisionsForOvr(club.ovr).includes(club.division)) contractIssues.push(`${club.slug}: su división no es elegible para su OVR`);
 }
-assert(contractIssues.length === 0, `los 296 clubes cumplen el contrato del engine (${contractIssues.length} problemas)`);
+assert(contractIssues.length === 0, `los 332 clubes cumplen el contrato del engine (${contractIssues.length} problemas)`);
 contractIssues.slice(0, 15).forEach((row) => console.error('      ·', row));
 
 const lookupIssues = catalog.filter((club) => findClub(club.slug) !== club || findClubByKey(club.key) !== club);
-assert(lookupIssues.length === 0, `findClub/findClubByKey resuelven los 296 clubes (${lookupIssues.length} fallos)`);
+assert(lookupIssues.length === 0, `findClub/findClubByKey resuelven los 332 clubes (${lookupIssues.length} fallos)`);
 
 // ============================================================================
 // B) Visual por club (careerFormat) + logos declarados
@@ -159,7 +146,7 @@ for (const club of catalog) {
     if (!visual.symbol || !visual.crestShape) visualIssues.push(`${club.slug}: fallback procedural incompleto`);
   }
 }
-assert(visualIssues.length === 0, `clubVisual/reportClubVisual sin problemas en los 296 clubes (${visualIssues.length})`);
+assert(visualIssues.length === 0, `clubVisual/reportClubVisual sin problemas en los 332 clubes (${visualIssues.length})`);
 visualIssues.slice(0, 15).forEach((row) => console.error('      ·', row));
 assert(logoFilesChecked === withLogo, `todos los logos declarados existen en public/ (${logoFilesChecked}/${withLogo})`);
 console.log(`   con logo real: ${withLogo} · con fallback procedural: ${withFallback} · archivos verificados: ${logoFilesChecked}/${Object.keys(CREST_FILES).length} entradas del mapa`);
@@ -173,7 +160,7 @@ assert(reportClubVisual(null).name === clubVisual(null).name, 'reportClubVisual 
 // C/D) Flujo completo por club: debut → temporadas → evento → decisión →
 //      mercado → retiro, con el club siempre dentro del catálogo
 // ============================================================================
-console.log('\n== C) Flujo de carrera por club (296) ==');
+console.log('\n== C) Flujo de carrera por club (332) ==');
 
 const stats = {
   flows: 0, youthPicked: 0, seasons: 0, events: 0, decisions: 0, stays: 0,
@@ -310,7 +297,7 @@ catalog.forEach((club, index) => {
 assert(flowIssues.length === 0, `ningún club rompe el flujo de carrera (${flowIssues.length} problemas)`);
 flowIssues.slice(0, 20).forEach((row) => console.error('      ·', row));
 assert(stats.youthPicked > 250, `la mayoría de las carreras pasaron por el debut (${stats.youthPicked}/${stats.flows})`);
-assert(stats.seasons > 296, `se simularon temporadas en todas las carreras (${stats.seasons})`);
+assert(stats.seasons > 332, `se simularon temporadas en todas las carreras (${stats.seasons})`);
 assert(stats.finished > 250, `la mayoría de las carreras llegó al retiro (${stats.finished}/${stats.flows})`);
 assert(stats.badOffers === 0, `todas las ofertas de mercado apuntan a clubes del catálogo (${stats.badOffers} inconsistentes)`);
 assert(stats.transfersAccepted > 0 && stats.stays > 0 && stats.retirements > 0,
@@ -322,35 +309,7 @@ console.log(`   OVR al cierre del recorrido: ${ovrMin} – ${ovrMax}`);
 // ============================================================================
 // E) Persistencia: el save se relee con el club vigente del catálogo
 // ============================================================================
-console.log('\n== E) Persistencia ==');
-
-const sample = catalog.filter((_, i) => i % 37 === 0);
-let roundTrips = 0;
-for (const club of sample) {
-  const started = startCareer(player, {
-    seed: 4242, difficulty: 'normal', initialDivision: club.division, initialClubSlug: club.slug,
-  });
-  const played = started.phase === FLOW_PHASES.DEBUT
-    ? chooseYouthClub(started, started.youthOffers[0])
-    : advanceSeason(started, { seed: 7 });
-
-  const serialized = serializeCareerState(played);
-  assert(serialized.ok === true, `${club.slug}: el estado se serializa (${serialized.reason || 'ok'})`);
-  if (!serialized.ok) continue;
-
-  const restored = deserializeCareerState(envelopeOf(played));
-  assert(restored.ok === true, `${club.slug}: el save se relee (${restored.reason || 'ok'})`);
-  if (!restored.ok) continue;
-
-  roundTrips += 1;
-  if (!clubInCatalog(restored.state.career.club)) fail(`${club.slug}: el club restaurado no está en el catálogo (${restored.state.career.club?.slug})`);
-  if (!deepScan(restored.state)) fail(`${club.slug}: el estado restaurado tiene NaN/Infinity`);
-
-  // La carrera restaurada sigue jugable (no quedó un estado congelado).
-  const after = advanceSeason(restored.state, { seed: 13 });
-  assert(after.career.season >= restored.state.career.season, `${club.slug}: la carrera restaurada puede seguir avanzando`);
-}
-console.log(`   round-trips de save verificados: ${roundTrips}/${sample.length}`);
+console.log('\n== E) Carrera completa ==');
 
 // Carrera completa hasta el retiro: historial consistente y cierre limpio.
 const longClub = findClub('river-plate') || catalog[0];
@@ -373,7 +332,6 @@ assert((life.career.clubHistory || []).every((h) => clubInCatalog(h.club)), 'cad
 assert(deepScan(life.career), 'la carrera completa no tiene NaN/Infinity');
 assert(getCareerDecisionOptions(life).length === 0, 'una carrera retirada no ofrece más decisiones');
 assert(advanceSeason(life).lastAction?.ok === false, 'no se puede avanzar una carrera retirada');
-assert(deserializeCareerState(envelopeOf(life)).ok === true, 'una carrera retirada se persiste y se relee');
 console.log(`   carrera completa: ${life.career.seasonHistory.length} temporadas · ${life.career.clubHistory.length} etapas · OVR ${life.career.ovr} a los ${life.career.age} años`);
 
 // Guardas del engine que dependen del mundo (no cambian con el catálogo).

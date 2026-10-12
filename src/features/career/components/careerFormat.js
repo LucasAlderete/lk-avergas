@@ -12,21 +12,19 @@
 //   posición/rol/perfil/edad; careerWorld.js: nombres de división, colores de
 //   club y metadatos del mundo). No duplica ninguno.
 //
-// Nota sobre `cleanText` (parche de presentación, sin tocar el motor):
-//   El catálogo de eventos (features/career/events.js) está guardado con bytes
-//   UTF-8 re-interpretados como Latin-1/Windows-1252, así que sus textos llegan
-//   al navegador como "El telÃ©fono del malviaje" o "ðŸ“ž". `cleanText` los
-//   repara SOLO para mostrarlos (idempotente: un texto ya correcto se devuelve
-//   intacto). La corrección real del archivo queda pendiente para un paso
-//   posterior: acá no se modifica events.js.
+// Nota sobre `cleanText`:
+//   events.js estuvo guardado con mojibake (UTF-8 leído como Windows-1252) y
+//   ya se corrigió en el archivo. `cleanText` queda como red de seguridad: es
+//   idempotente, así que un texto correcto se devuelve intacto.
 // ============================================================================
 
 import { AGE, GROWTH_META, ROLE_LABELS, positionById } from '../config.js';
 import { divisions, findClub, findClubByKey } from '../../../data/careerWorld.js';
 import { FLOW_PHASES } from '../flow.js';
 import { CREST_FILES } from '../../../data/careerWorld/crests.generated.js';
+import { EXTRA_CREST_FILES } from '../../../data/careerWorld/crests.extra.js';
 
-export const DASH = '—';
+export const DASH = '-';
 
 /** Convierte un nombre de club en slug (misma lógica que careerWorld.js). */
 function slugify(name) {
@@ -196,40 +194,15 @@ export function feedbackOf(lastAction) {
     };
   }
 
-  switch (lastAction.action) {
-    case 'start':
-      return { tone: 'ok', text: 'Carrera iniciada. La cantera te está mirando.' };
-    case 'choose_youth_club':
-      return { tone: 'ok', text: '¡Debut firmado! Ya tenés club de cantera.' };
-    case 'advance_season':
-      return { tone: 'ok', text: 'Temporada simulada.' };
-    case 'choose_event_choice': {
-      const delta = Number.isFinite(lastAction.ovrDelta)
-        ? `OVR ${signed(lastAction.ovrDelta)}`
-        : 'Decisión tomada';
-      return {
-        tone: 'ok',
-        text: lastAction.isTransfer ? `${delta} · se abrió un interés de traspaso` : delta,
-      };
-    }
-    case 'stay': {
-      const bonus = safeNumber(lastAction.loyaltyOvrBonus, 0);
-      return {
-        tone: 'ok',
-        text: bonus > 0 ? `Seguís en el club con +${bonus} OVR de lealtad.` : 'Seguís en el club.',
-      };
-    }
-    case 'transfer':
-      // `opened: true` = se abrió el mercado (ya no es una acción del usuario:
-      // la dispara la pantalla al llegar al checkpoint). Sin mensaje.
-      return lastAction.opened === true
-        ? null
-        : { tone: 'ok', text: 'Traspaso confirmado: nuevo club, nueva camiseta.' };
-    case 'retire':
-      return { tone: 'ok', text: 'Carrera cerrada. Bien jugado.' };
-    default:
-      return { tone: 'ok', text: 'Acción completada.' };
+  // Las confirmaciones genéricas ("Carrera iniciada", "Temporada simulada",
+  // "Traspaso confirmado"...) se sacaron: repetían lo que ya muestran la barra
+  // y la tabla (Copero tampoco las tiene). Solo queda lo que no se ve en otro
+  // lado: los errores (arriba) y el bono de lealtad al quedarse.
+  if (lastAction.action === 'stay') {
+    const bonus = safeNumber(lastAction.loyaltyOvrBonus, 0);
+    return bonus > 0 ? { tone: 'ok', text: `+${bonus} OVR por lealtad al club.` } : null;
   }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +269,32 @@ export function divisionName(nivel) {
   return divisionOf(nivel)?.name || (Number.isFinite(nivel) ? `División ${nivel}` : DASH);
 }
 
+/**
+ * Liga REAL del club ("Primera División", "LaLiga", "Primera Nacional"), como
+ * la muestra Copero. El nivel interno (Primera/Segunda) es solo fuerza de
+ * juego y no coincide con la liga real (Lanús es D2 pero juega en Primera):
+ * queda de respaldo si el club no se encuentra en el catálogo.
+ */
+export function leagueName(club, fallbackDivision) {
+  const isObject = club && typeof club === 'object';
+  const world = isObject ? (findClubByKey(club.key) || findClub(club.slug)) : null;
+  const league = (world && world.league) || (isObject && club.league) || null;
+  if (league) return league;
+  const division = isObject && Number.isFinite(club.division) ? club.division : fallbackDivision;
+  return divisionName(division);
+}
+
+/** Nivel de OVR para el color: high | mid | low | bad. Mismos cortes que la
+ *  ficha del jugador (PlayerStatsSheet), así un 70 se ve igual en toda la app. */
+export const OVR_TIERS = ['none', 'bad', 'low', 'mid', 'high'];
+export function ovrTier(ovr) {
+  if (!Number.isFinite(ovr)) return 'none';
+  if (ovr >= 80) return 'high';
+  if (ovr >= 65) return 'mid';
+  if (ovr >= 50) return 'low';
+  return 'bad';
+}
+
 /** Nombre corto de la división ("PRIMERA A"). */
 export function divisionShort(nivel) {
   return divisionOf(nivel)?.short || DASH;
@@ -332,7 +331,7 @@ export function clubVisual(club) {
   const short = (isObject && club.short) || (world && world.short) || clubInitials(name);
   const slug = (world && world.slug) || (isObject && club.slug) || slugify(name);
   // Logo real cuando existe en el catálogo de imágenes, sino null (fallback procedural)
-  const crestSrc = CREST_FILES && CREST_FILES[slug] ? CREST_FILES[slug] : null;
+  const crestSrc = (CREST_FILES && CREST_FILES[slug]) || EXTRA_CREST_FILES[slug] || null;
   return {
     name: name || 'Club sin datos',
     short,
@@ -348,18 +347,19 @@ export function clubVisual(club) {
       : ((world && Number.isFinite(world.division)) ? world.division : null),
     country: (world && world.country) || (isObject && club.country) || null,
     countryFlag: (world && world.countryFlag) || (isObject && club.countryFlag) || null,
+    countryCode: (world && world.countryCode) || (isObject && club.countryCode) || null,
     league: (world && world.league) || (isObject && club.league) || null,
   };
 }
 
 /**
- * País de un club como etiqueta corta ("🇦🇷 Argentina"), o null cuando el
+ * País de un club como etiqueta corta ("Argentina"; la bandera va aparte, CountryFlag), o null cuando el
  * catálogo no lo conoce (referencias viejas o clubes fuera del mundo).
  */
 export function clubCountryLabel(club) {
   const visual = clubVisual(club);
   if (!visual.country) return null;
-  return visual.countryFlag ? `${visual.countryFlag} ${visual.country}` : visual.country;
+  return visual.country;
 }
 
 /**

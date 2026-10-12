@@ -6,20 +6,26 @@
 //  - `division` (1/2) del engine: nivel INTERNO de carrera, derivado del OVR
 //    del club, no de la liga real. Documentado en docs/README-CAREER-CLUBS.md.
 //
-// UNIVERSO CERRADO (estabilización): 8 países y 13 competiciones. No agregar
+// UNIVERSO CERRADO (estabilización): 10 países y 15 competiciones. No agregar
 // países o ligas fuera de esta lista sin avisar.
 // =============================================================================
 
 export const COUNTRIES = {
-  AR: { name: 'Argentina', flag: '🇦🇷' },
-  ES: { name: 'España', flag: '🇪🇸' },
-  FR: { name: 'Francia', flag: '🇫🇷' },
-  EN: { name: 'Inglaterra', flag: '🏴󰁧󰁢󰁥󰁮󰁧󰁿' },
-  IT: { name: 'Italia', flag: '🇮🇹' },
-  BR: { name: 'Brasil', flag: '🇧🇷' },
-  US: { name: 'Estados Unidos', flag: '🇺🇸' },
-  MX: { name: 'México', flag: '🇲🇽' },
+  AR: { name: 'Argentina', flag: '🇦🇷', code3: 'ARG', tier: 4 },
+  ES: { name: 'España', flag: '🇪🇸', code3: 'ESP', tier: 1 },
+  FR: { name: 'Francia', flag: '🇫🇷', code3: 'FRA', tier: 2 },
+  EN: { name: 'Inglaterra', flag: '🏴󰁧󰁢󰁥󰁮󰁧󰁿', code3: 'ING', tier: 1 },
+  IT: { name: 'Italia', flag: '🇮🇹', code3: 'ITA', tier: 1 },
+  BR: { name: 'Brasil', flag: '🇧🇷', code3: 'BRA', tier: 3 },
+  US: { name: 'Estados Unidos', flag: '🇺🇸', code3: 'USA', tier: 3 },
+  MX: { name: 'México', flag: '🇲🇽', code3: 'MEX', tier: 3 },
+  PT: { name: 'Portugal', flag: '🇵🇹', code3: 'POR', tier: 2 },
+  DE: { name: 'Alemania', flag: '🇩🇪', code3: 'ALE', tier: 1 },
 };
+
+// `tier` = ranking del país para el mercado (1 = ligas top de Europa,
+// 4 = Argentina). Cuanto más alto el nivel, más OVR pide para llegar ofertas
+// desde ahí (ABROAD_RULES en features/career/config.js).
 
 /** Ligas reales por país. `level` = nivel real deportivo (1 = máxima). */
 export const LEAGUES = {
@@ -52,6 +58,12 @@ export const LEAGUES = {
   MX: {
     mx_1: { name: 'Liga MX', level: 1 },
   },
+  PT: {
+    pt_1: { name: 'Liga Portugal', level: 1 },
+  },
+  DE: {
+    de_1: { name: 'Bundesliga', level: 1 },
+  },
 };
 
 /** Notas de curación por país (contexto de mantenimiento, no dato de juego). */
@@ -64,6 +76,8 @@ export const COUNTRY_NOTES = {
   BR: 'Solo Série A (20 clubes).',
   US: 'MLS (30 clubes).',
   MX: 'Solo Liga MX (18 clubes): la Liga de Expansión queda fuera del universo.',
+  PT: 'Solo Liga Portugal (18 clubes, 2025-26). Destino típico de argentinos.',
+  DE: 'Solo Bundesliga (18 clubes, 2025-26). La 2. Bundesliga queda fuera.',
 };
 
 export default COUNTRIES;

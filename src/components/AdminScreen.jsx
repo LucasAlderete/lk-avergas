@@ -24,7 +24,7 @@ function matchLabel(match) {
   const when = formatWhen(match.createdAt);
   const state = match.status === 'open' ? 'abierto' : 'cerrado';
   const votes = `${match.voters || 0} ${match.voters === 1 ? 'voto' : 'votos'}`;
-  return `${when} · Fútbol ${match.mode} · ${state} · ${votes}`;
+  return `${when}, Fútbol ${match.mode}. ${state[0].toUpperCase()}${state.slice(1)}, ${votes}`;
 }
 
 function VoterCard({ ballot }) {
@@ -203,9 +203,8 @@ export default function AdminScreen({ onBack, onNavigate }) {
 
           {selected ? (
             <p className="admin-match-meta">
-              {selected.status === 'open' ? 'Abierto' : 'Cerrado'}
-              {' · '}{resultLine(selected.result)}
-              {' · '}jugaron {selected.players.join(', ') || 'nadie'}
+              {selected.status === 'open' ? 'Abierto' : 'Cerrado'}. {resultLine(selected.result)}.
+              {' '}Jugaron {selected.players.join(', ') || 'nadie'}.
             </p>
           ) : null}
 

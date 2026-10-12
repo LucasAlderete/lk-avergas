@@ -77,7 +77,7 @@ assert(career.html.includes('Mi carrera'), 'Mi carrera renderiza su pantalla');
 assert(career.html.includes('data-navigation="home"'), 'Mi carrera puede volver a inicio');
 assert(career.html.includes('data-navigation="squad"'), 'Mi carrera puede navegar a Plantel');
 assert(career.html.includes('data-navigation="lineup"'), 'Mi carrera puede navegar a Alineación');
-assert(header.html.includes('Volver a inicio'), 'el header de Carrera ofrece Volver a inicio');
+assert(header.html.includes('data-navigation="home"'), 'el header de Carrera ofrece volver a inicio (link Inicio del menú compartido)');
 assert(header.html.includes('>Inicio<'), 'el header de Carrera ofrece Inicio');
 // Ojo: el texto ">Mi carrera<" aparece también en el título de la barra, así
 // que para el menú hay que mirar el atributo data-navigation, no la etiqueta.
@@ -185,7 +185,8 @@ assert(homeCalls.includes('squad'), 'Home -> Plantel ejecuta el callback');
 assert(homeCalls.includes('lineup'), 'Home -> Alineación ejecuta el callback');
 assert(homeCalls.includes('history'), 'Home -> Historial ejecuta el callback');
 const careerCalls = ui.exerciseCareerCallbacks();
-for (const target of ['home', 'career', 'squad', 'lineup', 'history'].filter((id) => id !== 'career' || careerOn)) {
+// Mi carrera usa el menú compartido: la sección actual queda desactivada, como en el resto.
+for (const target of ['home', 'squad', 'lineup', 'history']) {
   assert(careerCalls.includes(target), `Mi carrera -> ${target} ejecuta el callback`);
 }
 const squadCalls = ui.exerciseSquadCallbacks();

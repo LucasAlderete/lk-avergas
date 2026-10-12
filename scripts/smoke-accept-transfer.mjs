@@ -131,14 +131,13 @@ assert(ev.fromDivision === current.club.division && ev.toDivision === offer.divi
 assert(ev.playerOvr === current.ovr, 'evento: playerOvr');
 assert(ev.estimatedValue === offer.estimatedValue && Number.isFinite(ev.estimatedValue), 'evento: estimatedValue finito');
 
-// --- Estadísticas / trofeos / logros / OVR / atributos intactos --------------
+// --- Estadísticas / trofeos / OVR / atributos intactos --------------
 assert(accepted.ovr === current.ovr, 'OVR intacto');
 assert(JSON.stringify(accepted.attrs) === JSON.stringify(current.attrs), 'atributos intactos');
 assert(JSON.stringify(accepted.careerStats) === JSON.stringify(current.careerStats), 'careerStats intactas');
 assert(JSON.stringify(accepted.seasonStats) === JSON.stringify(current.seasonStats), 'seasonStats intactas');
 assert(accepted.injuries === current.injuries, 'injuries intacto');
 assert(JSON.stringify(accepted.trophies) === JSON.stringify(current.trophies), 'trofeos intactos');
-assert(JSON.stringify(accepted.achievements) === JSON.stringify(current.achievements), 'logros intactos');
 assert(accepted.age === current.age && accepted.season === current.season, 'edad/temporada intactas (el traspaso no simula nada)');
 
 // --- Doble aceptación de la misma oferta: sin corrupción ---------------------
@@ -209,14 +208,12 @@ assert(viaKey.club.slug === offer.club.slug, 'oferta con solo club.key también 
 console.log('\n== Save con ofertas pendientes y contenido histórico ==');
 const enriched = cloneCareer(current);
 enriched.trophies = [{ type: 'league', label: 'Liga', icon: '🏆', season: current.season - 1, clubName: current.club.name }];
-enriched.achievements = [{ id: 'centurion', label: 'Centurión del Barrio' }];
 enriched.events = [...(enriched.events || []), { season: current.season - 1, type: 'injury', message: 'Prueba.' }];
 enriched.pendingOffers = [offer, offers[1]];
 enriched.offers = [offer];
 const enrichedSnapshot = JSON.stringify(enriched);
 const moved = acceptTransfer(enriched, offer);
 assert(JSON.stringify(moved.trophies) === JSON.stringify(enriched.trophies), 'trofeos históricos se conservan');
-assert(JSON.stringify(moved.achievements) === JSON.stringify(enriched.achievements), 'logros se conservan');
 assert(moved.events.length === enriched.events.length + 1, 'eventos previos + 1 evento de traspaso');
 assert(Array.isArray(moved.pendingOffers) && moved.pendingOffers.length === 0, 'pendingOffers existente → limpiada');
 assert(Array.isArray(moved.offers) && moved.offers.length === 0, 'offers existente → limpiada');

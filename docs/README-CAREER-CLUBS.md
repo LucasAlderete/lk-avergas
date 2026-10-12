@@ -4,7 +4,7 @@ El **modo carrera** (`career2` / `CareerScreen`) usa un mundo de clubes
 reales. El **modo Copero** no se toca: vive en su propio sistema y no
 comparte ninguno de estos datos.
 
-## 0. Universo cerrado (296 clubes)
+## 0. Universo cerrado (332 clubes)
 
 **No modificar el alcance sin avisar.** El Career World contiene EXCLUSIVAMENTE:
 
@@ -18,10 +18,12 @@ comparte ninguno de estos datos.
 | Brasil | Série A (20) | 20 |
 | Estados Unidos | MLS (30) | 30 |
 | México | Liga MX (18) | 18 |
-| **Total** | **13 competiciones · 8 países** | **296** |
+| Portugal | Liga Portugal (18) | 18 |
+| Alemania | Bundesliga (18) | 18 |
+| **Total** | **15 competiciones · 10 países** | **332** |
 
 Rosters de las temporadas 2025-26 / 2026 (verificados en Wikipedia). Sin
-Alemania, Países Bajos, Portugal, Bélgica, Uruguay ni otras ligas. El smoke
+Países Bajos, Bélgica, Uruguay ni otras ligas. El smoke
 `scripts/smoke-career-clubs.mjs` valida el universo exacto (país por país y
 competición por competición).
 

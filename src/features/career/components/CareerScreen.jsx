@@ -23,9 +23,9 @@
 // (club actual + ofertas + retirarse). No existe paso intermedio "Ver ofertas".
 // ============================================================================
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Check, RotateCcw, Trophy } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { AlertTriangle, Check, RotateCcw } from 'lucide-react';
 
 import { players } from '../../../data';
 import { useCareer } from '../useCareer';
@@ -35,14 +35,25 @@ import CareerEvent from './CareerEvent';
 import CareerHeader from './CareerHeader';
 import CareerPlayerCard from './CareerPlayerCard';
 import CareerSetup from './CareerSetup';
+import CareerShareCard from './CareerShareCard';
 import CareerTimeline from './CareerTimeline';
+import CareerTrophyShelf from './CareerTrophyShelf';
+import useSeasonReveal from './useSeasonReveal';
 import CareerTrophyToast from './CareerTrophyToast';
 import YouthOffers from './YouthOffers';
-import { EVENT_CATEGORIES } from '../events.js';
 import { DASH, cleanText, feedbackOf, phaseLabel, statText } from './careerFormat.js';
 import './careerScreen.css';
 
-export default function CareerScreen({ onBack, onNavigate }) {
+// Toda la pantalla respeta "reducir movimiento": Motion deja solo los fundidos.
+export default function CareerScreen(props) {
+  return (
+    <MotionConfig reducedMotion="user">
+      <CareerScreenBody {...props} />
+    </MotionConfig>
+  );
+}
+
+function CareerScreenBody({ onBack, onNavigate }) {
   const careerHook = useCareer();
   const {
     state, phase, career, youthOffers, transferOffers, currentEvent,
@@ -52,9 +63,11 @@ export default function CareerScreen({ onBack, onNavigate }) {
   } = careerHook;
 
   const [draftName, setDraftName] = useState(() => (players[0] ? players[0].name : ''));
+  // Identidad elegida en el setup: null = posición sugerida por atributos.
+  const [draftPosition, setDraftPosition] = useState(null);
+  const [draftNationality, setDraftNationality] = useState('AR');
+  const [draftNumber, setDraftNumber] = useState('10');
   const [difficulty, setDifficulty] = useState('normal');
-  const [seedInput, setSeedInput] = useState('2026');
-  const [confirmReset, setConfirmReset] = useState(false);
   const [busyAction, setBusyAction] = useState(null);
   // Recibo post-decisión de evento (solo presentación): guarda la narración
   // completa de la opción elegida para mostrarla junto a las opciones del
@@ -62,6 +75,12 @@ export default function CareerScreen({ onBack, onNavigate }) {
   // === null). Es INFORMACIÓN, no un paso de confirmación: no tiene botón y
   // se descarta recién cuando se toma una decisión (handleAction).
   const [eventReceipt, setEventReceipt] = useState(null);
+  // Panel congelado (como Copero): al elegir, las opciones quedan a la vista
+  // con la elegida resaltada mientras se simula, y recién se reemplazan cuando
+  // aparecen las del checkpoint siguiente. En eventos además gira la ruleta
+  // (`spin`) y la temporada espera a que frene.
+  //   { view: props de PhaseBody, selectedKey, spin: { eventId, choiceId, careerBefore, tone, done } | null }
+  const [frozen, setFrozen] = useState(null);
   const topRef = useRef(null);
   const firstRenderRef = useRef(true);
   // Checkpoint de decisión cuyo mercado ya se intentó abrir (ver efecto de abajo).
@@ -84,12 +103,25 @@ export default function CareerScreen({ onBack, onNavigate }) {
   const handleStart = () => {
     if (!draftPlayer || busyAction) return;
     setBusyAction('start');
-    const raw = String(seedInput || '').trim();
-    const seed = raw !== '' && Number.isFinite(Number(raw)) ? Number(raw) : undefined;
+    // Semilla al azar por carrera: con una fija, todas las partidas del mismo
+    // jugador salían iguales. La semilla igual queda guardada en la partida.
+    const seed = Math.floor(Math.random() * 2 ** 31);
     marketRef.current = null; // carrera nueva: checkpoints nuevos
     setEventReceipt(null);
-    start(draftPlayer, { seed, difficulty });
+    setFrozen(null);
+    const number = Math.round(Number(draftNumber));
+    const options = { seed, difficulty, nationality: draftNationality };
+    if (Number.isInteger(number) && number >= 1 && number <= 99) options.shirtNumber = number;
+    if (draftPosition) options.position = draftPosition;
+    start(draftPlayer, options);
     window.setTimeout(() => setBusyAction(null), 600);
+  };
+  const freezeView = (selectedKey, spin = null) => {
+    setFrozen({
+      view: { phase, career, state, options, youthOffers, transferOffers, currentEvent, seasonReport, retirementDue, stoppedReason, isRetired, lastAction },
+      selectedKey,
+      spin,
+    });
   };
   const handleAction = (action, payload = null) => {
     // Cualquier acción distinta de la elección de evento invalida el recibo
@@ -98,6 +130,8 @@ export default function CareerScreen({ onBack, onNavigate }) {
     runAction(String(action), () => chooseAction(action, payload));
   };
   const handleYouth = (offer) => {
+    if (busyAction) return;
+    freezeView((offer && offer.id) || null);
     runAction('choose_youth_club', () => chooseYouthClubAndStart(offer));
   };
   // Elección de evento: se "fotografía" la opción (label + description del
@@ -114,9 +148,21 @@ export default function CareerScreen({ onBack, onNavigate }) {
       choiceLabel: cleanText(chosen.label),
       choiceNarrative: cleanText(chosen.description),
     } : null);
+    if (chosen && !busyAction) {
+      freezeView(chosen.id, { eventId: event.id || null, choiceId: chosen.id, careerBefore: career, tone: null, done: false });
+    }
     handleAction('choose_event_choice', choiceId);
   };
-  const handleReset = () => { setConfirmReset(false); setEventReceipt(null); marketRef.current = null; reset(); };
+  // Destinos: se congela la miniatura elegida antes de resolver.
+  const handleDestination = (action, payload = null) => {
+    if (busyAction) return;
+    const key = action === FLOW_ACTIONS.STAY ? 'stay'
+      : action === FLOW_ACTIONS.RETIRE ? 'retire'
+      : ((payload && payload.id) || null);
+    freezeView(key);
+    handleAction(action, payload);
+  };
+  const handleReset = () => { setEventReceipt(null); setFrozen(null); marketRef.current = null; reset(); };
 
   const focusKey = useMemo(() => {
     if (!career) return 'setup';
@@ -153,6 +199,53 @@ export default function CareerScreen({ onBack, onNavigate }) {
   // Guard por checkpoint: si el mercado no devuelve ofertas, la fase queda en
   // 'decision' y la UI muestra club actual + retirarse sin reintentar en loop.
   // ---------------------------------------------------------------------------
+  // Avance de temporadas de a una (como Copero): presentación sobre `career`.
+  const spin = frozen && frozen.spin ? frozen.spin : null;
+  const spinning = Boolean(spin && !spin.done);
+  // Resultado real del evento (lo dejó el motor en lastDecision): la ruleta se
+  // clava ahí. Mientras gira, la tabla sigue mostrando la carrera de antes.
+  const lastDecision = career && career.lastDecision;
+  const spinTone = spin && lastDecision && lastDecision.eventId === spin.eventId && lastDecision.choiceId === spin.choiceId
+    && lastDecision.season === (spin.careerBefore && spin.careerBefore.season)
+    ? (lastDecision.ovrDelta > 0 ? 'up' : lastDecision.ovrDelta < 0 ? 'down' : 'same')
+    : null;
+  const handleSpinDone = useCallback(() => {
+    setFrozen((prev) => (prev && prev.spin ? { ...prev, spin: { ...prev.spin, done: true } } : prev));
+  }, []);
+  // Seguro: si el motor no dejó resultado (acción rechazada), no se traba.
+  useEffect(() => {
+    if (!spinning || spinTone) return undefined;
+    const timer = window.setTimeout(handleSpinDone, 1500);
+    return () => window.clearTimeout(timer);
+  }, [spinning, spinTone, handleSpinDone]);
+  const { revealing: revealingSeasons, skip: skipReveal, displayCareer } = useSeasonReveal(spinning ? spin.careerBefore : career);
+  const revealing = revealingSeasons || spinning;
+
+  // Títulos: el aviso sale cuando la reproducción LLEGA a la temporada en que
+  // se ganó, no apenas el motor la simula. Se van marcando los ya mostrados y
+  // la cola del hook se vacía recién cuando no queda ninguno pendiente.
+  const trophyKey = (t) => `${t && t.season}-${t && t.type}-${t && t.label}`;
+  const [shownTrophies, setShownTrophies] = useState(() => new Set());
+  const visibleTrophies = (trophyToasts || []).filter((t) => (
+    !shownTrophies.has(trophyKey(t))
+    && (!revealing || !Number.isFinite(t && t.season) || t.season < displayCareer.season)
+  ));
+  // Callback estable: el overlay reinicia su temporizador si cambia onFinish,
+  // y la pantalla se redibuja en cada temporada revelada.
+  const visibleRef = useRef(visibleTrophies);
+  visibleRef.current = visibleTrophies;
+  const handleTrophiesShown = useCallback(() => {
+    setShownTrophies((prev) => new Set([...prev, ...visibleRef.current.map(trophyKey)]));
+  }, []);
+  useEffect(() => {
+    const queue = trophyToasts || [];
+    if (revealing || queue.length === 0) return;
+    if (queue.every((t) => shownTrophies.has(trophyKey(t)))) {
+      clearTrophyToasts();
+      setShownTrophies(new Set());
+    }
+  }, [revealing, trophyToasts, shownTrophies, clearTrophyToasts]);
+
   const checkpointKey = useMemo(() => {
     if (!career || !state) return null;
     const careerTag = (career.snapshot && career.snapshot.createdAt) || career.playerId || 'career';
@@ -164,10 +257,37 @@ export default function CareerScreen({ onBack, onNavigate }) {
     if (phase !== FLOW_PHASES.DECISION) return;
     if (!state || !career || retirementDue) return;   // retiro obligatorio: única opción
     if (busyAction) return;                           // hay una acción en curso
+    if (revealing) return;                            // todavía se están mostrando temporadas
     if (checkpointKey === null || marketRef.current === checkpointKey) return;
     marketRef.current = checkpointKey;
     chooseAction(FLOW_ACTIONS.TRANSFER);
-  }, [phase, state, career, retirementDue, busyAction, checkpointKey, chooseAction]);
+  }, [phase, state, career, retirementDue, busyAction, revealing, checkpointKey, chooseAction]);
+
+  // Se suelta el panel congelado cuando ya hay opciones nuevas para mostrar:
+  // terminó la ruleta y la reproducción, no hay acción en curso y el mercado
+  // (que se abre solo en 'decision') ya se pidió.
+  const marketPending = phase === FLOW_PHASES.DECISION && !retirementDue && checkpointKey !== null && marketRef.current !== checkpointKey;
+  useEffect(() => {
+    if (!frozen || revealing || busyAction) return;
+    if (phase === FLOW_PHASES.SEASON || marketPending) return;
+    setFrozen(null);
+  }, [frozen, revealing, busyAction, phase, marketPending]);
+
+  // Mientras se reproduce el tramo las opciones desaparecen; se reserva su alto
+  // para que la pantalla no salte (y la tabla no cambie de lugar) y al terminar
+  // las opciones vuelvan al mismo sitio.
+  const actionRef = useRef(null);
+  const heldActionH = useRef(0);
+  useLayoutEffect(() => {
+    const el = actionRef.current;
+    if (!el) return;
+    if (revealing) {
+      el.style.minHeight = heldActionH.current ? `${heldActionH.current}px` : '';
+    } else {
+      el.style.minHeight = '';
+      heldActionH.current = el.offsetHeight;
+    }
+  });
 
   if (!state || !career) {
     return (
@@ -177,7 +297,13 @@ export default function CareerScreen({ onBack, onNavigate }) {
           <CareerSetup
             onBack={onBack} onStart={handleStart} stoppedReason={stoppedReason}
             draftName={draftName} onDraftName={setDraftName} difficulty={difficulty}
-            onDifficulty={setDifficulty} seedInput={seedInput} onSeedInput={setSeedInput}
+            onDifficulty={setDifficulty}
+            position={draftPosition}
+            onPosition={setDraftPosition}
+            nationality={draftNationality}
+            onNationality={setDraftNationality}
+            shirtNumber={draftNumber}
+            onShirtNumber={setDraftNumber}
             busy={busyAction === 'start'}
           />
         </div>
@@ -189,11 +315,35 @@ export default function CareerScreen({ onBack, onNavigate }) {
   return (
     <div className="career-screen" ref={topRef}>
       <div className="career-shell career-shell--main">
-        <CareerHeader career={career} phase={phase} onBack={onBack} onNavigate={onNavigate} />
+        <CareerHeader career={displayCareer} phase={phase} onBack={onBack} onNavigate={onNavigate} />
 
-        <div className="career-dashboard">
+        <div className="career-dashboard career-dashboard--single">
           <div className="career-primary">
-            <CareerPlayerCard career={career} isRetired={isRetired} />
+            <div className="career-col career-col--history">
+            <CareerPlayerCard career={displayCareer} isRetired={isRetired && !revealing} />
+            {/* Pantalla única: en el celular la decisión va pegada a la carta y
+                la trayectoria abajo (orden por CSS); en escritorio, al costado. */}
+            <CareerTimeline career={displayCareer} phase={phase} />
+            {revealingSeasons ? (
+              <button type="button" className="career-skip" onClick={skipReveal}>
+                Saltar al final del tramo
+              </button>
+            ) : null}
+            <CareerTrophyShelf career={displayCareer} />
+            </div>
+            <div className="career-col career-col--action" ref={actionRef}>
+            {/* Mientras se reproduce el tramo, la tabla es la protagonista: la
+                decisión aparece recién al terminar (sin tarjeta intermedia). */}
+            {frozen ? (
+            <PhaseBody
+              {...frozen.view}
+              busyAction={null} feedback={null}
+              eventReceipt={eventReceipt} showEventReceipt={false}
+              selectedKey={frozen.selectedKey}
+              spin={frozen.spin ? { choiceId: frozen.spin.choiceId, tone: spinTone, onDone: handleSpinDone } : null}
+              onEventChoose={() => {}} onYouth={() => {}} onAction={() => {}} onReset={() => {}}
+            />
+            ) : revealing ? null : (
             <PhaseBody
               phase={phase} career={career} state={state} options={options}
               youthOffers={youthOffers} transferOffers={transferOffers}
@@ -204,18 +354,17 @@ export default function CareerScreen({ onBack, onNavigate }) {
               eventReceipt={eventReceipt} showEventReceipt={showEventReceipt}
               onEventChoose={handleEventChoose}
               onYouth={handleYouth}
-              onAction={handleAction} onReset={handleReset}
+              onAction={handleDestination} onReset={handleReset}
             />
+            )}
+            </div>
           </div>
-          <aside className="career-secondary" aria-label="Trayectoria">
-            <CareerTimeline career={career} phase={phase} />
-          </aside>
         </div>
-        <CareerFooter isRetired={isRetired} confirmReset={confirmReset} onAskReset={() => setConfirmReset(true)} onCancelReset={() => setConfirmReset(false)} onConfirmReset={handleReset} />
+        <CareerFooter isRetired={isRetired} onReset={handleReset} />
       </div>
       {/* Aviso temporal de títulos: overlay automático sobre el flujo actual;
           al desaparecer, el checkpoint de debajo queda tal cual. */}
-      <CareerTrophyToast trophies={trophyToasts} onFinish={clearTrophyToasts} />
+      <CareerTrophyToast trophies={visibleTrophies} onFinish={handleTrophiesShown} />
     </div>
   );
 }
@@ -269,7 +418,34 @@ function SeasonFeedback({ busy, feedback, lastAction, hideSeasonEcho = false }) 
 //   Visualizar
 //   Tres semanas de respiración y planchas...
 //   (sin botón: convive con las opciones del checkpoint)
-function EventChoiceResult({ choiceLabel, choiceNarrative }) {
+// El relato que se muestra es el del resultado real (sube/baja/igual) que dejó
+// el motor en lastDecision; si no coincide con el recibo, el texto de la opción.
+function receiptDecision(receipt, career) {
+  const last = career && career.lastDecision;
+  return last && last.eventId === receipt.eventId && last.choiceId === receipt.choiceId ? last : null;
+}
+
+function receiptNarrative(receipt, career) {
+  const last = receiptDecision(receipt, career);
+  if (last && last.narrative) return cleanText(last.narrative);
+  return receipt.choiceNarrative;
+}
+
+/** Lo que te dejó la decisión, en una línea: "+3 OVR · 2 fechas afuera". */
+function receiptOutcome(receipt, career) {
+  const last = receiptDecision(receipt, career);
+  if (!last) return null;
+  const parts = [];
+  if (Number.isFinite(last.ovrDelta)) {
+    parts.push(last.ovrDelta > 0 ? `+${last.ovrDelta} OVR` : last.ovrDelta < 0 ? `−${Math.abs(last.ovrDelta)} OVR` : 'OVR igual');
+  }
+  if (last.suspension > 0) parts.push(`${last.suspension} ${last.suspension === 1 ? 'temporada' : 'temporadas'} suspendido`);
+  if (last.transfer && last.transfer.targetClub && last.transfer.targetClub.name) parts.push(`${last.transfer.targetClub.name} te espera en el mercado`);
+  const tone = last.ovrDelta > 0 ? 'up' : last.ovrDelta < 0 ? 'down' : 'same';
+  return parts.length > 0 ? { text: parts.join(' · '), tone } : null;
+}
+
+function EventChoiceResult({ choiceLabel, choiceNarrative, outcome }) {
   return (
     <motion.div
       className="career-choice-result"
@@ -279,56 +455,35 @@ function EventChoiceResult({ choiceLabel, choiceNarrative }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
     >
-      <p className="career-choice-result-kicker"><Check size={14} /> Decisión tomada</p>
-      {choiceLabel ? <p className="career-choice-result-label">{choiceLabel}</p> : null}
+      {choiceLabel ? <p className="career-choice-result-label"><Check size={15} aria-hidden="true" /> {choiceLabel}</p> : null}
       {choiceNarrative ? <p className="career-choice-result-copy">{choiceNarrative}</p> : null}
+      {outcome ? <p className={`career-choice-result-outcome is-${outcome.tone}`}>{outcome.text}</p> : null}
     </motion.div>
   );
 }
 
-function RetiredPanel({ career, onReset, busy }) {
+function RetiredPanel({ career }) {
   const stats = (career && career.careerStats) || {};
-  const achievements = career && Array.isArray(career.achievements) ? career.achievements : [];
   const trophies = career && Array.isArray(career.trophies) ? career.trophies : [];
   const seasons = career && Array.isArray(career.seasonHistory) ? career.seasonHistory : [];
   const stints = career && Array.isArray(career.clubHistory) ? career.clubHistory : [];
-  const clubsCount = stints.length + (career && career.club ? 1 : 0);
+  // clubHistory ya incluye el club actual; una vuelta al mismo club no suma.
+  const clubsCount = new Set(stints.map((stint) => {
+    const club = stint && stint.club;
+    return club ? (club.slug || club.key || club.name) : null;
+  }).filter(Boolean)).size;
 
+  // El título del panel ("Carrera terminada") y la carta del jugador ya dicen
+  // quién y qué: acá va directo el resumen.
   return (
     <section className="career-section career-section--accent">
-      <div className="career-section-head">
-        <span className="career-section-kicker"><Trophy size={14} /> Carrera terminada</span>
-        <h2 className="career-section-title">{(career && career.name) || 'Jugador'}</h2>
-      </div>
-      <p className="career-phase-copy">
-        Resumen completo: números, clubes, títulos y logros.
-      </p>
+      <CareerShareCard career={career} />
       <div className="career-retired-grid">
         <div className="career-retired-cell"><span>Temporadas</span><b>{seasons.length}</b></div>
         <div className="career-retired-cell"><span>Clubes</span><b>{clubsCount || DASH}</b></div>
         <div className="career-retired-cell"><span>Goles</span><b>{Number.isFinite(stats.gls) ? stats.gls : DASH}</b></div>
         <div className="career-retired-cell"><span>Títulos</span><b>{trophies.length}</b></div>
       </div>
-      {achievements.length > 0 ? (
-        <ul className="career-retired-achievements">
-          {achievements.map((achievement, index) => (
-            <li key={`${(achievement && achievement.id) || 'logro'}-${index}`}>
-              <Check size={14} />
-              {(achievement && achievement.label) || (typeof achievement === 'string' ? achievement : 'Logro')}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="career-section-note">Sin logros registrados en esta carrera.</p>
-      )}
-      <button
-        type="button"
-        className="career-button career-button--primary career-button--block career-button--big"
-        onClick={onReset}
-        disabled={busy}
-      >
-        <RotateCcw size={16} /> Nueva carrera
-      </button>
     </section>
   );
 }
@@ -358,12 +513,13 @@ function PhaseBody({
   onYouth,
   onAction,
   onReset,
+  selectedKey = null,
+  spin = null,
 }) {
   const isBusy = (key) => busyAction === key;
   let body = null;
   let panelTitle = phaseLabel(phase);
   let panelKind = 'action';
-  let panelKicker = null;
   // La izquierda no repite la temporada: el eco "Temporada simulada." solo
   // tiene sentido en la fase donde se ejecutó la simulación (SEASON).
   const hideSeasonEcho = phase !== FLOW_PHASES.SEASON;
@@ -372,10 +528,10 @@ function PhaseBody({
     panelTitle = 'Elegí tu club';
     panelKind = 'offers';
     body = youthOffers.length > 0
-      ? <YouthOffers offers={youthOffers} onChoose={onYouth} busy={isBusy('choose_youth_club')} bare />
+      ? <YouthOffers offers={youthOffers} onChoose={onYouth} busy={isBusy('choose_youth_club')} bare selectedKey={selectedKey} />
       : (
         <p className="career-section-note">
-          El motor no generó ofertas para este jugador. Reiniciá la carrera para intentarlo otra vez.
+          Ningún club te vino a buscar esta vez. Tocá «Volver a jugar» para intentarlo de nuevo.
         </p>
       );
   } else if (phase === FLOW_PHASES.SEASON) {
@@ -391,16 +547,13 @@ function PhaseBody({
       </div>
     );
   } else if (phase === FLOW_PHASES.EVENT) {
-    // IZQUIERDA = qué decido AHORA. Sin bloque de temporada (vive en la
-    // trayectoria) y sin título redundante "Evento de carrera": la categoría
-    // del motor funciona como kicker y el título del evento es lo principal.
+    // Qué decido AHORA: solo el título del evento y su descripción (la
+    // categoría interna del motor no se muestra).
     const event = currentEvent && currentEvent.event ? currentEvent.event : null;
-    const category = event ? (EVENT_CATEGORIES[event.category] || 'Evento de carrera') : null;
     panelTitle = event ? cleanText(event.title) || 'Evento de carrera' : 'Evento de carrera';
     panelKind = 'event';
-    panelKicker = category ? cleanText(category) : null;
     body = (
-      <CareerEvent currentEvent={currentEvent} onChoose={onEventChoose} busy={isBusy('choose_event_choice')} bare hideCategory />
+      <CareerEvent currentEvent={currentEvent} onChoose={onEventChoose} busy={isBusy('choose_event_choice')} bare hideCategory spin={spin} />
     );
   } else if (phase === FLOW_PHASES.DECISION) {
     // Selector de destino: TODAS las alternativas a la vista (club actual +
@@ -415,7 +568,8 @@ function PhaseBody({
         {showEventReceipt ? (
           <EventChoiceResult
             choiceLabel={eventReceipt.choiceLabel}
-            choiceNarrative={eventReceipt.choiceNarrative}
+            choiceNarrative={receiptNarrative(eventReceipt, career)}
+            outcome={receiptOutcome(eventReceipt, career)}
           />
         ) : null}
         <CareerDestinations
@@ -424,7 +578,7 @@ function PhaseBody({
           onStay={() => onAction(FLOW_ACTIONS.STAY)}
           onAccept={(offer) => onAction(FLOW_ACTIONS.TRANSFER, offer)}
           onRetire={() => onAction(FLOW_ACTIONS.RETIRE)}
-          busy={busyAction} bare
+          busy={busyAction} bare selectedKey={selectedKey}
         />
       </>
     );
@@ -439,7 +593,8 @@ function PhaseBody({
         {showEventReceipt ? (
           <EventChoiceResult
             choiceLabel={eventReceipt.choiceLabel}
-            choiceNarrative={eventReceipt.choiceNarrative}
+            choiceNarrative={receiptNarrative(eventReceipt, career)}
+            outcome={receiptOutcome(eventReceipt, career)}
           />
         ) : null}
         <CareerDestinations
@@ -448,20 +603,22 @@ function PhaseBody({
           onStay={() => onAction(FLOW_ACTIONS.STAY)}
           onAccept={(offer) => onAction(FLOW_ACTIONS.TRANSFER, offer)}
           onRetire={() => onAction(FLOW_ACTIONS.RETIRE)}
-          busy={busyAction} bare
+          busy={busyAction} bare selectedKey={selectedKey}
         />
       </>
     );
   } else if (phase === FLOW_PHASES.RETIRED || isRetired) {
     panelTitle = 'Carrera terminada';
     panelKind = 'final';
-    body = <RetiredPanel career={career} onReset={onReset} busy={isBusy('reset')} />;
+    body = <RetiredPanel career={career} />;
   } else if (phase === FLOW_PHASES.STOPPED) {
-    panelTitle = 'Estado detenido';
+    panelTitle = 'La carrera se trabó';
     panelKind = 'final';
     body = (
       <p className="career-section-note">
-        {`Motivo: ${stoppedReason || 'desconocido'}. Reiniciá la carrera para volver a jugar.`}
+        {stoppedReason === 'invalid_player'
+          ? 'No pudimos armar la carrera con este jugador. Tocá «Volver a jugar» y probá con otro.'
+          : 'Algo se rompió en el camino. Tocá «Volver a jugar» para arrancar otra.'}
       </p>
     );
   }
@@ -477,10 +634,8 @@ function PhaseBody({
   return (
     <section className="career-decision-panel" aria-label={`Acción actual: ${panelTitle}`}>
       <div className="career-decision-head">
-        <span className="career-decision-tag">
-          {panelKind === 'final' ? 'RESUMEN' : panelKind === 'offers' ? 'DEBUT' : 'ACCIÓN'}
-        </span>
-        {panelKicker ? <span className="career-decision-kicker">{panelKicker}</span> : null}
+        {/* Sin etiquetas de tipo de panel ("ACCIÓN"/"DEBUT") ni categoría
+            interna del evento ("Preparación"): solo título y descripción. */}
         <h2 className="career-decision-title career-decision-title--clamp">{panelTitle}</h2>
       </div>
       <SeasonFeedback busy={busyAction} feedback={feedback} lastAction={lastAction} hideSeasonEcho={hideSeasonEcho} />
@@ -501,33 +656,44 @@ function PhaseBody({
 }
 
 // ---------------------------------------------------------------------------
-// Footer con el reinicio en dos pasos
+// Footer con el reinicio. Con la carrera en juego pide un segundo toque (se
+// pierde todo); ya retirado va directo.
 // ---------------------------------------------------------------------------
 
-function CareerFooter({ isRetired, confirmReset, onAskReset, onCancelReset, onConfirmReset }) {
+function CareerFooter({ isRetired, onReset }) {
+  const [armed, setArmed] = useState(false);
+  // Se desarma sola: en el celular el botón no siempre recibe foco (ni blur).
+  useEffect(() => {
+    if (!armed) return undefined;
+    const timer = window.setTimeout(() => setArmed(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [armed]);
+  const handleClick = () => {
+    if (isRetired || armed) {
+      setArmed(false);
+      onReset();
+      return;
+    }
+    setArmed(true);
+  };
   return (
     <footer className="career-footer">
-      <span>
-        {isRetired
-          ? 'Carrera cerrada. El resumen queda guardado hasta que reinicies.'
-          : 'Tu carrera se guarda automáticamente en este dispositivo.'}
+      <span aria-live="polite">
+        {armed
+          ? 'Se pierde esta carrera. Tocá de nuevo para empezar otra.'
+          : isRetired
+            ? 'Carrera cerrada. El resumen queda hasta que vuelvas a jugar.'
+            : null}
       </span>
       <div className="career-footer-tools">
-        {confirmReset ? (
-          <div className="career-reset-confirm">
-            <span>¿Borrar la carrera guardada?</span>
-            <button type="button" className="career-button career-button--danger" onClick={onConfirmReset}>
-              Sí, borrar
-            </button>
-            <button type="button" className="career-button career-button--ghost" onClick={onCancelReset}>
-              Cancelar
-            </button>
-          </div>
-        ) : (
-          <button type="button" className="career-button career-button--ghost" onClick={onAskReset}>
-            <RotateCcw size={15} /> Reiniciar carrera
-          </button>
-        )}
+        <button
+          type="button"
+          className={`career-button career-button--ghost${armed ? ' is-armed' : ''}`}
+          onClick={handleClick}
+          onBlur={() => setArmed(false)}
+        >
+          <RotateCcw size={15} /> {armed ? 'Sí, empezar de nuevo' : 'Volver a jugar'}
+        </button>
       </div>
     </footer>
   );

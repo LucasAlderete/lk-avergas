@@ -1,44 +1,32 @@
 // ============================================================================
-// CAPA REACT DEL MODO CARRERA — useCareer.js (Pasos 7 + 10)
+// CAPA REACT DEL MODO CARRERA — useCareer.js
 // ============================================================================
-// Hook que consume flow.js (orquestador puro) y persistence.js desde React:
+// Hook que consume flow.js (orquestador puro) desde React:
 //
-//   React (useCareer)  →  persistence.js  (restaurar / autosave / borrar save)
-//                      →  flow.js  →  engine.js / events.js
+//   React (useCareer)  →  flow.js  →  engine.js / events.js
 //
 // Reglas de este archivo:
-// - SOLO lógica de React: guarda el flow state en useState, delega cada acción
-//   a flow.js y delega leer/guardar/borrar a persistence.js. NO duplica nada:
-//   createCareer, simulateSeason, transferencias, stay, retiro, eventos,
-//   simulación, validación, serialización ni storage viven acá: acá se llaman.
+// - SOLO lógica de React: guarda el flow state en useState y delega cada
+//   acción a flow.js. NO duplica nada: createCareer, simulateSeason,
+//   transferencias, stay, retiro, eventos, simulación y validación viven en
+//   flow/engine: acá se llaman.
+// - SIN persistencia: la carrera empieza y termina en la sesión (no es un
+//   juego a largo plazo). Recargar la página arranca de cero. Lo que SÍ
+//   sobrevive es el cambio de pantalla: el estado se guarda en memoria del
+//   módulo (sessionCareer), así ir a Plantel y volver no borra la carrera.
 // - TEMPORADA AUTOMÁTICA: la fase 'season' es de tránsito del motor y nunca
 //   espera un clic. Tras crear la carrera, tras elegir el club de debut y
 //   tras cada decisión (stay/transfer), advanceToCheckpoint() repite
 //   flow.advanceSeason hasta el próximo checkpoint (evento / decisión /
 //   retiro): la UI no necesita —ni expone— ningún botón de avance manual.
-// - Sin storage propio: este archivo NO menciona localStorage /
-//   sessionStorage / IndexedDB / window / document. La única puerta al save es
-//   persistence.js (que tampoco toca claves de otras capas).
 // - Estado inicial null: el hook NO crea carreras de un jugador arbitrario.
 //   La carrera empieza cuando la UI llama explícitamente start(player,
-//   options?) o cuando hay una carrera persistida válida (restauración).
-//   flow.startCareer se encarga de las validaciones.
-// - Restauración (Paso 10): loadCareerState() se llama DENTRO de un useEffect
-//   de montaje (nunca durante el render) con guarda por ref, así que corre UNA
-//   sola vez por montaje real aunque StrictMode monte/desmonte/remonte en dev.
-//   Sin save / save corrupto / schema o mundo incompatible → null → el hook
-//   arranca sin carrera, sin lanzar excepciones.
-// - Autosave (Paso 10): todo cambio del flow state de una carrera activa se
-//   persiste COMPLETO (career + fase + ofertas + evento + reporte +
-//   seasonsSinceDecision + stoppedReason + lastAction) con saveCareerState().
-//   Sin career (sin carrera o estado detenido) no se escribe nada. El estado
-//   recién restaurado no se reescribe: ya está en storage. saveCareerState
-//   valida y clona; si devuelve ok:false la carrera sigue en memoria.
+//   options?). flow.startCareer se encarga de las validaciones.
 // - AVISO DE TÍTULOS (overlay temporal, sin fase nueva): los helpers puros
 //   exportados (trophyCelebrationId / pendingTrophyToasts /
 //   withCelebratedTrophyIds / baselineCelebratedTrophyIds) solo diff-ean
 //   career.trophies (lo que ya genera el engine) contra celebratedTrophyIds
-//   (campo del flow state que persistence.js guarda con el save). No calculan
+//   (campo del flow state, en memoria). No calculan
 //   títulos, no agregan estados al flow y no requieren acción del jugador.
 // - Seguro para render: si state === null, los derivados exponen null/[]
 //   (nunca se accede a state.career sin guarda) y el primer render no
@@ -48,15 +36,12 @@
 //   estado se mantiene y queda expuesto en lastAction para que la UI decida
 //   cómo mostrarlo.
 // - StrictMode: los updaters funcionales pueden invocarse dos veces en dev;
-//   flow.js es puro, así que no hay efectos colaterales. Los efectos de
-//   restauración/autosave son idempotentes (cargar dos veces el mismo save no
-//   corrompe nada y guardar no modifica el estado) y el de autosave NUNCA
-//   llama a setState: sin ciclo load → save → load. Para trayectorias
+//   flow.js es puro, así que no hay efectos colaterales. Para trayectorias
 //   reproducibles, la UI puede pasar { seed } en cada acción (el rng lo
 //   resuelve flow.js: options.rng → options.seed → default).
 // ============================================================================
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   startCareer as flowStartCareer,
@@ -67,11 +52,10 @@ import {
   FLOW_PHASES,
 } from './flow.js';
 
-import {
-  saveCareerState,
-  loadCareerState,
-  clearCareerState,
-} from './persistence.js';
+
+// Memoria de la sesión: CareerScreen se desmonta al navegar a otra sección y
+// sin esto la carrera se perdía. Vive solo en memoria (recargar la borra).
+const sessionCareer = { state: null, trophyToasts: [] };
 
 /** Clon defensivo del player: el engine/flow jamás muta el original y esta
  *  capa lo garantiza por contrato (los players de data.js son JSON puro). */
@@ -95,8 +79,8 @@ function safeOptions(options) {
 // ---------------------------------------------------------------------------
 // El engine ya registra cada título en career.trophies (rollSeasonTrophies vía
 // simulateSeason): acá NO se calcula nada. Solo se diff-ean esos títulos contra
-// celebratedTrophyIds (flow state persistido) para saber cuáles falta avisar,
-// una sola vez por título y sin repetirlos al re-renderizar o recargar el save.
+// celebratedTrophyIds (flow state en memoria) para saber cuáles falta avisar,
+// una sola vez por título y sin repetirlos al re-renderizar.
 // ---------------------------------------------------------------------------
 
 /** Id estable de un título del engine para el registro de avisos. */
@@ -180,7 +164,7 @@ function advanceToCheckpoint(state, options = {}) {
  * Hook del nuevo modo carrera. API:
  *
  *   const {
- *     state,            // flow state crudo de flow.js | null (lo que se persiste)
+ *     state,            // flow state crudo de flow.js | null (en memoria)
  *     phase,            // FLOW_PHASES vigente | null (null = sin carrera)
  *     career,           // career del engine | null (nunca se toca directo)
  *     youthOffers,      // ofertas de debut | [] (solo phase 'debut')
@@ -202,91 +186,32 @@ function advanceToCheckpoint(state, options = {}) {
  *     chooseYouthClubAndStart, // (offer, options?) → lo mismo con rng/seed
  *     advanceSeason,    // (options?) → simula hasta el próximo checkpoint
  *     chooseAction,     // (action, payload?, options?) → acción de flow
- *     reset,            // () → vuelve al estado inicial (null) + borra el save
+ *     reset,            // () → vuelve al estado inicial (null)
  *   } = useCareer();
  *
- * Persistencia: al montar intenta restaurar la carrera guardada
- * (loadCareerState); cada cambio del flow state con career se guarda completo
- * (saveCareerState); reset() además elimina el save (clearCareerState). Este
- * hook NUNCA toca storage por su cuenta.
+ * Sin persistencia: la carrera vive en memoria hasta que se recarga la página.
  */
 export function useCareer() {
-  // Estado inicial: null → "sin carrera". La carrera nace con start() o con la
-  // restauración del save (efecto de montaje de abajo), nunca en el render.
-  const [state, setState] = useState(null);
+  // Estado inicial: null → "sin carrera". La carrera nace con start(), nunca
+  // en el render.
+  // Arranca de la memoria de la sesión (null si todavía no hubo carrera).
+  const [state, setState] = useState(() => sessionCareer.state);
   // Cola VISUAL del aviso temporal de títulos (peso cero en el flow): los ya
   // detectados que faltan mostrar. El registro de "ya vistos" vive en el flow
-  // state (celebratedTrophyIds) y viaja en el save con el autosave de siempre.
-  const [trophyToasts, setTrophyToasts] = useState([]);
+  // state (celebratedTrophyIds).
+  const [trophyToasts, setTrophyToasts] = useState(() => sessionCareer.trophyToasts);
 
-  // ---------------------------------------------------------------------------
-  // Guardas de montaje (refs: sobreviven al remonte simulado de StrictMode y no
-  // provocan renders extra).
-  //   hydrationRef → la restauración corre UNA vez por montaje real.
-  //   restoredRef  → flow state que vino del save: ya está persistido, así que
-  //                  el autosave no lo reescribe (sin write redundante en el
-  //                  primer commit y sin posibilidad de ciclo load → save).
-  // ---------------------------------------------------------------------------
-  const hydrationRef = useRef(false);
-  const restoredRef = useRef(null);
-
-  // ---------------------------------------------------------------------------
-  // Restauración (montaje): loadCareerState() ya con el componente montado,
-  // jamás durante el render. Orden importante: este efecto va ANTES del de
-  // autosave para que el estado restaurado exista antes de cualquier guardado.
-  // loadCareerState() devuelve null ante ausencia de save, JSON corrupto,
-  // schema/mundo incompatible o storage ausente: los cuatro casos son "sin
-  // carrera" y ninguno lanza (acá tampoco se lanza).
-  // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (hydrationRef.current) return; // ya restaurado en este montaje
-    hydrationRef.current = true;
-
-    let restored = null;
-    try {
-      restored = loadCareerState();
-    } catch {
-      restored = null; // defensa extra: un storage hostil no rompe la carrera
-    }
-
-    // Sin carrera restaurable (o resto inválido): se arranca sin carrera.
-    if (!restored || typeof restored !== 'object' || !restored.career) return;
-
-    // Un save atascado en 'season' (guardado entre temporadas con el flujo
-    // manual) retoma el ciclo automáticamente: misma regla que en cada
-    // acción. Si la fase no es 'season', advanceToCheckpoint devuelve el
-    // mismo objeto y el autosave de abajo no reescribe el save.
-    restoredRef.current = restored;
-    setState(advanceToCheckpoint(restored));
-  }, []);
-
-  // ---------------------------------------------------------------------------
-  // Autosave: cada cambio del flow state de una carrera activa se persiste
-  // COMPLETO (saveCareerState valida y clona: career, phase, youthOffers,
-  // transferOffers, currentEvent, seasonReport, retirementDue,
-  // seasonsSinceDecision, stoppedReason, lastAction). Sin career no se escribe
-  // nada → nunca se crea un save parcial. Si el guardado falla (ok:false,
-  // storage ausente) la carrera continúa en memoria y la UI no se entera.
-  // Este efecto NO llama a setState y NO crea saves: save no puede
-  // re-dispararse a sí mismo (sin loop).
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    if (!state || !state.career) return;
-    if (state === restoredRef.current) return; // ya está en storage (vino de ahí)
-
-    try {
-      saveCareerState(state);
-    } catch {
-      // Best-effort: la persistencia nunca rompe la carrera en memoria.
-    }
-  }, [state]);
+    sessionCareer.state = state;
+    sessionCareer.trophyToasts = trophyToasts;
+  }, [state, trophyToasts]);
 
   // ---------------------------------------------------------------------------
   // Aviso temporal de títulos: capa visual SIN fase nueva ni acción del jugador.
   // Detección = career.trophies (engine) − celebratedTrophyIds (save):
   //   · sin títulos → no encola nada;
   //   · títulos nuevos → se encolan UNA vez y se registran YA (un re-render o
-  //     un reload posterior no los repite; el autosave de arriba persiste el
+  //     un re-render posterior no los repite; el registro viaja con el
   //     registro junto con el resto del flow state);
   //   · save legado (sin registro) → siembra el histórico sin mostrarlo;
   //   · sin carrera → la cola se vacía (pertenecía a la carrera anterior).
@@ -366,19 +291,10 @@ export function useCareer() {
     ));
   }, []);
 
-  /** Vuelve al estado inicial ("sin carrera") y ELIMINA el save del nuevo modo
-   *  carrera (persistence.clearCareerState → CAREER_SAVE_KEY). NUNCA toca las
-   *  claves del sistema viejo (Copero/history/player/screen/match/lineup/
-   *  injuries/player-status): esas las administra su propio sistema. */
+  /** Vuelve al estado inicial ("sin carrera"). */
   const reset = useCallback(() => {
-    try {
-      clearCareerState();
-    } catch {
-      // Best-effort: aunque falle el borrado, el estado React se limpia igual.
-    }
-    restoredRef.current = null; // el save dejó de existir
-    setState(null);             // con state null el autosave no escribe nada
-    setTrophyToasts([]);        // la cola del aviso era de esa carrera
+    setState(null);
+    setTrophyToasts([]); // la cola del aviso era de esa carrera
   }, []);
 
   /** Vacía la cola del aviso de títulos. La llama el overlay cuando termina

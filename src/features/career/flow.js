@@ -61,7 +61,7 @@ import {
   applyEventChoice,
 } from './events.js';
 
-import { EVENT_CHANCE_PER_CHECKPOINT } from './config.js';
+import { AGE, EVENT_CHANCE_PER_CHECKPOINT } from './config.js';
 
 // ============================================================================
 // FASES DEL FLUJO + CONTRATO DE ESTADO
@@ -284,7 +284,12 @@ function choiceFromPayload(payload) {
  * @returns {object} Flow state inicial.
  */
 export function startCareer(player, options = {}) {
-  const safeOptions = (options && typeof options === 'object') ? options : {};
+  const rawOptions = (options && typeof options === 'object') ? options : {};
+  // Un solo RNG para todo el arranque: createCareer (sortea el techo) y
+  // generateYouthOffers lo comparten, así { seed: s } ≡ { rng: createSeededRng(s) }.
+  const safeOptions = (rawOptions.rng == null && rawOptions.seed != null)
+    ? { ...rawOptions, rng: createSeededRng(rawOptions.seed) }
+    : rawOptions;
 
   // createCareer no es defensivo con players inválidos (verificado: lanza con
   // null/undefined). El flow no rompe ese contrato: captura y devuelve un
@@ -694,6 +699,12 @@ function resolveRetireAction(base) {
  *
  * @returns {Array<string>}
  */
+/** Retiro por decisión propia solo desde AGE.VOLUNTARY_RETIRE (como Copero). */
+function canRetireVoluntarily(base) {
+  const age = base && base.career && Number.isFinite(base.career.age) ? base.career.age : null;
+  return age === null || age >= AGE.VOLUNTARY_RETIRE;
+}
+
 export function getCareerDecisionOptions(state) {
   const base = normalizeState(state);
   if (!base) return [];
@@ -706,9 +717,10 @@ export function getCareerDecisionOptions(state) {
     case FLOW_PHASES.EVENT:
       return ['choose_event_choice'];
     case FLOW_PHASES.TRANSFER:
-      return ['transfer', 'stay', 'retire'];
+      return canRetireVoluntarily(base) ? ['transfer', 'stay', 'retire'] : ['transfer', 'stay'];
     case FLOW_PHASES.DECISION:
-      return base.retirementDue === true ? ['retire'] : ['stay', 'transfer', 'retire'];
+      if (base.retirementDue === true) return ['retire'];
+      return canRetireVoluntarily(base) ? ['stay', 'transfer', 'retire'] : ['stay', 'transfer'];
     default:
       return [];
   }

@@ -1,14 +1,15 @@
 // =============================================================================
 // Catálogo curado de clubes REALES — modo carrera.
 //
-// UNIVERSO CERRADO (docs/README-CAREER-CLUBS.md): 296 clubes en 13
-// competiciones de 8 países — rondas 2025-26 / 2026 verificadas en Wikipedia:
+// UNIVERSO CERRADO (docs/README-CAREER-CLUBS.md): 332 clubes en 15
+// competiciones de 10 países — rondas 2025-26 / 2026 verificadas en Wikipedia:
 //   Argentina: Primera División (30) · Primera Nacional (36)
 //   España: LaLiga (20) · Segunda División (22)
 //   Francia: Ligue 1 (18) · Ligue 2 (18)
 //   Inglaterra: Premier League (20) · Championship (24)
 //   Italia: Serie A (20) · Serie B (20) · Brasil: Série A (20)
 //   Estados Unidos: MLS (30) · México: Liga MX (18)
+//   Portugal: Liga Portugal (18) · Alemania: Bundesliga (18)
 //
 // Reglas (docs/README-CAREER-CLUBS.md):
 //  - Datos por club: nombre/ciudad/estadio/colores/fundación = hechos públicos.
@@ -77,7 +78,7 @@ const RAW = [
   {c:'AR',l:'ar_nac',city:'Boulogne Sur Mer',n:'Acassuso',s:'ACA',p:'#003b95',q:'#ffffff',o:54,d:1,k:0,i:0,y:1922,st:'La Quema'},
   {c:'AR',l:'ar_nac',city:'Munro',n:'Colegiales',s:'COL',p:'#eb0b2d',q:'#ffffff',o:54,d:1,k:0,i:0,y:1931,st:'Libertarios Unidos'},
   {c:'AR',l:'ar_nac',city:'Puerto Madryn',n:'Deportivo Madryn',s:'MDY',p:'#003b95',q:'#ffd200',o:54,d:1,k:0,i:0,y:1922,st:'Abel Sastre'},
-  {c:'AR',l:'ar_nac',city:'Libertad',n:'Ferroarril Midland',s:'MLD',p:'#003b95',q:'#ffffff',o:54,d:1,k:0,i:0,y:1920,st:'Ciudad de Libertad'},
+  {c:'AR',l:'ar_nac',city:'Libertad',n:'Ferrocarril Midland',s:'MLD',p:'#003b95',q:'#ffffff',o:54,d:1,k:0,i:0,y:1920,st:'Ciudad de Libertad'},
   {c:'AR',l:'ar_nac',city:'Santiago del Estero',n:'Mitre (Santiago del Estero)',s:'MTR',p:'#003b95',q:'#ffffff',o:54,d:1,k:0,i:0,y:1907,st:'Doctores José y Antonio Castiglione'},
   {c:'AR',l:'ar_nac',city:'Tristán Suárez',n:'Tristán Suárez',s:'TSU',p:'#111111',q:'#ffd200',o:54,d:1,k:0,i:0,y:1931,st:'20 de Octubre'},
   {c:'AR',l:'ar_nac',city:'Los Polvorines',n:'San Miguel',s:'SNM',p:'#003b95',q:'#ffffff',o:53,d:1,k:0,i:0,y:1907,st:'Malvinas Argentinas (Los Polvorines)'},
@@ -329,6 +330,46 @@ const RAW = [
   {c:'MX',l:'mx_1',city:'Puebla',n:'Puebla',s:'PUE',p:'#003b95',q:'#ffffff',o:63,d:2,k:1,i:0,y:1944,st:'Cuauhtémoc'},
   {c:'MX',l:'mx_1',city:'Querétaro',n:'Querétaro',s:'QUE',p:'#111111',q:'#ffffff',o:61,d:2,k:0,i:0,y:1950,st:'Corregidora'},
   {c:'MX',l:'mx_1',city:'Ciudad de México',n:'Atlante',s:'ATN',p:'#003b95',q:'#ffffff',o:60,d:1,k:1,i:1,y:1916,st:'Ciudad de los Deportes'},
+  // ------------------------------------------------------------- PORTUGAL
+  // Liga Portugal (18) — temporada 2025-26
+  {c:'PT',l:'pt_1',city:'Lisboa',n:'Benfica',s:'BEN',p:'#e30613',q:'#ffffff',o:82,d:5,k:5,i:4,y:1904,st:'Estádio da Luz'},
+  {c:'PT',l:'pt_1',city:'Oporto',n:'Porto',s:'POR',p:'#003b95',q:'#ffffff',o:82,d:5,k:5,i:4,y:1893,st:'Estádio do Dragão'},
+  {c:'PT',l:'pt_1',city:'Lisboa',n:'Sporting CP',s:'SCP',p:'#008057',q:'#ffffff',o:82,d:5,k:5,i:4,y:1906,st:'José Alvalade'},
+  {c:'PT',l:'pt_1',city:'Braga',n:'Braga',s:'BRA',p:'#e30613',q:'#ffffff',o:77,d:4,k:3,i:2,y:1921,st:'Municipal de Braga'},
+  {c:'PT',l:'pt_1',city:'Guimarães',n:'Vitória de Guimarães',s:'VSC',p:'#ffffff',q:'#111111',o:74,d:3,k:3,i:2,y:1922,st:'D. Afonso Henriques'},
+  {c:'PT',l:'pt_1',city:'Ponta Delgada',n:'Santa Clara',s:'SCL',p:'#e30613',q:'#ffffff',o:71,d:3,k:1,i:1,y:1921,st:'São Miguel'},
+  {c:'PT',l:'pt_1',city:'Vila Nova de Famalicão',n:'Famalicão',s:'FAM',p:'#003b95',q:'#ffffff',o:71,d:3,k:1,i:1,y:1931,st:'Municipal 22 de Junho'},
+  {c:'PT',l:'pt_1',city:'Estoril',n:'Estoril Praia',s:'ESP',p:'#ffd200',q:'#003b95',o:70,d:3,k:1,i:1,y:1939,st:'António Coimbra da Mota'},
+  {c:'PT',l:'pt_1',city:'Lisboa',n:'Casa Pia',s:'CPA',p:'#111111',q:'#ffffff',o:68,d:2,k:1,i:1,y:1920,st:'Pina Manique'},
+  {c:'PT',l:'pt_1',city:'Moreira de Cónegos',n:'Moreirense',s:'MOR',p:'#008057',q:'#ffffff',o:68,d:2,k:1,i:1,y:1938,st:'Comendador Joaquim de Almeida Freitas'},
+  {c:'PT',l:'pt_1',city:'Vila do Conde',n:'Rio Ave',s:'RAV',p:'#008057',q:'#ffffff',o:68,d:2,k:1,i:1,y:1939,st:'Estádio dos Arcos'},
+  {c:'PT',l:'pt_1',city:'Arouca',n:'Arouca',s:'ARO',p:'#ffd200',q:'#003b95',o:68,d:2,k:1,i:1,y:1951,st:'Municipal de Arouca'},
+  {c:'PT',l:'pt_1',city:'Barcelos',n:'Gil Vicente',s:'GIL',p:'#e30613',q:'#003b95',o:68,d:2,k:1,i:1,y:1924,st:'Cidade de Barcelos'},
+  {c:'PT',l:'pt_1',city:'Funchal',n:'Nacional',s:'NAC',p:'#111111',q:'#ffffff',o:66,d:2,k:1,i:1,y:1910,st:'Estádio da Madeira'},
+  {c:'PT',l:'pt_1',city:'Amadora',n:'Estrela da Amadora',s:'EAM',p:'#e30613',q:'#008057',o:66,d:2,k:1,i:1,y:2020,st:'José Gomes'},
+  {c:'PT',l:'pt_1',city:'Vila das Aves',n:'AVS',s:'AVS',p:'#e30613',q:'#ffffff',o:65,d:2,k:1,i:1,y:2023,st:'CD Aves'},
+  {c:'PT',l:'pt_1',city:'Tondela',n:'Tondela',s:'TON',p:'#ffd200',q:'#008057',o:65,d:2,k:1,i:1,y:1933,st:'João Cardoso'},
+  {c:'PT',l:'pt_1',city:'Alverca',n:'Alverca',s:'ALV',p:'#e30613',q:'#ffffff',o:65,d:2,k:1,i:1,y:1939,st:'Complexo Desportivo do FC Alverca'},
+  // ------------------------------------------------------------- ALEMANIA
+  // Bundesliga (18) — temporada 2025-26
+  {c:'DE',l:'de_1',city:'Múnich',n:'Bayern Múnich',s:'FCB',p:'#dc052d',q:'#ffffff',o:88,d:5,k:5,i:5,y:1900,st:'Allianz Arena'},
+  {c:'DE',l:'de_1',city:'Leverkusen',n:'Bayer Leverkusen',s:'B04',p:'#e32221',q:'#111111',o:84,d:5,k:4,i:3,y:1904,st:'BayArena'},
+  {c:'DE',l:'de_1',city:'Dortmund',n:'Borussia Dortmund',s:'BVB',p:'#fde100',q:'#111111',o:84,d:5,k:5,i:4,y:1909,st:'Signal Iduna Park'},
+  {c:'DE',l:'de_1',city:'Leipzig',n:'RB Leipzig',s:'RBL',p:'#ffffff',q:'#dd0741',o:82,d:4,k:3,i:3,y:2009,st:'Red Bull Arena'},
+  {c:'DE',l:'de_1',city:'Fráncfort',n:'Eintracht Frankfurt',s:'SGE',p:'#e1000f',q:'#111111',o:80,d:4,k:3,i:3,y:1899,st:'Deutsche Bank Park'},
+  {c:'DE',l:'de_1',city:'Stuttgart',n:'Stuttgart',s:'VFB',p:'#ffffff',q:'#e32219',o:79,d:4,k:3,i:2,y:1893,st:'MHPArena'},
+  {c:'DE',l:'de_1',city:'Friburgo',n:'Friburgo',s:'SCF',p:'#111111',q:'#e2001a',o:77,d:4,k:2,i:2,y:1904,st:'Europa-Park Stadion'},
+  {c:'DE',l:'de_1',city:'Wolfsburgo',n:'Wolfsburgo',s:'WOB',p:'#65b32e',q:'#ffffff',o:77,d:4,k:2,i:2,y:1945,st:'Volkswagen Arena'},
+  {c:'DE',l:'de_1',city:'Mönchengladbach',n:'Borussia Mönchengladbach',s:'BMG',p:'#ffffff',q:'#111111',o:77,d:4,k:3,i:2,y:1900,st:'Borussia-Park'},
+  {c:'DE',l:'de_1',city:'Maguncia',n:'Mainz 05',s:'M05',p:'#c3141e',q:'#ffffff',o:76,d:3,k:2,i:1,y:1905,st:'Mewa Arena'},
+  {c:'DE',l:'de_1',city:'Bremen',n:'Werder Bremen',s:'SVW',p:'#1d9053',q:'#ffffff',o:76,d:4,k:3,i:2,y:1899,st:'Weserstadion'},
+  {c:'DE',l:'de_1',city:'Sinsheim',n:'Hoffenheim',s:'TSG',p:'#1c63b7',q:'#ffffff',o:76,d:3,k:2,i:1,y:1899,st:'PreZero Arena'},
+  {c:'DE',l:'de_1',city:'Berlín',n:'Union Berlin',s:'FCU',p:'#eb1923',q:'#ffffff',o:75,d:3,k:2,i:1,y:1966,st:'An der Alten Försterei'},
+  {c:'DE',l:'de_1',city:'Augsburgo',n:'Augsburgo',s:'FCA',p:'#ba3733',q:'#46714d',o:74,d:3,k:1,i:1,y:1907,st:'WWK Arena'},
+  {c:'DE',l:'de_1',city:'Colonia',n:'Colonia',s:'KOE',p:'#ed1c24',q:'#ffffff',o:74,d:3,k:3,i:1,y:1948,st:'RheinEnergieStadion'},
+  {c:'DE',l:'de_1',city:'Hamburgo',n:'Hamburgo',s:'HSV',p:'#0a3f86',q:'#ffffff',o:74,d:3,k:4,i:2,y:1887,st:'Volksparkstadion'},
+  {c:'DE',l:'de_1',city:'Hamburgo',n:'St. Pauli',s:'STP',p:'#6f4e37',q:'#ffffff',o:73,d:3,k:2,i:1,y:1910,st:'Millerntor-Stadion'},
+  {c:'DE',l:'de_1',city:'Heidenheim',n:'Heidenheim',s:'FCH',p:'#e2001a',q:'#003b95',o:72,d:3,k:1,i:1,y:1846,st:'Voith-Arena'},
 ];
 
 export { RAW as RAW_CLUBS };

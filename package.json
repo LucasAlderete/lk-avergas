@@ -13,6 +13,8 @@
     "crests": "node scripts/fetch-club-crests.mjs"
   },
   "dependencies": {
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/dm-sans": "^5.3.0",
     "@vitejs/plugin-react": "latest",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",

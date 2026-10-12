@@ -473,7 +473,7 @@
     "page": "https://commons.wikimedia.org/wiki/File:Club_de_F%C3%BAtbol_Monterrey_logo.svg"
   },
   "nacional": {
-    "status": "ok",
+    "status": "rejected",
     "name": "nacional",
     "file": "career/clubs/nacional.png",
     "scope": "orphan",
@@ -481,7 +481,8 @@
     "league": null,
     "source": "File:Club Nacional de Football.png",
     "license": "CC BY-SA 4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Club_Nacional_de_Football.png"
+    "page": "https://commons.wikimedia.org/wiki/File:Club_Nacional_de_Football.png",
+    "reason": "escudo de Club Nacional de Football (Uruguay), no del Nacional de Madeira"
   },
   "napoli": {
     "status": "ok",
@@ -1117,12 +1118,12 @@
     "page": "https://commons.wikimedia.org/wiki/File:Escudo_del_Club_Social_y_Deportivo_Madryn.svg",
     "article": "Deportivo Madryn"
   },
-  "ferroarril-midland": {
+  "ferrocarril-midland": {
     "status": "no-article",
     "name": "Ferroarril Midland"
   },
   "mitre-santiago-del-estero": {
-    "status": "ok",
+    "status": "rejected",
     "name": "Mitre (Santiago del Estero)",
     "file": "career/clubs/mitre-santiago-del-estero.png",
     "bytes": 70911,
@@ -1130,7 +1131,8 @@
     "license": "Public domain",
     "artist": "Unknown authorUnknown author",
     "page": "https://commons.wikimedia.org/wiki/File:Escudo_de_la_Ciudad_de_Santiago_del_Estero.svg",
-    "article": "Santiago del Estero"
+    "article": "Santiago del Estero",
+    "reason": "escudo de la ciudad, no del club"
   },
   "tristan-suarez": {
     "status": "no-free-crest",
@@ -2244,5 +2246,49 @@
     "status": "no-free-crest",
     "name": "Atlante",
     "article": "Atlante F.C."
+  },
+  "estrela-da-amadora": {
+    "status": "ok",
+    "name": "Estrela da Amadora",
+    "file": "career/clubs/estrela-da-amadora.png",
+    "bytes": 34998,
+    "source": "File:Símbolo Estrela da Amadora.svg",
+    "license": "Public domain",
+    "artist": "C.F. Estrela da Amadora",
+    "page": "https://commons.wikimedia.org/wiki/File:S%C3%ADmbolo_Estrela_da_Amadora.svg",
+    "article": "C.F. Estrela da Amadora"
+  },
+  "borussia-monchengladbach": {
+    "status": "ok",
+    "name": "Borussia Mönchengladbach",
+    "file": "career/clubs/borussia-monchengladbach.png",
+    "bytes": 16854,
+    "source": "File:Borussia Mönchengladbach logo.svg",
+    "license": "Public domain",
+    "artist": "Borussia Mönchengladbach",
+    "page": "https://commons.wikimedia.org/wiki/File:Borussia_M%C3%B6nchengladbach_logo.svg",
+    "article": "Borussia Mönchengladbach"
+  },
+  "hoffenheim": {
+    "status": "ok",
+    "name": "Hoffenheim",
+    "file": "career/clubs/hoffenheim.png",
+    "bytes": 40460,
+    "source": "File:Logo TSG Hoffenheim.svg",
+    "license": "Public domain",
+    "artist": "Unknown authorUnknown author",
+    "page": "https://commons.wikimedia.org/wiki/File:Logo_TSG_Hoffenheim.svg",
+    "article": "TSG 1899 Hoffenheim"
+  },
+  "union-berlin": {
+    "status": "ok",
+    "name": "Union Berlin",
+    "file": "career/clubs/union-berlin.png",
+    "bytes": 18992,
+    "source": "File:1. FC Union Berlin Logo.svg",
+    "license": "Public domain",
+    "artist": "Peter Gribat &amp; 1. FC Union Berlin e.V.",
+    "page": "https://commons.wikimedia.org/wiki/File:1._FC_Union_Berlin_Logo.svg",
+    "article": "1. FC Union Berlin"
   }
 }

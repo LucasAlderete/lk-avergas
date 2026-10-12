@@ -5,7 +5,16 @@
 // Solo acepta archivos con licencia libre (Public domain / CC0 / CC BY / CC BY-SA).
 // Todo lo que no pueda resolverse con licencia libre queda con fallback procedural.
 //
-// Uso:  node scripts/fetch-club-crests.mjs [--limit N] [--delay MS]
+// Uso:  node scripts/fetch-club-crests.mjs [--limit N] [--delay MS] [--dry-run] [--only slug1,slug2]
+//   --dry-run  muestra qué escudo elegiría para cada club, sin descargar ni
+//              escribir nada (revisar antes de correrlo de verdad).
+//   --only     procesa solo esos slugs (aunque ya figuren en el manifiesto).
+//
+// Garantías (después del incidente que borró 136 escudos):
+//   - NUNCA borra: el mapa nuevo se arma SUMANDO a crests.generated.js. Lo que
+//     ya estaba (venga de Wikimedia o de football-logos) se conserva tal cual.
+//   - Solo acepta artículos que Wikipedia clasifica como club de fútbol.
+//   - Solo acepta archivos que se llaman como un escudo (logo/crest/badge...).
 // ============================================================================
 
 import fs from 'node:fs/promises';
@@ -22,6 +31,11 @@ const argOf = (name, def) => {
   return i >= 0 && args[i + 1] ? Number(args[i + 1]) : def;
 };
 const LIMIT = argOf('--limit', 0);
+const DRY_RUN = args.includes('--dry-run');
+const ONLY = (() => {
+  const i = args.indexOf('--only');
+  return i >= 0 && args[i + 1] ? new Set(args[i + 1].split(',').map((x) => x.trim())) : null;
+})();
 const DELAY = argOf('--delay', 350);
 
 const UA = 'lk-avergas-crest-fetcher/0.1 (https://github.com/LucasAlderete/lk-avergas; local dev)';
@@ -60,6 +74,48 @@ const CLUBS = RAW_CLUBS.map((raw) => ({
   country: COUNTRIES[raw.c]?.name || raw.c,
 }));
 
+// Títulos exactos de Wikipedia (en inglés) para clubes cuyo nombre en el
+// catálogo está castellanizado o es ambiguo. Evita matchear ciudades, metros
+// o clubes homónimos de otros países.
+const WIKI_TITLES = {
+  'bayern-munich': 'FC Bayern Munich',
+  'bayer-leverkusen': 'Bayer 04 Leverkusen',
+  'borussia-dortmund': 'Borussia Dortmund',
+  'rb-leipzig': 'RB Leipzig',
+  'eintracht-frankfurt': 'Eintracht Frankfurt',
+  stuttgart: 'VfB Stuttgart',
+  friburgo: 'SC Freiburg',
+  wolfsburgo: 'VfL Wolfsburg',
+  'borussia-monchengladbach': 'Borussia Mönchengladbach',
+  'mainz-05': '1. FSV Mainz 05',
+  'werder-bremen': 'SV Werder Bremen',
+  hoffenheim: 'TSG 1899 Hoffenheim',
+  'union-berlin': '1. FC Union Berlin',
+  augsburgo: 'FC Augsburg',
+  colonia: '1. FC Köln',
+  hamburgo: 'Hamburger SV',
+  'st-pauli': 'FC St. Pauli',
+  heidenheim: '1. FC Heidenheim',
+  benfica: 'S.L. Benfica',
+  porto: 'FC Porto',
+  'sporting-cp': 'Sporting CP',
+  braga: 'S.C. Braga',
+  'vitoria-de-guimaraes': 'Vitória S.C.',
+  'santa-clara': 'C.D. Santa Clara',
+  famalicao: 'F.C. Famalicão',
+  'estoril-praia': 'G.D. Estoril Praia',
+  'casa-pia': 'Casa Pia A.C.',
+  moreirense: 'Moreirense F.C.',
+  'rio-ave': 'Rio Ave F.C.',
+  arouca: 'F.C. Arouca',
+  'gil-vicente': 'Gil Vicente F.C.',
+  nacional: 'C.D. Nacional',
+  'estrela-da-amadora': 'C.F. Estrela da Amadora',
+  avs: 'AVS Futebol SAD',
+  tondela: 'C.D. Tondela',
+  alverca: 'F.C. Alverca',
+};
+
 // ---------- helpers de búsqueda ---------------------------------------------
 const tokens = (name) =>
   name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -67,7 +123,7 @@ const tokens = (name) =>
     .split(/\s+/)
     .filter((w) => w.length > 2 && !['club', 'football', 'deportivo', 'atletico', 'sport', 'city', 'real', 'sporting', 'association', 'union', 'futbol', 'balompie', 'the', 'fc', 'cf', 'sc'].includes(w));
 
-const EXCLUDE = /(kit|shirt|jersey|home|away|third|stadium|ground|arena|photo|match|squad|team|supporters|ultras|flag|map|training|season|player|portrait|trophy|copa|league|table|banner|panorama|view|street|station|building|coat of arms of|wordmark)/i;
+const EXCLUDE = /(altes|alte|ancien|antigo|antiguo|handball|basketball|basket|volleyball|hockey|futsal|women|frauen|feminino|esports|old|former|historic|historial|chart|performance|graph|diagram|metro|satellite|sentinel|aerial|kit|shirt|jersey|home|away|third|stadium|ground|arena|photo|match|squad|team|supporters|ultras|flag|map|training|season|player|portrait|trophy|copa|league|table|banner|panorama|view|street|station|building|coat of arms of|wordmark)/i;
 
 async function searchTitle(clubName, country) {
   const queries = [
@@ -87,6 +143,14 @@ async function searchTitle(clubName, country) {
     await sleep(DELAY);
   }
   return null;
+}
+
+/** El artículo tiene que estar en una categoría de club de fútbol. */
+async function isFootballClub(title) {
+  const data = await api(`${WIKI}?action=query&format=json&redirects=1&prop=categories&cllimit=100&titles=${encodeURIComponent(title)}`);
+  const page = Object.values(data?.query?.pages || {})[0] || {};
+  const cats = (page.categories || []).map((c) => c.title);
+  return cats.some((c) => /(association )?football clubs|soccer clubs|futsal clubs/i.test(c));
 }
 
 async function pageImages(title) {
@@ -128,13 +192,14 @@ function pickCandidates(images, pageimage, clubName) {
       const norm = t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const hits = wanted.filter((w) => norm.includes(w)).length;
       const hasLongest = longest && norm.includes(longest) ? 1 : 0;
-      const crestWord = /crest|logo|badge|escudo/.test(norm) ? 1 : 0;
+      const crestWord = /crest|logo|badge|escudo|emblem|wappen|simbolo|symbol/.test(norm) ? 1 : 0;
       const geo = GEO.test(norm) ? 1 : 0;
       const dated = /\b(18|19|20)\d{2}\b/.test(norm) ? 1 : 0;
       const score = hasLongest * 4 + hits * 2 + crestWord * 3 - geo * 5 - dated;
       return { title: t, score, hits, hasLongest, crestWord, geo, dated, isPageImage: pageimage === t, norm };
     })
-    .filter((c) => c.hasLongest === 1 && c.geo === 0 && c.dated === 0)
+    // Además del nombre del club, el archivo tiene que llamarse como un escudo.
+    .filter((c) => c.hasLongest === 1 && c.crestWord === 1 && c.geo === 0 && c.dated === 0)
     .sort((a, b) => (b.isPageImage - a.isPageImage) || (b.score - a.score) || (a.norm.length - b.norm.length));
 }
 
@@ -164,13 +229,24 @@ async function download(url, dest) {
 const manifest = JSON.parse(await fs.readFile(MANIFEST, 'utf8').catch(() => '{}'));
 await fs.mkdir(OUT_DIR, { recursive: true });
 
-const pending = CLUBS.filter((c) => !manifest[c.slug]);
+// Lo que ya tiene escudo en el mapa actual (de cualquier fuente) no se toca.
+const genMod = await import(new URL('../src/data/careerWorld/crests.generated.js', import.meta.url).href + `?t=${Date.now()}`);
+const EXISTING_FILES = { ...(genMod.CREST_FILES || {}) };
+const EXISTING_META = { ...(genMod.CREST_META || {}) };
+const pending = ONLY
+  ? CLUBS.filter((c) => ONLY.has(c.slug))
+  : CLUBS.filter((c) => !manifest[c.slug] && !EXISTING_FILES[c.slug]);
 const batch = LIMIT > 0 ? pending.slice(0, LIMIT) : pending;
 console.log(`Clubes: ${CLUBS.length} · ya resueltos: ${CLUBS.length - pending.length} · en este batch: ${batch.length}`);
 
+const fetchedNow = new Set(); // solo lo descargado en ESTA corrida se suma al mapa
 for (const club of batch) {
   try {
-    const title = await searchTitle(club.name, club.country);
+    let title = WIKI_TITLES[club.slug] || await searchTitle(club.name, club.country);
+    if (title && !(await isFootballClub(title))) {
+      console.log(`--  ${club.slug}: "${title}" no es un club de fútbol, se descarta`);
+      title = null;
+    }
     if (!title) {
       manifest[club.slug] = { status: 'no-article', name: club.name };
     } else {
@@ -183,6 +259,11 @@ for (const club of batch) {
         const lic = info.license || '?';
         if (!FREE_LICENSE.test(lic)) continue;
         if (!/^(image\/(png|svg\+xml)|text\/svg)/.test(info.mime || '')) continue;
+        if (DRY_RUN) {
+          console.log(`DRY ${club.slug} <- ${cand.title} [${lic}] (artículo: ${title})`);
+          done = true;
+          break;
+        }
         // Detectar el formato REAL por magic bytes del contenido, no por la
         // extension sugerida por Wikimedia (que puede ser .svg aunque el
         // contenido sea PNG).
@@ -203,39 +284,61 @@ for (const club of batch) {
           page: info.descriptionUrl,
           article: title,
         };
+        fetchedNow.add(club.slug);
         console.log(`OK  ${club.slug} <- ${cand.title} [${lic}] (${size}b)`);
         done = true;
         break;
       }
-      if (!done) manifest[club.slug] = { status: 'no-free-crest', name: club.name, article: title };
+      if (!done) {
+        if (DRY_RUN) console.log(`--  ${club.slug}: sin escudo con licencia libre (artículo: ${title})`);
+        else manifest[club.slug] = { status: 'no-free-crest', name: club.name, article: title };
+      }
     }
   } catch (err) {
     console.log(`ERR ${club.slug}: ${err.message}`);
   }
-  await fs.writeFile(MANIFEST, JSON.stringify(manifest, null, 2));
+  if (!DRY_RUN) await fs.writeFile(MANIFEST, JSON.stringify(manifest, null, 2));
   await sleep(DELAY);
+}
+
+if (DRY_RUN) {
+  console.log('\n--dry-run: no se descargó ni se escribió nada.');
+  process.exit(0);
 }
 
 await fs.writeFile(MANIFEST, JSON.stringify(manifest, null, 2));
 
 // ---------- regenera el mapa del proyecto ------------------------------------
-const entries = Object.entries(manifest).filter(([, m]) => m.status === 'ok')
-  .sort(([a], [b]) => a.localeCompare(b));
+// MERGE: lo que ya estaba en el mapa se conserva y SOLO se suma lo que se
+// descargó en esta corrida (el manifiesto viejo tiene entradas 'ok' erróneas,
+// ej. el escudo de Nacional de Uruguay para Nacional de Madeira).
+const files = { ...EXISTING_FILES };
+const meta = { ...EXISTING_META };
+for (const slug of fetchedNow) {
+  const m = manifest[slug];
+  if (!m || m.status !== 'ok') continue;
+  files[slug] = m.file;
+  meta[slug] = { source: m.source, license: m.license, page: m.page };
+}
+const entries = Object.keys(files).sort((a, b) => a.localeCompare(b));
+if (entries.length < Object.keys(EXISTING_FILES).length) {
+  throw new Error('el mapa nuevo tendría menos escudos que el actual: no se escribe');
+}
 const lines = [
   '// ============================================================================',
   '// crests.generated.js — MAPA DE ESCUDOS REALES (generado, NO editar a mano)',
   '// ============================================================================',
-  '// Generado por scripts/fetch-club-crests.mjs desde Wikimedia Commons.',
-  '// Origen y licencia de cada archivo: docs/crest-manifest.json (en el repo).',
+  '// Generado por scripts/fetch-club-crests.mjs (Wikimedia Commons + football-logos).',
+  '// Origen y licencia de cada archivo: docs/crest-manifest.json y docs/LOGO-LICENSE-MANIFEST.md.',
   '// Los clubes sin entrada acá usan el fallback procedural del adapter.',
   '// ============================================================================',
   '',
   'export const CREST_FILES = {',
-  ...entries.map(([slug, m]) => `  '${slug}': '${m.file}',`),
+  ...entries.map((slug) => `  '${slug}': '${files[slug]}',`),
   '};',
   '',
   'export const CREST_META = {',
-  ...entries.map(([slug, m]) => `  '${slug}': { source: ${JSON.stringify(m.source)}, license: ${JSON.stringify(m.license)}, page: ${JSON.stringify(m.page)} },`),
+  ...entries.filter((slug) => meta[slug]).map((slug) => `  '${slug}': ${JSON.stringify(meta[slug])},`),
   '};',
   '',
   'export default CREST_FILES;',

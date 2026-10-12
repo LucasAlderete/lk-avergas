@@ -40,11 +40,6 @@ import {
   simulateSegment,
 } from '../src/features/career/engine.js';
 import { chooseYouthClub, startCareer } from '../src/features/career/flow.js';
-import {
-  CAREER_SAVE_SCHEMA_VERSION,
-  deserializeCareerState,
-  serializeCareerState,
-} from '../src/features/career/persistence.js';
 
 let failures = 0;
 const assert = (cond, label) => {
@@ -61,11 +56,12 @@ const deepScan = (value) => {
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
-// Universo cerrado: 8 países / 13 competiciones / 296 clubes.
-const EXPECTED_COUNTRIES = { AR: 66, ES: 42, EN: 44, IT: 40, FR: 36, BR: 20, US: 30, MX: 18 };
+// Universo cerrado: 10 países / 15 competiciones / 332 clubes.
+const EXPECTED_COUNTRIES = { AR: 66, ES: 42, EN: 44, IT: 40, FR: 36, BR: 20, US: 30, MX: 18, PT: 18, DE: 18 };
 const EXPECTED_LEAGUES = {
   ar_lp: 30, ar_nac: 36, es_1: 20, es_2: 22, fr_1: 18, fr_2: 18,
   en_pl: 20, en_ch: 24, it_a: 20, it_b: 20, br_a: 20, us_mls: 30, mx_1: 18,
+  pt_1: 18, de_1: 18,
 };
 
 // ============================================================================
@@ -74,7 +70,7 @@ const EXPECTED_LEAGUES = {
 console.log('\n== A) Catálogo de clubes ==');
 
 const catalog = allClubs();
-assert(catalog.length === 296, `cantidad total de clubes = 296 (${catalog.length})`);
+assert(catalog.length === 332, `cantidad total de clubes = 332 (${catalog.length})`);
 assert(catalog.length === clubs.length, 'allClubs() refleja el mismo catálogo que clubs');
 
 const byCountry = {};
@@ -219,7 +215,7 @@ assert(divisions.every((item) => Number.isFinite(item.nivel) && item.name && ite
 assert(worldMeta.version === CAREER_WORLD_VERSION, 'worldMeta.version = CAREER_WORLD_VERSION');
 assert(worldMeta.clubs === catalog.length, `worldMeta.clubs = ${catalog.length}`);
 assert(worldMeta.countries === Object.keys(byCountry).length, `worldMeta.countries = ${Object.keys(byCountry).length}`);
-assert(worldMeta.leagues === 13, `worldMeta.leagues = 13 (${worldMeta.leagues})`);
+assert(worldMeta.leagues === 15, `worldMeta.leagues = 15 (${worldMeta.leagues})`);
 
 assert(catalog.every((club) => domesticReputation(club) === club.domesticReputation),
   'domesticReputation(club) = club.domesticReputation');
@@ -448,43 +444,12 @@ assert(segment.career.club.slug === accepted.club.slug, 'simular no cambia de cl
 assert(deepScan(segment.career), 'carrera simulada sin NaN/Infinity');
 
 // ============================================================================
-// D) PERSISTENCIA Y VERSIONADO
+// D) VERSIONADO DEL MUNDO
 // ============================================================================
-console.log('\n== D) Persistencia y versionado ==');
+console.log('\n== D) Versionado del mundo ==');
 
 assert(Number.isInteger(CAREER_WORLD_VERSION) && CAREER_WORLD_VERSION >= 2,
   `CAREER_WORLD_VERSION actualizado por el reemplazo del mundo (${CAREER_WORLD_VERSION})`);
-
-const serialized = serializeCareerState(flowState);
-assert(serialized.ok === true, `el flow state del mundo real se serializa (${serialized.reason || 'ok'})`);
-
-// El envelope (schema + mundo) lo arma saveCareerState: acá se replica para
-// validar la relectura y el rechazo de saves del mundo anterior.
-const envelopeOf = (worldVersion) => JSON.stringify({
-  schemaVersion: CAREER_SAVE_SCHEMA_VERSION,
-  worldVersion,
-  savedAt: Date.now(),
-  state: JSON.parse(serialized.json),
-});
-
-const roundTrip = deserializeCareerState(envelopeOf(CAREER_WORLD_VERSION));
-assert(roundTrip.ok === true, `el save actual se relee (${roundTrip.reason || 'ok'})`);
-assert(roundTrip.ok && Boolean(findClub(roundTrip.state.career.club.slug)),
-  'el club del save restaurado existe en el catálogo');
-assert(roundTrip.ok && roundTrip.state.career.club.key === findClub(roundTrip.state.career.club.slug).key,
-  'el club restaurado conserva su clave del catálogo');
-
-// Save del mundo Avergas (worldVersion anterior): se rechaza, no se migra.
-const rejected = deserializeCareerState(envelopeOf(1));
-assert(rejected.ok === false && rejected.reason === 'world_version',
-  `una carrera del mundo Avergas se rechaza (${rejected.reason})`);
-
-// Save de otro schema: tampoco se adivina.
-const otherSchema = JSON.parse(envelopeOf(CAREER_WORLD_VERSION));
-otherSchema.schemaVersion = CAREER_SAVE_SCHEMA_VERSION + 1;
-const badSchema = deserializeCareerState(JSON.stringify(otherSchema));
-assert(badSchema.ok === false && badSchema.reason === 'schema_version',
-  `un save de otro schema se rechaza (${badSchema.reason})`);
 
 // Guardas del engine que dependen del mundo siguen respondiendo.
 assert(generateTransferOffers({ ...careerA, retired: true }, { seed: 1 }).length === 0,

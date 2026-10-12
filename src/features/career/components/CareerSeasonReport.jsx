@@ -11,13 +11,16 @@ import { Activity, AlertTriangle, ArrowDown, ArrowUp, Shield, Target, Trophy, Tr
 
 import {
   divisionName,
+  leagueName,
   reportClubVisual,
   roleLabel,
   safeNumber,
   signed,
   statText,
 } from './careerFormat.js';
+import { stageLabel } from '../nationalTeam.js';
 import ClubBadge from './ClubBadge.jsx';
+import CountryFlag from './CountryFlag.jsx';
 
 export default function CareerSeasonReport({ report, retirementDue, compact = false }) {
   if (!report || typeof report !== 'object') return null;
@@ -50,9 +53,9 @@ export default function CareerSeasonReport({ report, retirementDue, compact = fa
         <div>
           <strong>
             {club.name}
-            {club.countryFlag ? <span aria-hidden="true">{` ${club.countryFlag}`}</span> : null}
+            {club.countryCode ? <>{' '}<CountryFlag code={club.countryCode} size={13} /></> : null}
           </strong>
-          <span>{`${divisionName(club.division)} · ${roleLabel(report.role)}${Number.isFinite(report.age) ? ` · ${report.age} años` : ''}`}</span>
+          <span>{`${leagueName(club, club.division)} · ${roleLabel(report.role)}${Number.isFinite(report.age) ? ` · ${report.age} años` : ''}`}</span>
         </div>
       </div>
 
@@ -98,6 +101,32 @@ export default function CareerSeasonReport({ report, retirementDue, compact = fa
             {(trophy && trophy.label) || 'Título'}
           </span>
         ))}
+
+        {report.nationalTeam ? (
+          <span className="career-chip">
+            <CountryFlag code={report.nationalTeam.team} size={13} />
+            {`Selección: ${statText(report.nationalTeam.caps)} PJ · ${statText(report.nationalTeam.goals)} goles`}
+          </span>
+        ) : null}
+
+        {report.nationalTeam && report.nationalTeam.firstCall ? (
+          <span className="career-chip career-chip--gold">
+            <Shield size={13} /> Primera convocatoria
+          </span>
+        ) : null}
+
+        {report.nationalTeam && report.nationalTeam.qualifier ? (
+          <span className={`career-chip${report.nationalTeam.qualifier.qualified ? '' : ' career-chip--warn'}`}>
+            {`Eliminatorias: ${report.nationalTeam.qualifier.qualified ? 'clasificó' : 'no clasificó'} al Mundial ${report.nationalTeam.qualifier.season}`}
+          </span>
+        ) : null}
+
+        {report.nationalTeam && report.nationalTeam.worldCup ? (
+          <span className="career-chip career-chip--gold">
+            <Trophy size={13} />
+            {`Mundial ${report.nationalTeam.worldCup.season}: ${stageLabel(report.nationalTeam.worldCup.stage)}`}
+          </span>
+        ) : null}
 
         {report.lowRotationPenalty ? (
           <span className="career-chip career-chip--warn">

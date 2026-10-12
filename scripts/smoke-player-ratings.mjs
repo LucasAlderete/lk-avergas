@@ -71,9 +71,9 @@ console.log('== C) Rango, perfiles y datos que NO hay que romper ==');
       assert(value >= 0 && value <= 99, `${player.name} ${stat.label} está en 0-99 (está en ${value})`);
     }
     assert(typeof player.phrase === 'string' && player.phrase.length > 0, `${player.name} tiene frase`);
-    assert(typeof player.lore?.perfil === 'string' && player.lore.perfil.length > 0, `${player.name} tiene perfil`);
-    assert(Array.isArray(player.lore?.rasgos), `${player.name} tiene rasgos`);
-    assert(Array.isArray(player.lore?.cargadas), `${player.name} tiene cargadas`);
+    // lore = una sola lista de cargadas (rasgos + anécdotas); sin perfil.
+    assert(Array.isArray(player.lore?.cargadas) && player.lore.cargadas.length > 0, `${player.name} tiene cargadas`);
+    assert(player.lore.cargadas.every((c) => typeof c === 'string' && c.trim().length > 0), `${player.name}: cargadas son textos no vacíos`);
   }
   // Los que sólo están en la Alineación no se tocan: siguen en 0-10 y su OVR
   // se recalcula por el mismo promedio.

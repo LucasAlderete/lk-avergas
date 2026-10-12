@@ -16,3 +16,6 @@ dist/
 node_modules/
 dist/
 tmp/
+
+# Salida del navegador automático (capturas y logs de revisiones)
+.playwright-mcp/

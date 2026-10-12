@@ -147,7 +147,7 @@ export default function VoteSheet({ player, deltas, myBallot, onCast, remaining,
             {eligible
               ? (
                 <p className="vote-budget">
-                  Te quedan <b>{remaining}</b> de {TOTAL_POINTS} · a este jugador {used}/{POINTS_PER_PLAYER}
+                  Te quedan <b>{remaining}</b> de {TOTAL_POINTS}. A este jugador, {used}/{POINTS_PER_PLAYER}.
                 </p>
               )
               : <p className="vote-budget">No jugó este partido. No se le pueden cargar puntos.</p>}

@@ -2,7 +2,7 @@
 // careerWorld.js — ADAPTER del catálogo de clubes reales (fase 1)
 // ============================================================================
 // API EXACTA que consumía el mundo Avergas, ahora servida desde el catálogo
-// real curado (clubs.js + countries.js). El engine, events, flow, persistence
+// real curado (clubs.js + countries.js). El engine, events, flow
 // y la UI NO cambian: consumen esta API.
 //
 // Semántica de la división INTERNA del engine (no confundir con la liga real):
@@ -20,8 +20,8 @@ import { RAW_CLUBS } from './careerWorld/clubs.js';
 
 // ----------------------------------------------------------------------------
 // Versión del mundo: cualquier cambio estructural del mundo (acá: la
-// desaparición de la Tercera División) INVALIDA los saves viejos
-// (persistence.js rechaza worldVersion distinto → nueva carrera).
+// desaparición de la Tercera División) se refleja en este número
+// (versión del mundo, por si vuelve a hacer falta distinguir catálogos).
 // ----------------------------------------------------------------------------
 export const CAREER_WORLD_VERSION = 3;
 
@@ -94,6 +94,7 @@ const buildClub = (raw) => {
     country: country.name,
     countryCode: raw.c,
     countryFlag: country.flag,
+    countryTier: country.tier || 4, // ranking del país para el mercado (1 = top)
     city: raw.city,
     // Competición real
     league: league.name,

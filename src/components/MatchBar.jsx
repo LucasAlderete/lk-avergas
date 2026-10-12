@@ -16,7 +16,7 @@ export default function MatchBar({ lineup, match, openMatch, closeMatch, matchBu
         {match ? (
           <>
             <p>
-              Partido abierto · se vota en Plantel a {match.players.join(', ')}.
+              Partido abierto. Se vota en Plantel a {match.players.join(', ')}.
             </p>
             <MatchResultFields value={draft} onChange={setDraft} disabled={matchBusy} />
             <button

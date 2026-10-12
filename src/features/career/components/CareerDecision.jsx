@@ -59,7 +59,7 @@ export default function CareerDecision({ options, retirementDue, onAction, busy,
               disabled={Boolean(busy)}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.15, delay: Math.min(index * 0.03, 0.09), ease: 'easeOut' }}
+              transition={{ duration: 0.15, delay: Math.min(index * 0.03, 0.09), ease: [0.23, 1, 0.32, 1] }}
             >
               <span className="career-action-icon"><Icon size={15} /></span>
               <span className="career-action-text">

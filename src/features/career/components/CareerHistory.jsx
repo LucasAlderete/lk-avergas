@@ -18,12 +18,14 @@ import {
   careerStartAge,
   clubVisual,
   divisionName,
+  leagueName,
   reportClubVisual,
   roleLabel,
   safeNumber,
   statText,
 } from './careerFormat.js';
 import ClubBadge from './ClubBadge.jsx';
+import CountryFlag from './CountryFlag.jsx';
 
 export default function CareerHistory({ career, forceOpen = false, defaultOpen = false }) {
   // null = comportamiento automático (abierto si la carrera es corta o si la
@@ -76,7 +78,7 @@ export default function CareerHistory({ career, forceOpen = false, defaultOpen =
                       <div className="career-timeline-body">
                         <strong>{club.name}</strong>
                         <span>
-                          {`${divisionName(club.division)} · ${roleLabel(season.role)} · OVR ${statText(season.ovrStart)} → ${statText(season.ovrEnd)}`}
+                          {`${leagueName(club, club.division)} · ${roleLabel(season.role)} · OVR ${statText(season.ovrStart)} → ${statText(season.ovrEnd)}`}
                         </span>
                         <div className="career-timeline-tags">
                           <i>{`${statText(season.pj)} PJ`}</i>
@@ -133,10 +135,10 @@ export default function CareerHistory({ career, forceOpen = false, defaultOpen =
                     <div className="career-stint-body">
                       <strong>
                         {(club && club.name) || DASH}
-                        {visual.countryFlag ? <span aria-hidden="true">{` ${visual.countryFlag}`}</span> : null}
+                        {visual.countryCode ? <>{' '}<CountryFlag code={visual.countryCode} size={13} /></> : null}
                       </strong>
                       <span>
-                        {`${divisionName((club && club.division) || stint.division)} · ${statText(stint.fromAge)}–${statText(toAge)} años${index === stints.length - 1 ? ' · actual' : ''}`}
+                        {`${leagueName(club, stint.division)} · ${statText(stint.fromAge)}–${statText(toAge)} años${index === stints.length - 1 ? ' · actual' : ''}`}
                       </span>
                     </div>
                     <span className="career-chip" style={{ marginLeft: 'auto' }}>

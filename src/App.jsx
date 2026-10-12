@@ -9,6 +9,7 @@ import LineupScreen from './components/LineupScreen.jsx';
 import MatchHistoryScreen from './components/MatchHistoryScreen.jsx';
 import SquadScreen from './components/SquadScreen.jsx';
 import { resolveStoredScreen, transitionScreen } from './navigation.js';
+import { DevDataToggle } from './dev/worstCase.jsx';
 
 function loadScreen() {
   try {
@@ -58,18 +59,20 @@ export default function App() {
 
   return (
     <div className="app-shell" data-screen={screen}>
-      <AnimatePresence mode="wait" initial={false}>
+      {/* Sin salida ni mode="wait": la pantalla nueva aparece al instante con un
+          fundido corto. Esperar la salida sumaba ~360ms a cada navegación. */}
+      <AnimatePresence initial={false}>
         <motion.div
           key={screen}
           className="app-screen"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.18, ease: 'easeOut' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
         >
           {content}
         </motion.div>
       </AnimatePresence>
+      <DevDataToggle />
     </div>
   );
 }

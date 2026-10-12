@@ -88,11 +88,11 @@ console.log('== C) Imports/exports estáticos ==');
   const importLines = (source.match(/^import[\s\S]*?from[^\n]+$/gm) || []);
   assert(importLines.some((l) => /from\s*['"]react['"]/.test(l)), "importa hooks desde 'react' (solo hooks)");
   assert(importLines.some((l) => /from\s*['"]\.\/flow\.js['"]/.test(l)), "importa las funciones de './flow.js'");
-  assert(importLines.some((l) => /from\s*['"]\.\/persistence\.js['"]/.test(l)), "importa './persistence.js' (única puerta al save)");
-  assert(importLines.length === 3, `solo 3 imports (react + flow.js + persistence.js): tiene ${importLines.length}`);
+  assert(!importLines.some((l) => /persistence/.test(l)), 'no hay persistencia: no importa ningún módulo de save');
+  assert(importLines.length === 2, `solo 2 imports (react + flow.js): tiene ${importLines.length}`);
   assert(!/from\s*['"]\.\/engine\.js['"]/.test(source), 'NO importa engine.js (solo via flow: sin duplicar lógica)');
   assert(!/from\s*['"]\.\/events\.js['"]/.test(source), 'NO importa events.js');
-  assert(!/getItem|setItem|removeItem/.test(sourceNoComments), 'NO usa la API de storage (todo pasa por persistence.js)');
+  assert(!/getItem|setItem|removeItem/.test(sourceNoComments), 'NO usa la API de storage (la carrera vive en memoria)');
   assert(/export\s+function\s+useCareer|export\s+const\s+useCareer/.test(source), 'exporta useCareer');
   assert(/export\s+default\s+useCareer/.test(source), 'export default useCareer');
   // API mínima pedida por el Paso 7 (nombres reales del diseño).
@@ -105,10 +105,8 @@ console.log('== C) Imports/exports estáticos ==');
   assert(/flowAdvanceSeason\(/.test(source), 'advanceSeason delega en flow.advanceSeason');
   assert(/flowChooseCareerAction\(/.test(source), 'chooseAction delega en flow.chooseCareerAction');
   assert(/flowGetCareerDecisionOptions\(/.test(source), 'decisionOptions delega en flow.getCareerDecisionOptions');
-  // Persistencia delegada (Paso 10): el hook solo llama a persistence.js.
-  assert(/loadCareerState\(\)/.test(sourceNoComments), 'la restauración delega en loadCareerState()');
-  assert(/saveCareerState\(state\)/.test(sourceNoComments), 'el autosave delega en saveCareerState(state)');
-  assert(/clearCareerState\(\)/.test(sourceNoComments), 'reset delega el borrado en clearCareerState()');
+  // Sin persistencia: el hook no restaura ni guarda nada.
+  assert(!/loadCareerState|saveCareerState|clearCareerState/.test(sourceNoComments), 'el hook no restaura ni guarda la carrera');
   // No duplica lógica del engine: el hook jamás llama al motor por su cuenta
   // (análisis sobre el fuente sin comentarios).
   for (const engineFn of ['createCareer(', 'simulateSeason(', 'acceptTransfer(', 'resolveStay(', 'retireCareer(', 'generateYouthOffers(', 'generateTransferOffers(', 'rollCareerEvent(', 'applyEventChoice(']) {
@@ -170,8 +168,9 @@ console.log('== D) Delegación del hook validada contra flow.js real ==');
   }
   assert(s && s.phase === 'decision', `advanceSeason + eventos → se llega a una decisión (${seasons} temporada(s))`);
   const options = flow.getCareerDecisionOptions(s);
-  assert(JSON.stringify(options) === JSON.stringify(['stay', 'transfer', 'retire']),
-    `decisionOptions en decisión: ['stay', 'transfer', 'retire'] (obtuvo ${JSON.stringify(options)})`);
+  const expectedOpts = s.career.age >= 33 ? ['stay', 'transfer', 'retire'] : ['stay', 'transfer'];
+  assert(JSON.stringify(options) === JSON.stringify(expectedOpts),
+    `decisionOptions en decisión: ${JSON.stringify(expectedOpts)} (obtuvo ${JSON.stringify(options)}; retiro voluntario desde 33)`);
 
   // hook.chooseAction('stay') → flow.chooseCareerAction
   const clubBeforeStay = s.career.club.slug;
