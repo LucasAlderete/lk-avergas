@@ -2507,7 +2507,7 @@ body:has(.career-screen)::after {
   .career-screen .career-shell--main { display: flex; flex-direction: column; gap: 8px; min-height: calc(100dvh - 14px); }
   .career-screen .career-shell--main > .section-header { flex: none; margin: 0; padding-bottom: 2px; }
   .career-screen .section-nav button { font-size: 1rem; }
-  .career-screen .career-dashboard--single { display: flex; flex-direction: column; flex: 1 1 auto; gap: 8px; }
+  .career-screen .career-dashboard--single { display: flex; flex-direction: column; flex: 1 1 auto; align-items: stretch; gap: 8px; }
   .career-screen .career-dashboard--single .career-primary { display: flex; flex-direction: column; flex: 1 1 auto; gap: 8px; }
   .career-screen .career-col--history > .career-pcard { order: 0; flex: none; }
   .career-screen .career-col--history > .career-table-card { order: 1; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 96px; contain: size; }
