@@ -218,7 +218,7 @@ function CareerScreenBody({ onBack, onNavigate }) {
     const timer = window.setTimeout(handleSpinDone, 1500);
     return () => window.clearTimeout(timer);
   }, [spinning, spinTone, handleSpinDone]);
-  const { revealing: revealingSeasons, skip: skipReveal, displayCareer } = useSeasonReveal(spinning ? spin.careerBefore : career);
+  const { revealing: revealingSeasons, displayCareer } = useSeasonReveal(spinning ? spin.careerBefore : career);
   const revealing = revealingSeasons || spinning;
 
   // Títulos: el aviso sale cuando la reproducción LLEGA a la temporada en que
@@ -324,11 +324,6 @@ function CareerScreenBody({ onBack, onNavigate }) {
             {/* Pantalla única: en el celular la decisión va pegada a la carta y
                 la trayectoria abajo (orden por CSS); en escritorio, al costado. */}
             <CareerTimeline career={displayCareer} phase={phase} />
-            {revealingSeasons ? (
-              <button type="button" className="career-skip" onClick={skipReveal}>
-                Saltar al final del tramo
-              </button>
-            ) : null}
             <CareerTrophyShelf career={displayCareer} />
             </div>
             <div className="career-col career-col--action" ref={actionRef}>

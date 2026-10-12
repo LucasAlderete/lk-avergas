@@ -98,25 +98,31 @@ export default function CareerTimeline({ career, phase }) {
   // futuras, igual que Copero.
   const groups = groupSeasons(seasons, step);
 
-  // Acompaña la reproducción: cada vez que entra una temporada (o llega la
-  // decisión) baja solo hasta la última fila jugada, así no hay que scrollear
-  // para seguir lo que pasa.
+  // Acompaña la reproducción: la última fila jugada (o la de la decisión)
+  // queda siempre abajo de todo de lo visible, que es lo que se va simulando.
+  // También se reacomoda cuando la tabla cambia de alto (en el celular se
+  // achica al aparecer la decisión y la fila quedaba tapada).
   const lastSeasonPartial = seasons.length > 0 && Boolean(seasons[seasons.length - 1].partial);
   useEffect(() => {
     const box = scrollRef.current;
-    if (!box) return;
-    const rows = box.querySelectorAll(
-      '.career-table-row--played, .career-table-row--current, .career-table-row--decision',
-    );
-    const row = rows[rows.length - 1];
-    if (!row) return;
-    // La fila queda a ~75% de la altura visible (con pocas filas no se mueve).
-    const bottom = row.offsetTop + row.offsetHeight;
-    const top = Math.max(0, bottom - box.clientHeight * 0.75);
+    if (!box) return undefined;
+    const follow = (smooth) => {
+      const rows = box.querySelectorAll(
+        '.career-table-row--played, .career-table-row--current, .career-table-row--decision',
+      );
+      const row = rows[rows.length - 1];
+      if (!row) return;
+      const top = Math.max(0, row.offsetTop + row.offsetHeight + 4 - box.clientHeight);
+      if (smooth && typeof box.scrollTo === 'function') box.scrollTo({ top, behavior: 'smooth' });
+      else box.scrollTop = top;
+    };
     let smooth = true;
     try { smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { smooth = true; }
-    if (typeof box.scrollTo === 'function') box.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
-    else box.scrollTop = top;
+    follow(smooth);
+    if (typeof ResizeObserver !== 'function') return undefined;
+    const observer = new ResizeObserver(() => follow(false));
+    observer.observe(box);
+    return () => observer.disconnect();
   }, [seasons.length, lastSeasonPartial, needsDecisionRow]);
 
   if (seasons.length === 0 && currentAge === null) return null;

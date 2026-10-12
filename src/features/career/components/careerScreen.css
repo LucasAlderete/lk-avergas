@@ -2512,7 +2512,6 @@ body:has(.career-screen)::after {
   .career-screen .career-col--history > .career-pcard { order: 0; flex: none; }
   .career-screen .career-col--history > .career-table-card { order: 1; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 96px; contain: size; }
   .career-screen .career-table-card .career-table--scroll { flex: 1 1 auto; min-height: 0; max-height: none; }
-  .career-screen .career-col--history > .career-skip { order: 1; flex: none; min-height: 32px; }
   .career-screen .career-col--action { order: 2; flex: none; }
   /* La vitrina de títulos no entra: las copas ya se ven en la tabla. */
   .career-screen .career-shelf { display: none; }
