@@ -534,6 +534,13 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .section-nav button.is-active, .section-nav button:disabled { color: var(--paper); cursor: default; }
 .section-nav button.is-active::after, .section-nav button:disabled::after { transform: scaleX(1); }
 @media (prefers-reduced-motion: reduce) { .section-nav button::after { transition: none; } }
+/* Celular: el menú en una sola línea (si no entra, se desliza de costado). */
+@media (max-width: 640px) {
+  .section-header-tools { width: 100%; min-width: 0; justify-items: start; }
+  .section-nav { flex-wrap: nowrap; gap: 10px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .section-nav::-webkit-scrollbar { display: none; }
+  .section-nav button { flex: none; font-size: 1rem; white-space: nowrap; }
+}
 
 /* __CSS_CONTINUE__ */
 

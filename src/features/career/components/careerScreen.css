@@ -2494,3 +2494,51 @@ body:has(.career-screen)::after {
 /* La vitrina se titula como los demás bloques (no como etiqueta chica). */
 .career-screen .career-shelf-head { color: var(--c-text); font: 700 1.2rem/1 'Barlow Condensed', sans-serif; letter-spacing: .02em; }
 .career-screen .career-shelf-head svg { color: var(--c-accent); }
+
+/* ==========================================================================
+   Celular en una sola pantalla (como Copero): carta → tabla → decisión.
+   La pantalla ocupa al menos el alto visible y la tabla toma el lugar que
+   sobra (scrollea adentro), así la decisión siempre se ve sin bajar.
+   `contain: size` hace que la tabla no empuje el alto con sus filas: si la
+   decisión no entra, la tabla queda en su mínimo y recién ahí scrollea la página.
+   ========================================================================== */
+@media (max-width: 700px) {
+  .career-screen { padding: 6px 10px 8px; }
+  .career-screen .career-shell--main { display: flex; flex-direction: column; gap: 8px; min-height: calc(100dvh - 14px); }
+  .career-screen .career-shell--main > .section-header { flex: none; margin: 0; padding-bottom: 2px; }
+  .career-screen .section-nav button { font-size: 1rem; }
+  .career-screen .career-dashboard--single { display: flex; flex-direction: column; flex: 1 1 auto; gap: 8px; }
+  .career-screen .career-dashboard--single .career-primary { display: flex; flex-direction: column; flex: 1 1 auto; gap: 8px; }
+  .career-screen .career-col--history > .career-pcard { order: 0; flex: none; }
+  .career-screen .career-col--history > .career-table-card { order: 1; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 140px; contain: size; }
+  .career-screen .career-table-card .career-table--scroll { flex: 1 1 auto; min-height: 0; max-height: none; }
+  .career-screen .career-col--history > .career-skip { order: 1; flex: none; min-height: 32px; }
+  .career-screen .career-col--action { order: 2; flex: none; }
+  /* La vitrina de títulos no entra: las copas ya se ven en la tabla. */
+  .career-screen .career-shelf { display: none; }
+  .career-screen .career-footer { flex: none; padding: 0; }
+  .career-screen .career-footer .career-button { min-height: 32px; padding: 4px 10px; font-size: .78rem; }
+
+  /* Carta del jugador más baja. */
+  .career-screen .career-topbar { gap: 10px; padding: 8px 10px; }
+  .career-screen .career-topbar-ovr { width: 56px; height: 56px; }
+  .career-screen .career-topbar-ovr strong { font-size: 2rem; }
+  .career-screen .career-topbar-id { gap: 4px; }
+
+  /* Decisión compacta: textos más cortos y chicos. */
+  .career-screen .career-decision-panel { gap: 6px; padding: 8px 10px; }
+  .career-screen .career-decision-head { padding-bottom: 4px; }
+  .career-screen .career-event-copy { font-size: .8rem; line-height: 1.3; -webkit-line-clamp: 2; }
+  .career-screen .career-choices--grid { gap: 6px; }
+  .career-screen .career-choice--compact { min-height: 0; padding: 6px 8px; }
+  .career-screen .career-choice--compact .career-choice-label { font-size: .85rem; }
+  .career-screen .career-choice-odds { gap: 4px; margin-top: 4px; }
+  .career-screen .career-odd { padding: 3px 6px; font-size: .74rem; }
+  .career-screen .career-odd-icon { width: 18px; height: 18px; }
+  .career-screen .career-choice-result { padding: 6px 8px; }
+  .career-screen .career-choice-result-copy { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .78rem; }
+  .career-screen .career-dest { gap: 4px; padding: 8px 6px; }
+  .career-screen .career-dest-club { font-size: .95rem; }
+  /* Titular/suplente no entra en el celular. */
+  .career-screen .career-dest-role { display: none; }
+}
